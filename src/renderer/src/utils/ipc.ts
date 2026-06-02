@@ -185,6 +185,10 @@ export async function getFileStr(id: string): Promise<string> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('getFileStr', id))
 }
 
+export async function getFilePreviewStr(id: string, format?: string): Promise<string> {
+  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('getFilePreviewStr', id, format))
+}
+
 export async function setFileStr(id: string, str: string): Promise<void> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('setFileStr', id, str))
 }

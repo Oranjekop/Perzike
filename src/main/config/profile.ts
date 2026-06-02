@@ -447,6 +447,14 @@ export async function getFileStr(path: string): Promise<string> {
   return await readFile(resolveEditableFilePath(path, current, diffWorkDir), 'utf-8')
 }
 
+export async function getFilePreviewStr(path: string, _format?: string): Promise<string> {
+  const { diffWorkDir = false } = await getAppConfig()
+  const { current } = await getProfileConfig()
+  const target = resolveEditableFilePath(path, current, diffWorkDir)
+
+  return await readFile(target, 'utf-8')
+}
+
 export async function setFileStr(path: string, content: string): Promise<void> {
   return await saveFileStr(path, content, false)
 }

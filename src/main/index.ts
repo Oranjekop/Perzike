@@ -7,7 +7,6 @@ import {
   BrowserWindow,
   Menu,
   dialog,
-  Notification,
   powerMonitor,
   ipcMain,
   nativeTheme
@@ -32,6 +31,7 @@ import { showFloatingWindow } from './resolve/floatingWindow'
 import iconv from 'iconv-lite'
 import { getAppConfigSync } from './config/app'
 import { getUserAgent } from './utils/userAgent'
+import { showNotification } from './utils/notification'
 
 let quitTimeout: NodeJS.Timeout | null = null
 export let mainWindow: BrowserWindow | null = null
@@ -393,7 +393,7 @@ async function handleDeepLink(url: string): Promise<void> {
             url: profileUrl
           })
           mainWindow?.webContents.send('profileConfigUpdated')
-          new Notification({ title: '订阅导入成功' }).show()
+          void showNotification({ title: '订阅导入成功', variant: 'success' })
         }
       } catch (e) {
         dialog.showErrorBox('订阅导入失败', `${url}\n${e}`)
@@ -420,7 +420,7 @@ async function handleDeepLink(url: string): Promise<void> {
             ext: url.pathname.endsWith('.js') ? 'js' : 'yaml'
           })
           mainWindow?.webContents.send('overrideConfigUpdated')
-          new Notification({ title: '覆写导入成功' }).show()
+          void showNotification({ title: '覆写导入成功', variant: 'success' })
         }
       } catch (e) {
         dialog.showErrorBox('覆写导入失败', `${url}\n${e}`)

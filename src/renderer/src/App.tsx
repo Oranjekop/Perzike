@@ -34,6 +34,7 @@ import { TitleBarOverlayOptions } from 'electron'
 import SubStoreCard from '@renderer/components/sider/substore-card'
 import useSWR from 'swr'
 import ConfirmModal from '@renderer/components/base/base-confirm'
+import { notify } from '@renderer/utils/notification'
 
 let navigate: NavigateFunction
 
@@ -255,9 +256,9 @@ const App: React.FC = () => {
       setShowOverrideInstallConfirm(true)
     }
     const handleTunStartFailed = (): void => {
-      new Notification('TUN 启动失败', {
+      notify('TUN 启动失败', {
         body: 'TUN 启动失败，已自动禁用。如需使用请授予内核权限。',
-        silent: false
+        variant: 'danger'
       })
     }
 

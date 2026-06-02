@@ -1,12 +1,28 @@
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button } from '@heroui/react'
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Button,
+  Spinner
+} from '@heroui/react'
 import React, { useEffect, useState } from 'react'
 import { BaseEditor } from '../base/base-editor-lazy'
-import { getFileStr, saveFileStrWithElevation, setFileStr } from '@renderer/utils/ipc'
+import { TextViewer } from '../base/text-viewer'
+import {
+  getFilePreviewStr,
+  getFileStr,
+  saveFileStrWithElevation,
+  setFileStr
+} from '@renderer/utils/ipc'
 import yaml from 'js-yaml'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import ConfirmModal from '../base/base-confirm'
+import { notify } from '@renderer/utils/notification'
 type Language = 'yaml' | 'javascript' | 'css' | 'json' | 'text'
 const FILE_PERMISSION_ELEVATION_REQUIRED = 'FILE_PERMISSION_ELEVATION_REQUIRED'
+const TEXT_VIEWER_LINE_LIMIT = 20000
 
 interface Props {
   onClose: () => void
@@ -45,13 +61,29 @@ function getViewerContent(
   }
 }
 
+function hasManyLines(value: string, limit: number): boolean {
+  let lines = 1
+  for (let index = 0; index < value.length; index++) {
+    if (value.charCodeAt(index) === 10) {
+      lines++
+      if (lines > limit) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
 const Viewer: React.FC<Props> = (props) => {
   const { type, path, title, format, privderType, onClose } = props
   const { appConfig: { disableAnimation = false } = {} } = useAppConfig()
   const [currData, setCurrData] = useState('')
   const [showPermissionConfirm, setShowPermissionConfirm] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const language = type === 'Inline' ? 'yaml' : getDefaultLanguage(format)
+  const editorLanguage = format === 'MrsRule' ? 'text' : language
+  const useTextViewer = type !== 'File' && hasManyLines(currData, TEXT_VIEWER_LINE_LIMIT)
 
   const save = async (elevated = false): Promise<void> => {
     setIsSaving(true)
@@ -63,19 +95,49 @@ const Viewer: React.FC<Props> = (props) => {
         setShowPermissionConfirm(true)
         return
       }
-      alert(e)
+      notify(e, { variant: 'danger' })
     } finally {
       setIsSaving(false)
     }
   }
 
-  const getContent = async (): Promise<void> => {
-    const fileContent = await getFileStr(type === 'Inline' ? 'config.yaml' : path)
-    setCurrData(getViewerContent(fileContent, privderType, title))
-  }
-
   useEffect(() => {
-    getContent()
+    let canceled = false
+
+    if (type !== 'Inline' && !path) {
+      setIsLoading(true)
+      setCurrData('')
+      return () => {
+        canceled = true
+      }
+    }
+
+    const loadContent = async (): Promise<void> => {
+      setIsLoading(true)
+      try {
+        const fileContent = await (format === 'MrsRule'
+          ? getFilePreviewStr(path, format)
+          : getFileStr(type === 'Inline' ? 'config.yaml' : path))
+
+        if (canceled) return
+        setCurrData(
+          format === 'MrsRule' ? fileContent : getViewerContent(fileContent, privderType, title)
+        )
+      } catch (e) {
+        if (!canceled) {
+          notify(e, { variant: 'danger' })
+        }
+      } finally {
+        if (!canceled) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    loadContent()
+    return () => {
+      canceled = true
+    }
   }, [format, path, privderType, title, type])
 
   return (
@@ -117,18 +179,26 @@ const Viewer: React.FC<Props> = (props) => {
       <ModalContent className="h-full w-[calc(100%-100px)]">
         <ModalHeader className="flex pb-0 app-drag">{title}</ModalHeader>
         <ModalBody className="h-full">
-          <BaseEditor
-            language={language}
-            value={currData}
-            readOnly={type != 'File'}
-            onChange={(value) => setCurrData(value)}
-          />
+          {isLoading ? (
+            <div className="flex h-full items-center justify-center">
+              <Spinner size="lg" />
+            </div>
+          ) : useTextViewer ? (
+            <TextViewer value={currData} />
+          ) : (
+            <BaseEditor
+              language={editorLanguage}
+              value={currData}
+              readOnly={type != 'File'}
+              onChange={(value) => setCurrData(value)}
+            />
+          )}
         </ModalBody>
         <ModalFooter className="pt-0">
           <Button size="sm" variant="light" onPress={onClose}>
             关闭
           </Button>
-          {type == 'File' && (
+          {type == 'File' && !isLoading && (
             <Button
               size="sm"
               color="primary"

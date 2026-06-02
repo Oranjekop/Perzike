@@ -15,6 +15,7 @@ import { ProfileConfigProvider } from './hooks/use-profile-config'
 import { RulesProvider } from './hooks/use-rules'
 import { GroupsProvider } from './hooks/use-groups'
 import { ProxiesStateProvider } from './hooks/use-proxies-state'
+import AppNotificationProvider from './components/base/app-notification-provider'
 
 let F12Count = 0
 
@@ -47,6 +48,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <HeroUIProvider>
       <NextThemesProvider attribute="class" enableSystem defaultTheme="dark">
+        <AppNotificationProvider />
         <BaseErrorBoundary>
           <HashRouter>
             <AppConfigProvider>
