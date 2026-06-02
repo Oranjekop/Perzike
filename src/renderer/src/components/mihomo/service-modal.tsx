@@ -14,6 +14,7 @@ import {
 } from '@heroui/react'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { serviceStatus, testServiceConnection } from '@renderer/utils/ipc'
+import { notify } from '@renderer/utils/notification'
 
 interface Props {
   onChange: (open: boolean) => void
@@ -112,7 +113,7 @@ const ServiceModal: React.FC<Props> = (props) => {
         setConnectionStatus('disconnected')
         return
       }
-      alert(e)
+      notify(e, { variant: 'danger' })
     } finally {
       setLoading(false)
     }

@@ -14,6 +14,7 @@ import { platform } from '@renderer/utils/init'
 import { IoIosHelpCircle } from 'react-icons/io'
 import { BiCopy } from 'react-icons/bi'
 import EditableList from '../base/base-list-editor'
+import { notify } from '@renderer/utils/notification'
 
 const emptyArray: string[] = []
 
@@ -129,7 +130,7 @@ const AdvancedSettings: React.FC = () => {
                 envType: Array.from(v) as ('bash' | 'fish' | 'cmd' | 'powershell' | 'nushell')[]
               })
             } catch (e) {
-              alert(e)
+              notify(e, { variant: 'danger' })
             }
           }}
         >
@@ -150,7 +151,7 @@ const AdvancedSettings: React.FC = () => {
               await patchControledMihomoConfig({})
               await restartCore()
             } catch (e) {
-              alert(e)
+              notify(e, { variant: 'danger' })
             }
           }}
         />
@@ -165,7 +166,7 @@ const AdvancedSettings: React.FC = () => {
               await patchControledMihomoConfig({})
               await restartCore()
             } catch (e) {
-              alert(e)
+              notify(e, { variant: 'danger' })
             }
           }}
         />

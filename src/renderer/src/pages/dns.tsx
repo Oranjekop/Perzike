@@ -14,6 +14,7 @@ import {
   isValidDomainWildcard,
   isValidDnsServer
 } from '@renderer/utils/validate'
+import { notify } from '@renderer/utils/notification'
 
 const DNS: React.FC = () => {
   const { controledMihomoConfig, patchControledMihomoConfig } = useControledMihomoConfig()
@@ -101,7 +102,7 @@ const DNS: React.FC = () => {
       await patchControledMihomoConfig(patch)
       await restartCore()
     } catch (e) {
-      alert(e)
+      notify(e, { variant: 'danger' })
     }
   }
 

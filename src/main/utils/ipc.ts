@@ -134,6 +134,7 @@ import { closeFloatingWindow, showContextMenu, showFloatingWindow } from '../res
 import { getAppName } from './appName'
 import { getUserAgent } from './userAgent'
 import { appendAppLog, clearCachedMihomoLogs, getCachedMihomoLogs } from './log'
+import { showNotification } from './notification'
 
 function ipcErrorWrapper<T>( // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fn: (...args: any[]) => Promise<T> // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -395,7 +396,7 @@ export function registerIpcMainHandlers(): void {
   ipcMain.handle('getIconDataURL', (_e, appPath) => ipcErrorWrapper(getIconDataURL)(appPath))
   ipcMain.handle('copyEnv', (_e, type) => ipcErrorWrapper(copyEnv)(type))
   ipcMain.handle('alert', (_e, msg) => {
-    dialog.showErrorBox('Perzike', msg)
+    void showNotification({ title: 'Perzike', body: msg, variant: 'danger' })
   })
   ipcMain.handle('resetAppConfig', resetAppConfig)
   ipcMain.handle('relaunchApp', () => {

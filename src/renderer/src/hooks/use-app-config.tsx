@@ -1,6 +1,7 @@
 import React, { createContext, useContext, ReactNode } from 'react'
 import useSWR from 'swr'
 import { getAppConfig, patchAppConfig as patch } from '@renderer/utils/ipc'
+import { notify } from '@renderer/utils/notification'
 
 interface AppConfigContextType {
   appConfig: AppConfig | undefined
@@ -17,7 +18,7 @@ export const AppConfigProvider: React.FC<{ children: ReactNode }> = ({ children 
     try {
       await patch(value)
     } catch (e) {
-      alert(e)
+      notify(e, { variant: 'danger' })
     } finally {
       mutateAppConfig()
     }

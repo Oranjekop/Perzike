@@ -16,6 +16,7 @@ import { IoIosHelpCircle } from 'react-icons/io'
 import { startTour } from '@renderer/utils/driver'
 import { useNavigate } from 'react-router-dom'
 import ConfirmModal from '../base/base-confirm'
+import { notify } from '@renderer/utils/notification'
 
 const Actions: React.FC = () => {
   const navigate = useNavigate()
@@ -103,10 +104,10 @@ const Actions: React.FC = () => {
                   setChangelog(version.changelog)
                   setOpenUpdate(true)
                 } else {
-                  new window.Notification('当前已是最新版本', { body: '无需更新' })
+                  notify('当前已是最新版本', { body: '无需更新', variant: 'success' })
                 }
               } catch (e) {
-                alert(e)
+                notify(e, { variant: 'danger' })
               } finally {
                 setCheckingUpdate(false)
               }

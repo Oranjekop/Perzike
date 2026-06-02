@@ -1,5 +1,5 @@
-import { BrowserWindow, Notification, ipcMain, shell } from 'electron'
-import { getAppConfig } from '../config/app'
+import { BrowserWindow, Notification, app, dialog, ipcMain, shell } from 'electron'
+import { getAppConfigSync } from '../config/app'
 
 export type AppNotificationVariant = 'default' | 'accent' | 'success' | 'warning' | 'danger'
 type AppNotificationMode = 'system' | 'toast'
@@ -25,11 +25,11 @@ ipcMain.on('app-notification-ready', (event) => {
   flushPendingToastNotifications(window)
 })
 
-export async function showNotification(payload: AppNotificationPayload): Promise<void> {
+export function showNotification(payload: AppNotificationPayload): void {
   const notification = normalizeNotificationPayload(payload)
   let notificationMode: AppNotificationMode = 'system'
   try {
-    notificationMode = (await getAppConfig()).notificationMode ?? 'system'
+    notificationMode = getAppConfigSync().notificationMode ?? 'system'
   } catch {
     // fall back to system notifications when config is not readable yet
   }
@@ -41,30 +41,46 @@ export async function showNotification(payload: AppNotificationPayload): Promise
       return
     }
 
+    if (shouldShowBlockingError(notification)) {
+      showBlockingError(notification)
+      return
+    }
+
     pendingToastNotifications.push(notification)
     return
   }
 
-  const systemNotification = new Notification({
-    title: notification.title,
-    body: notification.body,
-    timeoutType: notification.persistent ? 'never' : 'default'
-  })
-  if (notification.url) {
-    systemNotification.on('click', () => {
-      void shell.openExternal(notification.url!)
-    })
+  if (shouldShowBlockingError(notification)) {
+    showBlockingError(notification)
+    return
   }
-  if (notification.id) {
-    systemNotifications.get(notification.id)?.close()
-    systemNotifications.set(notification.id, systemNotification)
-    systemNotification.on('close', () => {
-      if (systemNotifications.get(notification.id!) === systemNotification) {
-        systemNotifications.delete(notification.id!)
-      }
+
+  try {
+    const systemNotification = new Notification({
+      title: notification.title,
+      body: notification.body,
+      timeoutType: notification.persistent ? 'never' : 'default'
     })
+    if (notification.url) {
+      systemNotification.on('click', () => {
+        void shell.openExternal(notification.url!)
+      })
+    }
+    if (notification.id) {
+      systemNotifications.get(notification.id)?.close()
+      systemNotifications.set(notification.id, systemNotification)
+      systemNotification.on('close', () => {
+        if (systemNotifications.get(notification.id!) === systemNotification) {
+          systemNotifications.delete(notification.id!)
+        }
+      })
+    }
+    systemNotification.show()
+  } catch {
+    if (notification.variant === 'danger') {
+      showBlockingError(notification)
+    }
   }
-  systemNotification.show()
 }
 
 export function dismissNotification(id: string): void {
@@ -111,6 +127,24 @@ function flushPendingToastNotifications(window: BrowserWindow): void {
 function isMainRendererWindow(window: BrowserWindow): boolean {
   const url = window.webContents.getURL()
   return !url.includes('floating.html') && !url.includes('traymenu.html')
+}
+
+function shouldShowBlockingError(notification: AppNotificationPayload): boolean {
+  if (notification.variant !== 'danger') {
+    return false
+  }
+
+  if (!app.isReady()) {
+    return true
+  }
+
+  return !BrowserWindow.getAllWindows().some(
+    (window) => !window.isDestroyed() && isMainRendererWindow(window)
+  )
+}
+
+function showBlockingError(notification: AppNotificationPayload): void {
+  dialog.showErrorBox(notification.title, notification.body ?? notification.title)
 }
 
 function normalizeNotificationPayload(payload: AppNotificationPayload): AppNotificationPayload {

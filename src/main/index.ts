@@ -6,7 +6,6 @@ import {
   shell,
   BrowserWindow,
   Menu,
-  dialog,
   powerMonitor,
   ipcMain,
   nativeTheme
@@ -123,10 +122,11 @@ if (
       } catch {
         // ignore
       }
-      dialog.showErrorBox(
-        '首次启动请以管理员权限运行',
-        `首次启动请以管理员权限运行\n${createErrorStr}\n${eStr}`
-      )
+      void showNotification({
+        title: '首次启动请以管理员权限运行',
+        body: `首次启动请以管理员权限运行\n${createErrorStr}\n${eStr}`,
+        variant: 'danger'
+      })
     } finally {
       exitApp()
     }
@@ -305,7 +305,7 @@ app.whenReady().then(async () => {
       await patchControledMihomoConfig({ tun: { enable: false } })
     }
   } catch (e) {
-    dialog.showErrorBox('应用初始化失败', `${e}`)
+    void showNotification({ title: '应用初始化失败', body: `${e}`, variant: 'danger' })
     app.quit()
     return
   }
@@ -332,7 +332,7 @@ app.whenReady().then(async () => {
       })
       coreStarted = true
     } catch (e) {
-      dialog.showErrorBox('内核启动出错', `${e}`)
+      void showNotification({ title: '内核启动出错', body: `${e}`, variant: 'danger' })
     }
   })()
 
@@ -396,7 +396,11 @@ async function handleDeepLink(url: string): Promise<void> {
           void showNotification({ title: '订阅导入成功', variant: 'success' })
         }
       } catch (e) {
-        dialog.showErrorBox('订阅导入失败', `${url}\n${e}`)
+        void showNotification({
+          title: '订阅导入失败',
+          body: `${url}\n${e}`,
+          variant: 'danger'
+        })
       }
       break
     }
@@ -423,7 +427,11 @@ async function handleDeepLink(url: string): Promise<void> {
           void showNotification({ title: '覆写导入成功', variant: 'success' })
         }
       } catch (e) {
-        dialog.showErrorBox('覆写导入失败', `${url}\n${e}`)
+        void showNotification({
+          title: '覆写导入失败',
+          body: `${url}\n${e}`,
+          variant: 'danger'
+        })
       }
       break
     }

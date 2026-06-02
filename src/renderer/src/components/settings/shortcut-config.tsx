@@ -5,6 +5,7 @@ import { useAppConfig } from '@renderer/hooks/use-app-config'
 import React, { KeyboardEvent, useState, useEffect } from 'react'
 import { platform } from '@renderer/utils/init'
 import { registerShortcut } from '@renderer/utils/ipc'
+import { notify } from '@renderer/utils/notification'
 
 const keyMap = {
   Backquote: '`',
@@ -214,10 +215,10 @@ const ShortcutInput: React.FC<{
                 await patchAppConfig({ [action]: inputValue })
                 window.electron.ipcRenderer.send('updateTrayMenu')
               } else {
-                alert('快捷键注册失败')
+                notify('快捷键注册失败', { variant: 'danger' })
               }
             } catch (e) {
-              alert(`快捷键注册失败：${e}`)
+              notify(`快捷键注册失败：${e}`, { variant: 'danger' })
             }
           }}
         >

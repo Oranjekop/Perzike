@@ -28,6 +28,7 @@ import ControllerSetting from '@renderer/components/mihomo/controller-setting'
 import EnvSetting from '@renderer/components/mihomo/env-setting'
 import AdvancedSetting from '@renderer/components/mihomo/advanced-settings'
 import LogSetting from '@renderer/components/mihomo/log-setting'
+import { notify } from '@renderer/utils/notification'
 
 const Mihomo: React.FC = () => {
   const { appConfig, patchAppConfig } = useAppConfig()
@@ -56,7 +57,7 @@ const Mihomo: React.FC = () => {
       await restartCore()
       PubSub.publish('mihomo-core-changed')
     } catch (e) {
-      alert(e)
+      notify(e, { variant: 'danger' })
     }
   }
 
@@ -67,9 +68,9 @@ const Mihomo: React.FC = () => {
       setTimeout(() => PubSub.publish('mihomo-core-changed'), 2000)
     } catch (e) {
       if (typeof e === 'string' && e.includes('already using latest version')) {
-        new Notification('已经是最新版本')
+        notify('已经是最新版本', { variant: 'success' })
       } else {
-        alert(e)
+        notify(e, { variant: 'danger' })
       }
     } finally {
       setUpgrading(false)
@@ -96,7 +97,7 @@ const Mihomo: React.FC = () => {
     try {
       await switchPermissionMode(mode)
     } catch (e) {
-      alert(e)
+      notify(e, { variant: 'danger' })
     } finally {
       window.setTimeout(() => {
         permissionModeChangingRef.current = false
@@ -113,16 +114,16 @@ const Mihomo: React.FC = () => {
           onRevoke={async () => {
             if (platform === 'win32') {
               await deleteElevateTask()
-              new Notification('任务计划已取消注册')
+              notify('任务计划已取消注册', { variant: 'success' })
             } else {
               await revokeCorePermission()
-              new Notification('内核权限已撤销')
+              notify('内核权限已撤销', { variant: 'success' })
             }
             await restartCore()
           }}
           onGrant={async () => {
             await manualGrantCorePermition()
-            new Notification('内核授权成功')
+            notify('内核授权成功', { variant: 'success' })
             await restartCore()
           }}
         />
@@ -189,7 +190,7 @@ const Mihomo: React.FC = () => {
                 await restartCore()
                 PubSub.publish('mihomo-core-changed')
               } catch (e) {
-                alert(e)
+                notify(e, { variant: 'danger' })
               }
             }}
           >

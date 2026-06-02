@@ -7,6 +7,7 @@ import {
   removeOverrideItem as remove,
   updateOverrideItem as update
 } from '@renderer/utils/ipc'
+import { notify } from '@renderer/utils/notification'
 
 interface OverrideConfigContextType {
   overrideConfig: OverrideConfig | undefined
@@ -28,7 +29,7 @@ export const OverrideConfigProvider: React.FC<{ children: ReactNode }> = ({ chil
     try {
       await set(config)
     } catch (e) {
-      alert(e)
+      notify(e, { variant: 'danger' })
     } finally {
       mutateOverrideConfig()
     }
@@ -38,7 +39,7 @@ export const OverrideConfigProvider: React.FC<{ children: ReactNode }> = ({ chil
     try {
       await add(item)
     } catch (e) {
-      alert(e)
+      notify(e, { variant: 'danger' })
     } finally {
       mutateOverrideConfig()
     }
@@ -48,7 +49,7 @@ export const OverrideConfigProvider: React.FC<{ children: ReactNode }> = ({ chil
     try {
       await remove(id)
     } catch (e) {
-      alert(e)
+      notify(e, { variant: 'danger' })
     } finally {
       mutateOverrideConfig()
     }
@@ -58,7 +59,7 @@ export const OverrideConfigProvider: React.FC<{ children: ReactNode }> = ({ chil
     try {
       await update(item)
     } catch (e) {
-      alert(e)
+      notify(e, { variant: 'danger' })
     } finally {
       mutateOverrideConfig()
     }

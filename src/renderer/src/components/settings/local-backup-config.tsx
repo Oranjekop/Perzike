@@ -4,6 +4,7 @@ import SettingItem from '../base/base-setting-item'
 import { Button } from '@heroui/react'
 import { listLocalBackups, localBackup } from '@renderer/utils/ipc'
 import LocalRestoreModal from './local-restore-modal'
+import { notify } from '@renderer/utils/notification'
 
 const LocalBackupConfig: React.FC = () => {
   const [backuping, setBackuping] = useState(false)
@@ -12,18 +13,14 @@ const LocalBackupConfig: React.FC = () => {
   const [filenames, setFilenames] = useState<string[]>([])
   const [restoreOpen, setRestoreOpen] = useState(false)
 
-  const showNotification = (title: string, body: string): void => {
-    new window.Notification(title, { body })
-  }
-
   const handleBackup = async (): Promise<void> => {
     setBackuping(true)
     try {
       const savedPath = await localBackup()
-      showNotification('备份成功', `本地备份已保存到：${savedPath}`)
+      notify('备份成功', { body: `本地备份已保存到：${savedPath}`, variant: 'success' })
     } catch (e) {
       if (e !== '用户取消操作') {
-        showNotification('备份失败', `${e}`)
+        notify('备份失败', { body: `${e}`, variant: 'danger' })
       }
     } finally {
       setBackuping(false)
@@ -37,13 +34,13 @@ const LocalBackupConfig: React.FC = () => {
       setBackupDir(backupDir)
       setFilenames(files)
       if (files.length === 0) {
-        showNotification('没有备份', '所选目录中没有可恢复的备份文件')
+        notify('没有备份', { body: '所选目录中没有可恢复的备份文件', variant: 'warning' })
       } else {
         setRestoreOpen(true)
       }
     } catch (e) {
       if (e !== '用户取消操作') {
-        showNotification('读取失败', `${e}`)
+        notify('读取失败', { body: `${e}`, variant: 'danger' })
       }
     } finally {
       setRestoring(false)

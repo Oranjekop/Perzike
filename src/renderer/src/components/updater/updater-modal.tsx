@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown'
 import React, { useState } from 'react'
 import { downloadAndInstallUpdate } from '@renderer/utils/ipc'
 import { FiX, FiDownload } from 'react-icons/fi'
+import { notify } from '@renderer/utils/notification'
 
 interface Props {
   version: string
@@ -25,7 +26,7 @@ const UpdaterModal: React.FC<Props> = (props) => {
       setDownloading(true)
       await downloadAndInstallUpdate(version)
     } catch (e) {
-      alert(e)
+      notify(e, { variant: 'danger' })
       setDownloading(false)
     }
   }

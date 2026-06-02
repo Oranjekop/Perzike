@@ -10,6 +10,7 @@ import {
   stopSubStoreBackendServer,
   downloadSubStore
 } from '@renderer/utils/ipc'
+import { notify } from '@renderer/utils/notification'
 import React, { useEffect, useState } from 'react'
 import { HiExternalLink } from 'react-icons/hi'
 import { IoMdCloudDownload } from 'react-icons/io'
@@ -45,7 +46,7 @@ const SubStore: React.FC = () => {
               isLoading={isUpdating}
               onPress={async () => {
                 try {
-                  new Notification('Sub-Store 更新中...')
+                  notify('Sub-Store 更新中...', { id: 'substore-update' })
                   setIsUpdating(true)
                   await downloadSubStore()
                   await stopSubStoreBackendServer()
@@ -55,9 +56,12 @@ const SubStore: React.FC = () => {
                   await stopSubStoreFrontendServer()
                   await startSubStoreFrontendServer()
                   await getPort()
-                  new Notification('Sub-Store 更新完成')
+                  notify('Sub-Store 更新完成', { id: 'substore-update', variant: 'success' })
                 } catch (e) {
-                  new Notification(`Sub-Store 更新失败：${e}`)
+                  notify(`Sub-Store 更新失败：${e}`, {
+                    id: 'substore-update',
+                    variant: 'danger'
+                  })
                 } finally {
                   setIsUpdating(false)
                 }

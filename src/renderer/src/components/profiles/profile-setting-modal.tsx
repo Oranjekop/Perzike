@@ -18,6 +18,7 @@ import { getGistUrl, getUserAgent } from '@renderer/utils/ipc'
 import debounce from '@renderer/utils/debounce'
 import { IoIosHelpCircle } from 'react-icons/io'
 import { BiCopy } from 'react-icons/bi'
+import { notify } from '@renderer/utils/notification'
 
 interface Props {
   onClose: () => void
@@ -129,7 +130,7 @@ const ProfileSettingModal: React.FC<Props> = (props) => {
                       await navigator.clipboard.writeText(`${url}/raw/perzike.yaml`)
                     }
                   } catch (e) {
-                    alert(e)
+                    notify(e, { variant: 'danger' })
                   }
                 }}
               >

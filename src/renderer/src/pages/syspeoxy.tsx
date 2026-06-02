@@ -10,6 +10,7 @@ import { openUWPTool, triggerSysProxy } from '@renderer/utils/ipc'
 import React, { Key, useEffect, useState } from 'react'
 import ByPassEditorModal from '@renderer/components/sysproxy/bypass-editor-modal'
 import { IoIosHelpCircle } from 'react-icons/io'
+import { notify } from '@renderer/utils/notification'
 
 const defaultPacScript = `
 function FindProxyForURL(url, host) {
@@ -97,7 +98,7 @@ const Sysproxy: React.FC = () => {
       try {
         await triggerSysProxy(values.enable, onlyActiveDevice)
       } catch (e) {
-        alert(e)
+        notify(e, { variant: 'danger' })
         await patchAppConfig({ sysProxy: { enable: false } })
       }
     }

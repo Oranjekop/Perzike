@@ -3,6 +3,7 @@ import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { localDelete, localRestore, relaunchApp } from '@renderer/utils/ipc'
 import React, { useState } from 'react'
 import { MdDeleteForever } from 'react-icons/md'
+import { notify } from '@renderer/utils/notification'
 
 interface Props {
   backupDir: string
@@ -15,10 +16,6 @@ const LocalRestoreModal: React.FC<Props> = ({ backupDir, filenames: names, onClo
   const [filenames, setFilenames] = useState<string[]>(names)
   const [restoring, setRestoring] = useState(false)
   const [deletingFile, setDeletingFile] = useState<string | null>(null)
-
-  const showNotification = (title: string, body: string): void => {
-    new window.Notification(title, { body })
-  }
 
   const isOperating = restoring || deletingFile !== null
 
@@ -52,7 +49,7 @@ const LocalRestoreModal: React.FC<Props> = ({ backupDir, filenames: names, onClo
                       await localRestore(backupDir, filename)
                       await relaunchApp()
                     } catch (e) {
-                      showNotification('恢复失败', `${e}`)
+                      notify('恢复失败', { body: `${e}`, variant: 'danger' })
                       setRestoring(false)
                     }
                   }}
@@ -71,9 +68,12 @@ const LocalRestoreModal: React.FC<Props> = ({ backupDir, filenames: names, onClo
                     try {
                       await localDelete(backupDir, filename)
                       setFilenames((prev) => prev.filter((name) => name !== filename))
-                      showNotification('删除成功', `已删除备份文件：${filename}`)
+                      notify('删除成功', {
+                        body: `已删除备份文件：${filename}`,
+                        variant: 'success'
+                      })
                     } catch (e) {
-                      showNotification('删除失败', `${e}`)
+                      notify('删除失败', { body: `${e}`, variant: 'danger' })
                     } finally {
                       setDeletingFile(null)
                     }
