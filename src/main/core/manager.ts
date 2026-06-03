@@ -20,7 +20,8 @@ import {
   stopMihomoMemory,
   patchMihomoConfig,
   mihomoConfig,
-  mihomoGroups
+  mihomoGroups,
+  subscribeMihomoLogs
 } from './mihomoApi'
 import { readFile, rm, writeFile } from 'fs/promises'
 import { mainWindow } from '..'
@@ -168,6 +169,10 @@ const coreLogNotificationRules: CoreLogNotificationRule[] = [
     }
   }
 ]
+
+subscribeMihomoLogs((log) => {
+  notifyCoreLog({ text: log.payload })
+})
 
 function parseTailscaleAuthLog(line: string): { name: string; url: string } | undefined {
   const prefix = '[Tailscale]('
