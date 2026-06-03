@@ -20,7 +20,7 @@ let memoryReconnectTimer: NodeJS.Timeout | null = null
 let mihomoLogsWs: WebSocket | null = null
 let logsRetry = 10
 let logsReconnectTimer: NodeJS.Timeout | null = null
-const mihomoLogHandlers = new Set<(log: ControllerLog) => void>()
+let mihomoLogHandlers: Set<(log: ControllerLog) => void> | undefined
 let mihomoConnectionsWs: WebSocket | null = null
 let connectionsRetry = 10
 let connectionsReconnectTimer: NodeJS.Timeout | null = null
@@ -409,10 +409,17 @@ export const restartMihomoLogs = async (): Promise<void> => {
   await startMihomoLogs()
 }
 
+function getMihomoLogHandlers(): Set<(log: ControllerLog) => void> {
+  if (!mihomoLogHandlers) {
+    mihomoLogHandlers = new Set()
+  }
+  return mihomoLogHandlers
+}
+
 export function subscribeMihomoLogs(handler: (log: ControllerLog) => void): () => void {
-  mihomoLogHandlers.add(handler)
+  getMihomoLogHandlers().add(handler)
   return () => {
-    mihomoLogHandlers.delete(handler)
+    mihomoLogHandlers?.delete(handler)
   }
 }
 
@@ -430,7 +437,7 @@ const mihomoLogs = async (): Promise<void> => {
     try {
       const log = JSON.parse(data) as ControllerLog
       publishMihomoLog(log)
-      for (const handler of mihomoLogHandlers) {
+      for (const handler of getMihomoLogHandlers()) {
         try {
           handler(log)
         } catch {

@@ -91,6 +91,7 @@ let activeCorePermissionMode: NonNullable<AppConfig['corePermissionMode']> | nul
 let serviceCoreStreamsRestartTimer: NodeJS.Timeout | null = null
 let unsubscribeServiceCoreEvents: (() => void) | null = null
 let unsubscribeServiceCoreEventStream: (() => void) | null = null
+let unsubscribeMihomoLogNotifications: (() => void) | null = null
 let serviceCoreStreamsActive = false
 let serviceCoreStreamsStarting: Promise<void> | null = null
 let lastServiceCoreEventKey = ''
@@ -170,10 +171,6 @@ const coreLogNotificationRules: CoreLogNotificationRule[] = [
   }
 ]
 
-subscribeMihomoLogs((log) => {
-  notifyCoreLog({ text: log.payload })
-})
-
 function parseTailscaleAuthLog(line: string): { name: string; url: string } | undefined {
   const prefix = '[Tailscale]('
   const marker = ') To start this tsnet server, restart with TS_AUTHKEY set, or go to: '
@@ -229,6 +226,7 @@ function findTailscaleAuthUrlEnd(url: string): number {
 }
 
 async function startMihomoApiStreams(): Promise<void> {
+  ensureMihomoLogNotifications()
   await startMihomoTraffic()
   await startMihomoConnections()
   await startMihomoLogs()
@@ -269,6 +267,16 @@ async function waitForMihomoReady(): Promise<void> {
       await new Promise((resolve) => setTimeout(resolve, retryInterval))
     }
   }
+}
+
+function ensureMihomoLogNotifications(): void {
+  if (unsubscribeMihomoLogNotifications) {
+    return
+  }
+
+  unsubscribeMihomoLogNotifications = subscribeMihomoLogs((log) => {
+    notifyCoreLog({ text: log.payload })
+  })
 }
 
 async function waitForDirectCoreReadyByPolling(logLevel?: LogLevel): Promise<Promise<void>[]> {
