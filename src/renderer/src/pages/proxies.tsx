@@ -5,6 +5,7 @@ import {
   getImageDataURL,
   mihomoChangeProxy,
   mihomoCloseConnections,
+  mihomoGroupDelay,
   mihomoProxyDelay
 } from '@renderer/utils/ipc'
 import { FaLocationCrosshairs } from 'react-icons/fa6'
@@ -148,7 +149,17 @@ const Proxies: React.FC = () => {
 
   const onProxyDelay = useCallback(
     async (proxy: string, group?: ControllerMixedGroup): Promise<ControllerProxiesDelay> => {
-      return await mihomoProxyDelay(proxy, getDelayTestUrl(group))
+      try {
+        return await mihomoProxyDelay(proxy, getDelayTestUrl(group))
+      } catch (error) {
+        if (!group) throw error
+        const delays = await mihomoGroupDelay(group.name, getDelayTestUrl(group))
+        const delay = delays[proxy]
+        if (typeof delay === 'number') {
+          return { delay }
+        }
+        throw error
+      }
     },
     [getDelayTestUrl]
   )
@@ -165,33 +176,42 @@ const Proxies: React.FC = () => {
         next.set(group.name, true)
         return next
       })
-      const result: Promise<void>[] = []
-      const runningList: Promise<void>[] = []
-      for (const proxy of allProxies[index]) {
-        const promise = Promise.resolve().then(async () => {
-          try {
-            await mihomoProxyDelay(proxy.name, getDelayTestUrl(group))
-          } catch {
-            // ignore
-          } finally {
-            mutate()
+      try {
+        try {
+          await mihomoGroupDelay(group.name, getDelayTestUrl(group))
+          mutate()
+        } catch {
+          const proxies = allProxies[index].length > 0 ? allProxies[index] : group.all
+          const result: Promise<void>[] = []
+          const runningList: Promise<void>[] = []
+          for (const proxy of proxies) {
+            const promise = Promise.resolve().then(async () => {
+              try {
+                await mihomoProxyDelay(proxy.name, getDelayTestUrl(group))
+              } catch {
+                // ignore
+              } finally {
+                mutate()
+              }
+            })
+            result.push(promise)
+            const running = promise.then(() => {
+              runningList.splice(runningList.indexOf(running), 1)
+            })
+            runningList.push(running)
+            if (runningList.length >= (delayTestConcurrency || 50)) {
+              await Promise.race(runningList)
+            }
           }
-        })
-        result.push(promise)
-        const running = promise.then(() => {
-          runningList.splice(runningList.indexOf(running), 1)
-        })
-        runningList.push(running)
-        if (runningList.length >= (delayTestConcurrency || 50)) {
-          await Promise.race(runningList)
+          await Promise.all(result)
         }
+      } finally {
+        setDelaying((prev) => {
+          const next = new Map(prev)
+          next.set(group.name, false)
+          return next
+        })
       }
-      await Promise.all(result)
-      setDelaying((prev) => {
-        const next = new Map(prev)
-        next.set(group.name, false)
-        return next
-      })
     },
     [allProxies, visibleGroups, delayTestConcurrency, mutate, getDelayTestUrl, setIsOpen]
   )

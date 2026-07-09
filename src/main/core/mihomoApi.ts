@@ -154,9 +154,22 @@ export const mihomoGroups = async (): Promise<ControllerMixedGroup[]> => {
   if (mode === 'direct') return []
   const proxies = await mihomoProxies()
   const runtime = await getRuntimeConfig()
+  const providerProxyMap = new Map<string, ControllerProxiesDetail>()
   const groups: ControllerMixedGroup[] = []
   const shouldShowGroup = (group: ControllerGroupDetail): boolean =>
     showHiddenProxyGroups || !group.hidden
+
+  try {
+    const providers = await mihomoProxyProviders()
+    Object.values(providers.providers).forEach((provider) => {
+      provider.proxies?.forEach((proxy) => {
+        providerProxyMap.set(proxy.name, proxy)
+      })
+    })
+  } catch {
+    // Provider details are best-effort. Groups can still render from controller proxy data.
+  }
+
   const getGroupProxy = (
     group: ControllerGroupDetail,
     name: string
@@ -165,6 +178,15 @@ export const mihomoGroups = async (): Promise<ControllerMixedGroup[]> => {
     if (proxy) return proxy
 
     const extra = group.extra?.[name]
+    const providerProxy = providerProxyMap.get(name)
+    if (providerProxy) {
+      return {
+        ...providerProxy,
+        alive: extra?.alive ?? providerProxy.alive,
+        history: extra?.history ?? providerProxy.history
+      }
+    }
+
     return {
       alive: extra?.alive ?? true,
       extra: {},
