@@ -157,20 +157,46 @@ export const mihomoGroups = async (): Promise<ControllerMixedGroup[]> => {
   const groups: ControllerMixedGroup[] = []
   const shouldShowGroup = (group: ControllerGroupDetail): boolean =>
     showHiddenProxyGroups || !group.hidden
+  const getGroupProxy = (
+    group: ControllerGroupDetail,
+    name: string
+  ): ControllerProxiesDetail | ControllerGroupDetail => {
+    const proxy = proxies.proxies[name]
+    if (proxy) return proxy
+
+    const extra = group.extra?.[name]
+    return {
+      alive: extra?.alive ?? true,
+      extra: {},
+      history: extra?.history ?? [],
+      id: name,
+      name,
+      tfo: false,
+      type: 'Compatible',
+      udp: false,
+      xudp: false,
+      'dialer-proxy': '',
+      interface: '',
+      mptcp: false,
+      'routing-mark': 0,
+      smux: false,
+      uot: false
+    }
+  }
   runtime?.['proxy-groups']?.forEach((group: { name: string; url?: string }) => {
     const { name, url } = group
     if (proxies.proxies[name] && 'all' in proxies.proxies[name]) {
       const newGroup = proxies.proxies[name]
       if (!shouldShowGroup(newGroup)) return
       newGroup.testUrl = url
-      const newAll = newGroup.all.map((name) => proxies.proxies[name])
+      const newAll = newGroup.all.map((name) => getGroupProxy(newGroup, name))
       groups.push({ ...newGroup, all: newAll })
     }
   })
   if (!groups.find((group) => group.name === 'GLOBAL')) {
     const newGlobal = proxies.proxies['GLOBAL']
     if (newGlobal && 'all' in newGlobal && shouldShowGroup(newGlobal)) {
-      const newAll = newGlobal.all.map((name) => proxies.proxies[name])
+      const newAll = newGlobal.all.map((name) => getGroupProxy(newGlobal, name))
       groups.push({ ...newGlobal, all: newAll })
     }
   }
