@@ -149,27 +149,15 @@ jobs:
             7z a $_.FullName PORTABLE
           }
 
-      - name: Generate Release Notes
-        env:
-          RELEASE_TAG: ${{ github.ref_name }}
-          RELEASE_NOTES_FILE: release-notes.md
-        run: |
-          node scripts/release-notes.mjs
-
-      - name: Generate latest.yml
-        shell: bash
-        run: RELEASE_NOTES_FILE=release-notes.md SKIP_CHANGELOG=1 pnpm updater
-
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}-${{ matrix.arch }}${{ matrix.format && '-' || '' }}${{ matrix.format || '' }}
+          retention-days: 1
           path: |
             dist/perzike*
             !dist/perzike.app.plist
             !dist/perzike*blockmap*
-            latest.yml
-            release-notes.md
 
   release:
     needs: [build]
@@ -241,3 +229,13 @@ jobs:
           files: |
             latest.yml
             bin/dist/*
+
+      - name: Delete Intermediate Artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts?per_page=100" \
+            --paginate --jq '.artifacts[].id' | while read -r artifact_id; do
+              gh api --method DELETE "repos/${{ github.repository }}/actions/artifacts/$artifact_id"
+            done
