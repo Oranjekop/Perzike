@@ -6,7 +6,70 @@ on:
       - '*'
 
 jobs:
+  prepare_release:
+    runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ steps.release_meta.outputs.tag_name }}
+      package_version: ${{ steps.release_meta.outputs.package_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+          fetch-tags: 'true'
+
+      - name: Resolve Release Meta
+        id: release_meta
+        shell: bash
+        run: |
+          TAG_NAME="${GITHUB_REF_NAME}"
+          CLEAN_VERSION=$(echo "$TAG_NAME" | sed 's/^v//')
+
+          if [[ ! "$CLEAN_VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+            echo "Invalid version format: $TAG_NAME"
+            exit 1
+          fi
+
+          if [[ "$CLEAN_VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            PACKAGE_VERSION="${CLEAN_VERSION}.0"
+          else
+            PACKAGE_VERSION="$CLEAN_VERSION"
+          fi
+
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "package_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update Version
+        run: |
+          jq --arg version "${{ steps.release_meta.outputs.package_version }}" '.version = $version' package.json > tmp.json && mv tmp.json package.json
+
+      - name: Generate Release Notes
+        env:
+          RELEASE_TAG: ${{ steps.release_meta.outputs.tag_name }}
+          RELEASE_VERSION: ${{ steps.release_meta.outputs.package_version }}
+          RELEASE_NOTES_FILE: release-notes.md
+        run: node scripts/release-notes.mjs
+
+      - name: Prepare Draft Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ steps.release_meta.outputs.tag_name }}
+        shell: bash
+        run: |
+          if gh release view "$TAG_NAME" > /dev/null 2>&1; then
+            gh release edit "$TAG_NAME" --draft --title "$TAG_NAME" --notes-file release-notes.md
+          else
+            gh release create "$TAG_NAME" --draft --verify-tag --title "$TAG_NAME" --notes-file release-notes.md
+          fi
+
+          RELEASE_ID=$(gh api "repos/${{ github.repository }}/releases/tags/$TAG_NAME" --jq '.id')
+          gh api "repos/${{ github.repository }}/releases/$RELEASE_ID/assets?per_page=100" \
+            --paginate --jq '.[].id' | while read -r asset_id; do
+              gh api --method DELETE "repos/${{ github.repository }}/releases/assets/$asset_id"
+            done
+
   build:
+    needs: [prepare_release]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -149,18 +212,30 @@ jobs:
             7z a $_.FullName PORTABLE
           }
 
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.os }}-${{ matrix.arch }}${{ matrix.format && '-' || '' }}${{ matrix.format || '' }}
-          retention-days: 1
-          path: |
-            dist/perzike*
-            !dist/perzike.app.plist
-            !dist/perzike*blockmap*
+      - name: Upload Release Assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ needs.prepare_release.outputs.tag_name }}
+        shell: bash
+        run: |
+          shopt -s nullglob
+          ASSETS=()
+
+          for asset in dist/perzike*; do
+            if [[ -f "$asset" && "$asset" != *.blockmap && "$asset" != "dist/perzike.app.plist" ]]; then
+              ASSETS+=("$asset")
+            fi
+          done
+
+          if (( ${#ASSETS[@]} == 0 )); then
+            echo "No release assets found"
+            exit 1
+          fi
+
+          gh release upload "$TAG_NAME" "${ASSETS[@]}" --clobber
 
   release:
-    needs: [build]
+    needs: [prepare_release, build]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -169,36 +244,14 @@ jobs:
           fetch-depth: '0'
           fetch-tags: 'true'
 
-      - name: Resolve Release Meta
-        id: release_meta
-        shell: bash
-        run: |
-          RAW_TAG="${GITHUB_REF_NAME}"
-          TAG_NAME=$(echo "$RAW_TAG" | sed 's#^refs/tags/##')
-          CLEAN_VERSION=$(echo "$TAG_NAME" | sed 's/^v//')
-
-          if [[ ! "$CLEAN_VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
-            echo "Invalid version format: $TAG_NAME"
-            exit 1
-          fi
-
-          if [[ "$CLEAN_VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
-            PACKAGE_VERSION="${CLEAN_VERSION}.0"
-          else
-            PACKAGE_VERSION="$CLEAN_VERSION"
-          fi
-
-          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
-          echo "package_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
-
       - name: Update Version
         run: |
-          jq --arg version "${{ steps.release_meta.outputs.package_version }}" '.version = $version' package.json > tmp.json && mv tmp.json package.json
+          jq --arg version "${{ needs.prepare_release.outputs.package_version }}" '.version = $version' package.json > tmp.json && mv tmp.json package.json
 
       - name: Generate Release Notes
         env:
-          RELEASE_TAG: ${{ steps.release_meta.outputs.tag_name }}
-          RELEASE_VERSION: ${{ steps.release_meta.outputs.package_version }}
+          RELEASE_TAG: ${{ needs.prepare_release.outputs.tag_name }}
+          RELEASE_VERSION: ${{ needs.prepare_release.outputs.package_version }}
           RELEASE_NOTES_FILE: release-notes.md
         run: node scripts/release-notes.mjs
 
@@ -208,34 +261,16 @@ jobs:
           SKIP_PREPARE=1 pnpm install
           RELEASE_NOTES_FILE=release-notes.md pnpm updater
 
-      - uses: actions/download-artifact@v4
-        with:
-          path: bin/
-          merge-multiple: true
-
-      - name: Delete Current
-        uses: 8Mi-Tech/delete-release-assets-action@main
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ steps.release_meta.outputs.tag_name }}
-          deleteOnlyFromDrafts: false
-
-      - name: Publish Release
-        if: success()
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.release_meta.outputs.tag_name }}
-          body_path: release-notes.md
-          files: |
-            latest.yml
-            bin/dist/*
-
-      - name: Delete Intermediate Artifacts
+      - name: Upload Release Metadata
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ needs.prepare_release.outputs.tag_name }}
         shell: bash
-        run: |
-          gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts?per_page=100" \
-            --paginate --jq '.artifacts[].id' | while read -r artifact_id; do
-              gh api --method DELETE "repos/${{ github.repository }}/actions/artifacts/$artifact_id"
-            done
+        run: gh release upload "$TAG_NAME" latest.yml --clobber
+
+      - name: Publish Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ needs.prepare_release.outputs.tag_name }}
+        shell: bash
+        run: gh release edit "$TAG_NAME" --draft=false --title "$TAG_NAME" --notes-file release-notes.md
