@@ -360,11 +360,14 @@ body {
 .single-row > div > .overflow-y-visible > .flex > :first-child {
   grid-column: 1;
   grid-row: 1;
+  align-self: center;
 }
 
 .single-row > div > .overflow-y-visible > .flex > :last-child:not(:first-child) {
   grid-column: 3;
   grid-row: 1;
+  align-self: center;
+  margin-top: 0;
   margin-right: 8px;
 }
 
@@ -376,6 +379,7 @@ body {
   justify-content: flex-start;
   overflow: visible;
   padding: 0;
+  align-self: center;
   text-align: left;
 }
 
