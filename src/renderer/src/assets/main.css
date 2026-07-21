@@ -124,10 +124,24 @@ body {
   box-shadow: 0 8px 22px rgb(68 116 165 / 0.055) !important;
 }
 
+.app-sidebar-grid > div > div {
+  transition-property: background-color, border-color, box-shadow, transform;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+.app-sidebar-grid > div > div:active {
+  transform: scale(0.97);
+}
+
+.app-sidebar-grid > div > div:has(button:not(.pointer-events-none):active),
+.app-sidebar-grid > div > div:has([role='switch']:active) {
+  transform: none;
+}
+
 .app-sidebar-grid > div > div:not(.bg-primary):hover,
 .outbound-mode-card:hover {
   border-color: hsl(var(--heroui-primary) / 0.34);
-  transform: translateY(-1px);
 }
 
 .app-sidebar-grid > div > div.bg-primary {
