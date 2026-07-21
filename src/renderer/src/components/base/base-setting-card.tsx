@@ -9,13 +9,13 @@ interface Props {
 
 const SettingCard: React.FC<Props> = (props) => {
   return !props.title ? (
-    <Card className={`${props.className ?? ''} m-2 subpixel-antialiased`}>
+    <Card className={`${props.className ?? ''} setting-card m-2 subpixel-antialiased`}>
       <CardBody>{props.children}</CardBody>
     </Card>
   ) : (
     <Accordion
       isCompact
-      className={`${props.className ?? ''} my-2 subpixel-antialiased`}
+      className={`${props.className ?? ''} setting-accordion my-2 subpixel-antialiased`}
       variant="splitted"
       {...props}
     >

@@ -41,12 +41,12 @@ const BasePage = forwardRef<HTMLDivElement, Props>((props, ref) => {
   })
 
   return (
-    <div ref={contentRef} className="w-full h-full">
+    <div ref={contentRef} className="app-page w-full h-full">
       <div
-        className={`sticky top-0 z-40 h-12.25 w-full ${disableAnimation ? 'bg-background/95 backdrop-blur-sm' : 'bg-transparent backdrop-blur'}`}
+        className={`app-page-header sticky top-0 z-40 h-14 w-full ${disableAnimation ? 'bg-background/95 backdrop-blur-sm' : 'bg-transparent backdrop-blur'}`}
       >
-        <div className="app-drag p-2 flex justify-between h-12 items-center">
-          <div className="title h-full text-lg leading-8">{props.title}</div>
+        <div className="app-drag px-4 flex justify-between h-[calc(100%-1px)] items-center">
+          <div className="title app-page-title h-full flex items-center">{props.title}</div>
           <div style={{ marginRight: overlayWidth }} className="header flex gap-1 h-full items-center">
             {props.header}
             <Button
@@ -73,7 +73,9 @@ const BasePage = forwardRef<HTMLDivElement, Props>((props, ref) => {
 
         <Divider />
       </div>
-      <div className="content h-[calc(100vh-49px)] overflow-y-auto custom-scrollbar">
+      <div
+        className={`content app-page-content h-[calc(100vh-56px)] overflow-y-auto custom-scrollbar ${props.contentClassName ?? ''}`}
+      >
         {props.children}
       </div>
     </div>

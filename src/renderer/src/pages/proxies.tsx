@@ -504,7 +504,7 @@ const Proxies: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="h-[calc(100vh-50px)]">
+        <div className="h-full">
           <Virtuoso
             ref={virtuosoRef}
             data={rows}

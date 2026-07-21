@@ -9,6 +9,172 @@
   src: url('./twemoji.ttf');
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background: hsl(var(--heroui-background));
+  color: hsl(var(--heroui-foreground));
+  font-family: 'Microsoft YaHei UI', 'PingFang SC', 'Noto Sans CJK SC', sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.012em;
+}
+
+.app-shell {
+  background: hsl(var(--heroui-background));
+}
+
+.app-sidebar {
+  background: hsl(var(--heroui-content1) / 0.72);
+  backdrop-filter: blur(18px);
+}
+
+.app-brand-mark {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border: 1px solid hsl(var(--heroui-primary) / 0.28);
+  border-radius: 9px;
+  background: hsl(var(--heroui-primary) / 0.1);
+  object-fit: cover;
+}
+
+.app-brand-copy {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.app-brand-copy h3 {
+  font-weight: 600;
+}
+
+.app-main {
+  background: hsl(var(--heroui-background));
+}
+
+.app-page-header {
+  background: hsl(var(--heroui-background) / 0.9) !important;
+  box-shadow: 0 10px 28px rgb(75 129 181 / 0.045);
+}
+
+.app-page-header > .app-drag > .header {
+  padding: 0;
+}
+
+.app-page-title {
+  color: hsl(var(--heroui-foreground));
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.app-page-content {
+  background: hsl(var(--heroui-background));
+}
+
+.settings-page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 14px 18px 24px;
+}
+
+.setting-card,
+.setting-accordion > div {
+  border: 1px solid hsl(var(--heroui-divider) / 0.9);
+  border-radius: 14px !important;
+  box-shadow: 0 10px 30px rgb(64 112 158 / 0.06) !important;
+}
+
+.setting-accordion {
+  gap: 10px;
+}
+
+.setting-item {
+  align-items: center;
+  padding: 3px 4px;
+}
+
+.setting-item > div:first-child {
+  min-width: 0;
+}
+
+.setting-item h4 {
+  color: hsl(var(--heroui-foreground));
+  font-weight: 500;
+}
+
+.setting-accordion button {
+  font-weight: 500;
+}
+
+.app-sidebar-grid :is(h3, h4) {
+  font-weight: 600;
+}
+
+.app-sidebar-grid > div > div,
+.outbound-mode-card {
+  border: 1px solid hsl(var(--heroui-divider) / 0.82);
+  border-radius: 13px;
+  box-shadow: 0 8px 22px rgb(68 116 165 / 0.055) !important;
+}
+
+.app-sidebar-grid > div > div:not(.bg-primary):hover,
+.outbound-mode-card:hover {
+  border-color: hsl(var(--heroui-primary) / 0.34);
+  transform: translateY(-1px);
+}
+
+.app-sidebar-grid > div > div.bg-primary {
+  border-color: hsl(var(--heroui-primary));
+  box-shadow: 0 8px 20px hsl(var(--heroui-primary) / 0.18) !important;
+}
+
+.app-page-content .shadow-small,
+.app-page-content .shadow-sm,
+.app-page-content .shadow-medium {
+  border: 1px solid hsl(var(--heroui-divider) / 0.82);
+  border-radius: 14px;
+}
+
+.app-page-content input,
+.app-page-content textarea {
+  letter-spacing: -0.008em;
+}
+
+.app-page-content table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.app-page-content thead {
+  color: hsl(var(--heroui-default-600));
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dark .app-sidebar {
+  background: hsl(var(--heroui-content1) / 0.78);
+}
+
+.dark .app-page-header {
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.12);
+}
+
+.dark .setting-card,
+.dark .setting-accordion > div,
+.dark .app-sidebar-grid > div > div,
+.dark .outbound-mode-card {
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.16) !important;
+}
+
 .driver-popover {
   background-color: hsl(var(--heroui-content2)) !important;
   border-radius: 8px !important;
@@ -177,6 +343,50 @@
 
 .dark .proxy-group-card:hover {
   background-color: hsl(var(--heroui-content2) / 0.98) !important;
+}
+
+/* Full-width compact variant for cards configured as a single sidebar row. */
+.single-row {
+  grid-column: span 2 / span 2;
+}
+
+.single-row > div {
+  display: grid;
+  grid-template-columns: 40px minmax(max-content, 1fr) auto;
+  align-items: center;
+  min-height: 52px;
+}
+
+.single-row > div > .overflow-y-visible,
+.single-row > div > .overflow-y-visible > .flex {
+  display: contents;
+}
+
+.single-row > div > .overflow-y-visible > .flex > :first-child {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.single-row > div > .overflow-y-visible > .flex > :last-child:not(:first-child) {
+  grid-column: 3;
+  grid-row: 1;
+  margin-right: 8px;
+}
+
+.single-row > div > .pt-1 {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  width: auto;
+  justify-content: flex-start;
+  overflow: visible;
+  padding: 0;
+  text-align: left;
+}
+
+.single-row > div > .pt-1 h3 {
+  overflow: visible;
+  white-space: nowrap;
 }
 
 * {

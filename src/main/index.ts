@@ -534,7 +534,7 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
     const [mainWindowState] = await Promise.all([
       Promise.resolve(
         windowStateKeeper({
-          defaultWidth: 800,
+          defaultWidth: 900,
           defaultHeight: 700,
           file: 'window-state.json'
         })
@@ -544,8 +544,8 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
         : Promise.resolve(Menu.setApplicationMenu(null))
     ])
     mainWindow = new BrowserWindow({
-      minWidth: 800,
-      minHeight: 600,
+      minWidth: 900,
+      minHeight: 700,
       width: mainWindowState.width,
       height: mainWindowState.height,
       x: mainWindowState.x,

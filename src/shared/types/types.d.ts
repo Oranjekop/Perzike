@@ -1,7 +1,7 @@
 type OutboundMode = 'rule' | 'global' | 'direct'
 type LogLevel = 'info' | 'debug' | 'warning' | 'error' | 'silent'
 type SysProxyMode = 'auto' | 'manual'
-type CardStatus = 'col-span-2' | 'col-span-1' | 'hidden'
+type CardStatus = 'col-span-2' | 'col-span-1' | 'single-row' | 'hidden'
 type AppTheme = 'system' | 'light' | 'dark'
 type Priority =
   | 'PRIORITY_LOW'

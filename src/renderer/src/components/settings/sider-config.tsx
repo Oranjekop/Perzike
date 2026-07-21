@@ -66,6 +66,7 @@ const SiderConfig: React.FC = () => {
             >
               <Radio value="col-span-2">大</Radio>
               <Radio value="col-span-1">小</Radio>
+              <Radio value="single-row">单行</Radio>
               <Radio value="hidden">隐藏</Radio>
             </RadioGroup>
           </SettingItem>

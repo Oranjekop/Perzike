@@ -14,7 +14,7 @@ const SettingItem: React.FC<Props> = (props) => {
 
   return (
     <>
-      <div className="select-text h-8 w-full flex justify-between">
+      <div className="setting-item select-text min-h-10 w-full flex justify-between gap-4">
         <div className="h-full flex items-center">
           <h4 className="h-full text-md leading-8 whitespace-nowrap">{title}</h4>
           <div>{actions}</div>

@@ -35,6 +35,7 @@ import SubStoreCard from '@renderer/components/sider/substore-card'
 import useSWR from 'swr'
 import ConfirmModal from '@renderer/components/base/base-confirm'
 import { notify } from '@renderer/utils/notification'
+import appIcon from '@renderer/assets/app-icon.png'
 
 let navigate: NavigateFunction
 
@@ -316,7 +317,7 @@ const App: React.FC = () => {
           setSiderWidthValue(e.clientX)
         }
       }}
-      className={`w-full h-screen flex ${resizing ? 'cursor-ew-resize' : ''}`}
+      className={`app-shell w-full h-screen flex ${resizing ? 'cursor-ew-resize' : ''}`}
     >
       {showQuitConfirm && (
         <ConfirmModal
@@ -390,7 +391,7 @@ const App: React.FC = () => {
         />
       )}
       {siderWidthValue === narrowWidth ? (
-        <div style={{ width: `${narrowWidth}px` }} className="side h-full">
+        <div style={{ width: `${narrowWidth}px` }} className="side app-sidebar h-full">
           <div className="app-drag flex justify-center items-center z-40 bg-transparent h-11.25">
             {platform !== 'darwin' && (
               <span className="text-lg font-bold leading-8 tracking-wide select-none">P</span>
@@ -425,7 +426,7 @@ const App: React.FC = () => {
       ) : (
         <div
           style={{ width: `${siderWidthValue}px` }}
-          className="side h-full overflow-y-auto no-scrollbar"
+          className="side app-sidebar h-full overflow-y-auto no-scrollbar"
         >
           <div
             className={`app-drag sticky top-0 z-40 ${disableAnimation ? 'bg-background/95 backdrop-blur-sm' : 'bg-transparent backdrop-blur'} h-12.25`}
@@ -433,9 +434,12 @@ const App: React.FC = () => {
             <div
               className={`flex justify-between p-2 ${!useWindowFrame && platform === 'darwin' ? 'ml-15' : ''}`}
             >
-            <div className="flex ml-1 items-center gap-2">
-              <h3 className="text-lg font-bold leading-8">Perzike</h3>
-            </div>
+              <div className="app-brand flex ml-1 items-center gap-2">
+                <img className="app-brand-mark" src={appIcon} alt="" />
+                <div className="app-brand-copy">
+                  <h3 className="text-lg font-semibold leading-5">Perzike</h3>
+                </div>
+              </div>
               {latest && latest.version && <UpdaterButton latest={latest} />}
               <Button
                 size="sm"
@@ -456,7 +460,10 @@ const App: React.FC = () => {
           </div>
           <div style={{ overflowX: 'clip' }}>
             <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={onDragEnd}>
-              <div className="grid grid-cols-2 gap-2 m-2" onClickCapture={onSiderClickCapture}>
+              <div
+                className="app-sidebar-grid grid grid-cols-2 gap-2 m-2"
+                onClickCapture={onSiderClickCapture}
+              >
                 <SortableContext items={order}>
                   {order.map((key: string) => {
                     const Component = componentMap[key]
@@ -487,7 +494,7 @@ const App: React.FC = () => {
       <Divider orientation="vertical" />
       <div
         style={{ width: `calc(100% - ${siderWidthValue + 1}px)` }}
-        className="main grow h-full overflow-y-auto"
+        className="main app-main grow h-full overflow-hidden"
       >
         {page}
       </div>
