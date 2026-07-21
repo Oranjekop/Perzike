@@ -31,8 +31,7 @@ body {
 }
 
 .app-sidebar {
-  background: hsl(var(--heroui-content1) / 0.72);
-  backdrop-filter: blur(18px);
+  background: hsl(var(--heroui-background));
 }
 
 .app-brand-mark {
@@ -158,10 +157,6 @@ body {
   font-size: 11px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-}
-
-.dark .app-sidebar {
-  background: hsl(var(--heroui-content1) / 0.78);
 }
 
 .dark .app-page-header {
