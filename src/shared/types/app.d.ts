@@ -42,6 +42,7 @@ interface AppConfig {
   disableNftables: boolean
   safePaths: string[]
   proxyDisplayOrder: 'default' | 'delay' | 'name'
+  proxyGroupDisplayMode: 'list' | 'card'
   proxyDisplayLayout: 'hidden' | 'single' | 'double'
   groupDisplayLayout: 'hidden' | 'single' | 'double'
   profileDisplayDate?: 'expire' | 'update'

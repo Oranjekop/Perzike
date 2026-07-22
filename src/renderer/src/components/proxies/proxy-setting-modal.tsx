@@ -28,6 +28,7 @@ const ProxySettingModal: React.FC<Props> = (props) => {
   const {
     proxyCols = 'auto',
     proxyDisplayOrder = 'default',
+    proxyGroupDisplayMode = 'list',
     groupDisplayLayout = 'single',
     proxyDisplayLayout = 'double',
     autoCloseConnection = true,
@@ -65,6 +66,21 @@ const ProxySettingModal: React.FC<Props> = (props) => {
       <ModalContent className="flag-emoji">
         <ModalHeader className="flex pb-0">代理组设置</ModalHeader>
         <ModalBody className="py-2 gap-1">
+          <SettingItem title="代理组显示模式" divider>
+            <Tabs
+              size="sm"
+              color="primary"
+              selectedKey={proxyGroupDisplayMode}
+              onSelectionChange={async (v) => {
+                await patchAppConfig({
+                  proxyGroupDisplayMode: v as 'list' | 'card'
+                })
+              }}
+            >
+              <Tab key="list" title="列表" />
+              <Tab key="card" title="卡片" />
+            </Tabs>
+          </SettingItem>
           <SettingItem title="代理节点展示列数" divider>
             <Select
               classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}

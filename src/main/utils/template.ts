@@ -20,6 +20,7 @@ export const defaultConfig: AppConfig = {
   connectionInterval: 500,
   useSubStore: true,
   proxyDisplayOrder: 'default',
+  proxyGroupDisplayMode: 'list',
   autoCheckUpdate: false,
   autoCloseConnection: true,
   closeMode: 'all',

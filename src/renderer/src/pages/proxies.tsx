@@ -57,6 +57,7 @@ const Proxies: React.FC = () => {
     proxyDisplayLayout = 'double',
     groupDisplayLayout = 'double',
     proxyDisplayOrder = 'default',
+    proxyGroupDisplayMode = 'list',
     autoCloseConnection = true,
     closeMode = 'all',
     proxyCols = 'auto',
@@ -64,6 +65,7 @@ const Proxies: React.FC = () => {
     delayTestUrlScope = 'group',
     delayTestConcurrency = 50
   } = appConfig || {}
+  const isCardMode = proxyGroupDisplayMode === 'card'
   const [cols, setCols] = useState(() =>
     proxyCols !== 'auto' ? parseInt(proxyCols) : calcAutoProxyCols()
   )
@@ -72,6 +74,7 @@ const Proxies: React.FC = () => {
   const [pendingScrollIndex, setPendingScrollIndex] = useState<number | null>(null)
   const [iconCacheVersion, setIconCacheVersion] = useState(0)
   const virtuosoRef = useRef<VirtuosoHandle>(null)
+  const cardListRef = useRef<HTMLDivElement>(null)
   const visibleGroups = useMemo(() => {
     if (!showGlobalByMode) return groups
     if (mode === 'global') return groups.filter((group) => group.name === 'GLOBAL')
@@ -86,7 +89,7 @@ const Proxies: React.FC = () => {
     const counts: number[] = []
     const proxiesByGroup: (ControllerProxiesDetail | ControllerGroupDetail)[][] = []
     visibleGroups.forEach((group) => {
-      const isGroupOpen = isOpenMap.get(group.name) ?? false
+      const isGroupOpen = isCardMode || (isOpenMap.get(group.name) ?? false)
       const groupSearchValue = searchValueMap.get(group.name) ?? ''
       if (isGroupOpen) {
         let groupProxies = group.all.filter(
@@ -113,7 +116,7 @@ const Proxies: React.FC = () => {
       }
     })
     return { groupCounts: counts, allProxies: proxiesByGroup }
-  }, [visibleGroups, isOpenMap, searchValueMap, proxyDisplayOrder, cols])
+  }, [visibleGroups, isOpenMap, searchValueMap, proxyDisplayOrder, cols, isCardMode])
   const rows = useMemo<ProxyListRow[]>(() => {
     return visibleGroups.flatMap((_, groupIndex) => {
       const groupRows: ProxyListRow[] = [{ type: 'group', groupIndex }]
@@ -257,6 +260,13 @@ const Proxies: React.FC = () => {
     (index: number) => {
       const group = visibleGroups[index]
       if (!group) return
+      if (isCardMode) {
+        const currentProxy = cardListRef.current?.querySelector(
+          `[data-group-index="${index}"] [data-selected="true"]`
+        )
+        currentProxy?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        return
+      }
       if (!(isOpenMap.get(group.name) ?? false)) {
         setPendingScrollIndex(index)
         setIsOpen(group.name, true)
@@ -264,7 +274,7 @@ const Proxies: React.FC = () => {
       }
       scrollToCurrentProxy(index)
     },
-    [visibleGroups, isOpenMap, setIsOpen, scrollToCurrentProxy]
+    [visibleGroups, isCardMode, isOpenMap, setIsOpen, scrollToCurrentProxy]
   )
 
   useEffect(() => {
@@ -479,6 +489,144 @@ const Proxies: React.FC = () => {
     ]
   )
 
+  const cardContent = useMemo(
+    () => (
+      <div ref={cardListRef} className="proxy-group-card-list grid gap-3 p-2">
+        {visibleGroups.map((group, groupIndex) => {
+          const groupSearchValue = searchValueMap.get(group.name) ?? ''
+          const isGroupDelaying = delaying.get(group.name) ?? false
+          const proxies = allProxies[groupIndex] ?? []
+
+          return (
+            <Card
+              key={group.name}
+              data-group-index={groupIndex}
+              className="border border-default-200/50 bg-content1"
+              shadow="sm"
+            >
+              <CardBody className="px-3 py-2">
+                <div className="flex min-h-12 items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center">
+                    {group.icon ? (
+                      <img
+                        alt=""
+                        draggable={false}
+                        className="mr-2 h-7 w-7 min-w-7 rounded-small object-contain"
+                        src={getGroupIconSrc(group.icon)}
+                      />
+                    ) : null}
+                    <div
+                      className={`flex min-w-0 flex-col ${groupDisplayLayout === 'double' ? '' : 'justify-center'}`}
+                    >
+                      <div
+                        className={`overflow-hidden text-ellipsis whitespace-nowrap leading-tight ${groupDisplayLayout === 'double' ? 'text-md' : 'text-lg'}`}
+                      >
+                        <span className="flag-emoji inline-block">{group.name}</span>
+                        {groupDisplayLayout === 'single' && (
+                          <>
+                            <span className="ml-2 text-sm text-foreground-500" title={group.type}>
+                              {group.type}
+                            </span>
+                            <span className="flag-emoji ml-2 text-sm text-foreground-500">
+                              {group.now}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      {groupDisplayLayout === 'double' && (
+                        <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[11px] leading-tight text-foreground-500">
+                          <span>{group.type}</span>
+                          <span className="flag-emoji ml-1 inline-block">{group.now}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center">
+                    <Chip size="sm" className="my-1 mr-2">
+                      {group.all.length}
+                    </Chip>
+                    <CollapseInput
+                      title="搜索节点"
+                      value={groupSearchValue}
+                      onValueChange={(value) => updateSearchValue(groupIndex, value)}
+                    />
+                    <Button
+                      title="定位到当前节点"
+                      variant="light"
+                      size="sm"
+                      isIconOnly
+                      onPress={() => handleLocateCurrentProxy(groupIndex)}
+                    >
+                      <FaLocationCrosshairs className="text-lg text-foreground-500" />
+                    </Button>
+                    <Button
+                      title="延迟测试"
+                      variant="light"
+                      isLoading={isGroupDelaying}
+                      size="sm"
+                      isIconOnly
+                      onPress={() => onGroupDelay(groupIndex)}
+                    >
+                      <MdOutlineSpeed className="text-lg text-foreground-500" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="my-1.5 h-px bg-divider" />
+                {proxies.length > 0 ? (
+                  <div
+                    style={
+                      proxyCols !== 'auto'
+                        ? { gridTemplateColumns: `repeat(${proxyCols}, minmax(0, 1fr))` }
+                        : {}
+                    }
+                    className={`grid gap-2 ${proxyCols === 'auto' ? 'sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' : ''}`}
+                  >
+                    {proxies.map((proxy) => {
+                      const isSelected = proxy.name === group.now
+                      return (
+                        <div key={proxy.name} data-selected={isSelected}>
+                          <ProxyItem
+                            mutateProxies={mutate}
+                            onProxyDelay={onProxyDelay}
+                            onSelect={onChangeProxy}
+                            proxy={proxy}
+                            group={group}
+                            proxyDisplayLayout={proxyDisplayLayout}
+                            selected={isSelected}
+                          />
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex h-16 items-center justify-center text-sm text-foreground-400">
+                    没有匹配的代理节点
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+          )
+        })}
+      </div>
+    ),
+    [
+      visibleGroups,
+      searchValueMap,
+      delaying,
+      allProxies,
+      getGroupIconSrc,
+      groupDisplayLayout,
+      updateSearchValue,
+      handleLocateCurrentProxy,
+      onGroupDelay,
+      proxyCols,
+      mutate,
+      onProxyDelay,
+      onChangeProxy,
+      proxyDisplayLayout
+    ]
+  )
+
   return (
     <BasePage
       title="代理组"
@@ -503,6 +651,8 @@ const Proxies: React.FC = () => {
             <h2 className="text-foreground-500 text-[20px]">直连模式</h2>
           </div>
         </div>
+      ) : isCardMode ? (
+        cardContent
       ) : (
         <div className="h-full">
           <Virtuoso
