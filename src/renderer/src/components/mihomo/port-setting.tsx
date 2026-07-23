@@ -7,7 +7,7 @@ import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-c
 import { restartCore, startSubStoreBackendServer, triggerSysProxy } from '@renderer/utils/ipc'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { platform } from '@renderer/utils/init'
-import { Button, Input, Switch } from '@renderer/components/ui/heroui'
+import { Button, Input, Switch } from '@heroui/react'
 import { FaNetworkWired } from 'react-icons/fa'
 import InterfaceModal from '@renderer/components/mihomo/interface-modal'
 

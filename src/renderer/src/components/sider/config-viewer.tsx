@@ -1,4 +1,4 @@
-import { Button, Label, Modal, Separator, Switch } from '@heroui/react'
+import { Button, Label, Modal, Separator, Switch } from '@heroui-v3/react'
 import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { BaseEditor } from '../base/base-editor-lazy'
 import {

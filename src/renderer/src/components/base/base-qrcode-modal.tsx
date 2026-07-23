@@ -1,5 +1,5 @@
 import React from 'react'
-import { Modal, ModalContent, ModalHeader, ModalBody } from '@renderer/components/ui/heroui'
+import { Modal, ModalContent, ModalHeader, ModalBody } from '@heroui/react'
 import { QRCodeSVG } from 'qrcode.react'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 

@@ -10,7 +10,7 @@ import {
   Switch,
   Select,
   SelectItem
-} from '@renderer/components/ui/heroui'
+} from '@heroui/react'
 import React, { useState } from 'react'
 import SettingItem from '../base/base-setting-item'
 import { useAppConfig } from '@renderer/hooks/use-app-config'

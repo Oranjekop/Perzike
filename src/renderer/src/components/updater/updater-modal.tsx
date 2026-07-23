@@ -1,4 +1,4 @@
-import { Button, Label, Link, Modal, ProgressBar } from '@heroui/react'
+import { Button, Label, Link, Modal, ProgressBar } from '@heroui-v3/react'
 import ReactMarkdown from 'react-markdown'
 import React, { useState } from 'react'
 import { downloadAndInstallUpdate } from '@renderer/utils/ipc'

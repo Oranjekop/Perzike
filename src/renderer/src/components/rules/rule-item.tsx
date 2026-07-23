@@ -1,4 +1,4 @@
-import { Card, CardBody, Switch } from '@renderer/components/ui/heroui'
+import { Card, CardBody, Switch } from '@heroui/react'
 import React, { useEffect, useState } from 'react'
 import { mihomoRulesDisable } from '@renderer/utils/ipc'
 

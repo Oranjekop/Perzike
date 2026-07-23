@@ -1,4 +1,4 @@
-import { Avatar, Button, Card, CardFooter, CardHeader, Chip } from '@renderer/components/ui/heroui'
+import { Avatar, Button, Card, CardFooter, CardHeader, Chip } from '@heroui/react'
 import { calcTraffic } from '@renderer/utils/calc'
 import dayjs from 'dayjs'
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react'

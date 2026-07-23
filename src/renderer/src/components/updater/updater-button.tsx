@@ -1,4 +1,4 @@
-import { Button } from '@renderer/components/ui/heroui'
+import { Button } from '@heroui/react'
 import React, { useState, useEffect } from 'react'
 import UpdaterModal from './updater-modal'
 import { GrUpgrade } from 'react-icons/gr'

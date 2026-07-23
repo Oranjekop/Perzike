@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import SettingCard from '../base/base-setting-card'
 import SettingItem from '../base/base-setting-item'
-import { Button, Switch, Tab, Tabs, Tooltip } from '@renderer/components/ui/heroui'
+import { Button, Switch, Tab, Tabs, Tooltip } from '@heroui/react'
 import {
   closeFloatingWindow,
   closeTrayIcon,

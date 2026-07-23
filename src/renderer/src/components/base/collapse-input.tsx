@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Input, InputProps } from '@renderer/components/ui/heroui'
+import { Input, InputProps } from '@heroui/react'
 import { FaSearch } from 'react-icons/fa'
 
 interface CollapseInputProps extends InputProps {

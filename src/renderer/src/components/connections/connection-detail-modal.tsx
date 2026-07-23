@@ -9,7 +9,7 @@ import {
   DropdownTrigger,
   DropdownMenu,
   DropdownItem
-} from '@renderer/components/ui/heroui'
+} from '@heroui/react'
 import React from 'react'
 import SettingItem from '../base/base-setting-item'
 import { calcTraffic } from '@renderer/utils/calc'

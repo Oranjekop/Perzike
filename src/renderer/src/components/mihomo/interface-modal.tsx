@@ -6,7 +6,7 @@ import {
   ModalFooter,
   Button,
   Snippet
-} from '@renderer/components/ui/heroui'
+} from '@heroui/react'
 import React, { useEffect, useState } from 'react'
 import { getInterfaces } from '@renderer/utils/ipc'
 import { useAppConfig } from '@renderer/hooks/use-app-config'

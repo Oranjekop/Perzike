@@ -1,7 +1,7 @@
 import BasePage from '@renderer/components/base/base-page'
 import { mihomoCloseConnections, mihomoCloseConnection } from '@renderer/utils/ipc'
 import React, { Key, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Badge, Button, Divider, Input, Select, SelectItem, Tab, Tabs } from '@renderer/components/ui/heroui'
+import { Badge, Button, Divider, Input, Select, SelectItem, Tab, Tabs } from '@heroui/react'
 import { calcTraffic } from '@renderer/utils/calc'
 import ConnectionItem from '@renderer/components/connections/connection-item'
 import { Virtuoso } from 'react-virtuoso'

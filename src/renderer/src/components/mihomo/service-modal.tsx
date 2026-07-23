@@ -11,7 +11,7 @@ import {
   CardBody,
   Chip,
   Divider
-} from '@renderer/components/ui/heroui'
+} from '@heroui/react'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { serviceStatus, testServiceConnection } from '@renderer/utils/ipc'
 import { notify } from '@renderer/utils/notification'

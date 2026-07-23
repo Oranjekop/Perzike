@@ -1,7 +1,7 @@
 import BasePage from '@renderer/components/base/base-page'
 import RuleItem from '@renderer/components/rules/rule-item'
 import { useMemo, useState } from 'react'
-import { Divider, Input } from '@renderer/components/ui/heroui'
+import { Divider, Input } from '@heroui/react'
 import { useRules } from '@renderer/hooks/use-rules'
 import { includesIgnoreCase } from '@renderer/utils/includes'
 

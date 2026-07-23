@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import SettingCard from '../base/base-setting-card'
 import SettingItem from '../base/base-setting-item'
 import EditableList from '../base/base-list-editor'
-import { Switch } from '@renderer/components/ui/heroui'
+import { Switch } from '@heroui/react'
 import { isValidDnsServer, isValidDomainWildcard } from '@renderer/utils/validate'
 
 interface AdvancedDnsSettingProps {

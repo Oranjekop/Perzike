@@ -1,4 +1,4 @@
-import { Toast } from '@heroui/react'
+import { Toast } from '@heroui-v3/react'
 import { useEffect } from 'react'
 import { dismissToastNotification, showToastNotification } from '@renderer/utils/notification'
 
