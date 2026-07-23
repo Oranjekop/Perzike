@@ -215,6 +215,18 @@ body {
   opacity: 1;
 }
 
+/* Form control tracks use the same visible surface hierarchy as inputs. */
+[data-slot='tabList'].bg-default-100,
+label:not([data-selected='true']) > input[role='switch'] + span {
+  background-color: var(--app-input-surface) !important;
+  box-shadow: inset 0 0 0 1px var(--app-input-border-color) !important;
+}
+
+.app-inline-input:is([data-hover='true'], [data-focus='true']) {
+  background-color: var(--app-input-hover-surface) !important;
+  box-shadow: inset 0 0 0 1px var(--app-input-border-color) !important;
+}
+
 .app-page-content table {
   border-collapse: separate;
   border-spacing: 0;
@@ -362,6 +374,11 @@ body {
 .proxy-group-card:hover {
   background-color: var(--app-card-hover-surface) !important;
   border-color: var(--app-card-hover-border-color);
+}
+
+.proxy-node-card:hover {
+  background-color: var(--app-card-hover-surface) !important;
+  border-color: var(--app-card-hover-border-color) !important;
 }
 
 /* Full-width compact variant for cards configured as a single sidebar row. */

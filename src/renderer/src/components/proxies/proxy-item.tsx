@@ -55,7 +55,7 @@ const ProxyItem: React.FC<Props> = (props) => {
       isPressable
       fullWidth
       shadow="sm"
-      className={`${fixed ? 'bg-secondary/25' : selected ? 'bg-primary text-primary-foreground dark:bg-primary/80' : 'bg-white dark:bg-content1 hover:bg-content2'} border border-default-200/35 transition-colors`}
+      className={`${fixed ? 'bg-secondary/25' : selected ? 'bg-primary text-primary-foreground dark:bg-primary/80' : 'proxy-node-card bg-white dark:bg-content1'} border border-default-200/35 transition-colors`}
       radius="sm"
     >
       <CardBody className="py-1.5 px-2">

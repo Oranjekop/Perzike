@@ -45,7 +45,8 @@ const CollapseInput: React.FC<CollapseInputProps> = (props) => {
         }}
         style={{ paddingInlineEnd: 0 }}
         classNames={{
-          inputWrapper: 'cursor-pointer bg-transparent p-0 data-[hover=true]:bg-content2',
+          inputWrapper:
+            'app-inline-input cursor-pointer bg-transparent p-0 data-[hover=true]:bg-content2',
           input: `${hasValue ? 'w-[150px] ml-2' : 'w-0 focus:w-[150px] focus:ml-2'} transition-all duration-200`
         }}
         endContent={
