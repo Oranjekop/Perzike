@@ -28,6 +28,10 @@
   --app-input-hover-surface: hsl(var(--heroui-default-200));
   --app-input-border-color: hsl(var(--heroui-divider) / 0.68);
   --app-input-placeholder-color: hsl(var(--heroui-default-500));
+  --app-popup-surface: hsl(var(--heroui-content1));
+  --app-popup-hover-surface: hsl(var(--heroui-content2));
+  --app-control-selected-surface: hsl(var(--heroui-primary) / 0.14);
+  --app-popup-shadow-color: rgb(65 105 145 / 0.14);
 }
 
 .dark {
@@ -46,6 +50,10 @@
   --app-input-hover-surface: #2a3342;
   --app-input-border-color: #364155;
   --app-input-placeholder-color: #8f9aac;
+  --app-popup-surface: #242b38;
+  --app-popup-hover-surface: #303949;
+  --app-control-selected-surface: hsl(var(--heroui-primary) / 0.2);
+  --app-popup-shadow-color: rgb(0 0 0 / 0.42);
 }
 
 html,
@@ -215,11 +223,48 @@ body {
   opacity: 1;
 }
 
+[data-slot='trigger'].bg-default-100 {
+  background-color: var(--app-input-surface) !important;
+  box-shadow: inset 0 0 0 1px var(--app-input-border-color) !important;
+}
+
+[data-slot='trigger'].bg-default-100:is(
+    [data-hover='true'],
+    [data-focus='true'],
+    [data-open='true']
+  ) {
+  background-color: var(--app-input-hover-surface) !important;
+}
+
+[data-slot='trigger'].bg-default-100:is([data-focus='true'], [data-open='true']) {
+  box-shadow: inset 0 0 0 1px hsl(var(--heroui-focus)) !important;
+}
+
+[data-slot='content']:has(:is([role='listbox'], [role='menu'])) {
+  background-color: var(--app-popup-surface) !important;
+  box-shadow:
+    inset 0 0 0 1px var(--app-input-border-color),
+    0 12px 30px var(--app-popup-shadow-color) !important;
+}
+
+:is([role='option'], [role='menuitem'])[aria-selected='true'] {
+  background-color: var(--app-control-selected-surface) !important;
+}
+
+:is([role='option'], [role='menuitem']):is([data-hover='true'], [data-focus='true']) {
+  background-color: var(--app-popup-hover-surface) !important;
+}
+
 /* Form control tracks use the same visible surface hierarchy as inputs. */
 [data-slot='tabList'].bg-default-100,
 label:not([data-selected='true']) > input[role='switch'] + span {
   background-color: var(--app-input-surface) !important;
   box-shadow: inset 0 0 0 1px var(--app-input-border-color) !important;
+}
+
+label:not([data-selected='true']) > input[type='radio'] + span {
+  background-color: var(--app-input-surface) !important;
+  border-color: var(--app-input-border-color) !important;
 }
 
 .app-inline-input:is([data-hover='true'], [data-focus='true']) {
