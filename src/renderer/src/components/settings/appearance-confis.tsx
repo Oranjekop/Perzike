@@ -15,6 +15,7 @@ import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { platform } from '@renderer/utils/init'
 import { useTheme } from 'next-themes'
 import { IoIosHelpCircle } from 'react-icons/io'
+import { notify } from '@renderer/utils/notification'
 
 const AppearanceConfig: React.FC = () => {
   const { appConfig, patchAppConfig } = useAppConfig()
@@ -143,8 +144,13 @@ const AppearanceConfig: React.FC = () => {
                 size="sm"
                 isSelected={showTraffic}
                 onValueChange={async (v) => {
-                  await patchAppConfig({ showTraffic: v })
-                  await startMonitor()
+                  try {
+                    await patchAppConfig({ showTraffic: v })
+                    await startMonitor()
+                  } catch (e) {
+                    await patchAppConfig({ showTraffic })
+                    notify('任务栏网速监控启动失败', { body: `${e}`, variant: 'danger' })
+                  }
                 }}
               />
             </SettingItem>

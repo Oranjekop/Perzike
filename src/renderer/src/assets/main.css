@@ -545,10 +545,17 @@ body {
     .substore-card
   )
   > div.bg-primary {
-  border: none !important;
+  border: 1px solid hsl(var(--heroui-primary)) !important;
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.22) !important;
 }
 
+.dark .app-sidebar-grid > div > div:not(.bg-primary) {
+  border: 1px solid hsl(var(--heroui-divider) / 0.82) !important;
+}
+
+.dark .app-sidebar-grid > div > div:not(.bg-primary):hover {
+  border-color: hsl(var(--heroui-primary) / 0.34) !important;
+}
 
 /* Keep the top-right window-control area visually continuous with the title bar. */
 .app-drag,
