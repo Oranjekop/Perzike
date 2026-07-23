@@ -5,15 +5,22 @@ import path from 'path'
 import zlib from 'zlib'
 import { extract } from 'tar'
 import { execFileSync, execSync } from 'child_process'
+import { pathToFileURL } from 'url'
 
 const cwd = process.cwd()
 const TEMP_DIR = path.join(cwd, 'node_modules/.temp')
 const PERZIKE_SERVICE_REPO = 'https://github.com/Oranjekop/perzike-service'
 const PERZIKE_RUN_REPO = 'https://github.com/Oranjekop/perzike-run'
+const TRAFFIC_MONITOR_RELEASE_API =
+  'https://api.github.com/repos/zhongyang219/TrafficMonitor/releases/latest'
 let arch = process.arch
 const platform = process.platform
-if (process.argv.slice(2).length !== 0) {
-  arch = process.argv.slice(2)[0].replace('--', '')
+const requestedArch = process.argv
+  .slice(2)
+  .map((argument) => argument.replace(/^--/, ''))
+  .find((argument) => ['x64', 'ia32', 'arm64', 'loong64'].includes(argument))
+if (requestedArch) {
+  arch = requestedArch
 }
 
 if (process.env.SKIP_PREPARE === '1') {
@@ -242,7 +249,10 @@ function ensureWindowsExecutableAccess(targetPath) {
   try {
     execFileSync('icacls.exe', [targetPath, '/grant', '*S-1-5-32-545:RX'], { stdio: 'ignore' })
   } catch (error) {
-    console.warn(`[WARN]: failed to grant read/execute permission for "${targetPath}":`, error.message)
+    console.warn(
+      `[WARN]: failed to grant read/execute permission for "${targetPath}":`,
+      error.message
+    )
   }
 }
 
@@ -278,6 +288,9 @@ async function downloadFile(url, path) {
     method: 'GET',
     headers: { 'Content-Type': 'application/octet-stream' }
   })
+  if (!response.ok) {
+    throw new Error(`download failed (${response.status} ${response.statusText}): ${url}`)
+  }
   const buffer = await response.arrayBuffer()
   fs.writeFileSync(path, new Uint8Array(buffer))
 
@@ -343,25 +356,75 @@ const resolveRunner = () =>
     downloadURL: `${PERZIKE_RUN_REPO}/releases/download/${arch}/perzike-run.exe`
   })
 
-const resolveMonitor = async () => {
+export const resolveMonitor = async (targetArch = arch) => {
+  const assetSuffix = {
+    ia32: '_x86.zip',
+    x64: '_x64.zip',
+    arm64: '_arm64ec.zip'
+  }[targetArch]
+  if (!assetSuffix) {
+    throw new Error(`unsupported TrafficMonitor architecture "${targetArch}"`)
+  }
+
+  const releaseHeaders = {
+    Accept: 'application/vnd.github+json',
+    'User-Agent': 'Perzike-build'
+  }
+  if (process.env.GITHUB_TOKEN) {
+    releaseHeaders.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`
+  }
+  const releaseResponse = await fetch(TRAFFIC_MONITOR_RELEASE_API, { headers: releaseHeaders })
+  if (!releaseResponse.ok) {
+    throw new Error(
+      `TrafficMonitor release lookup failed (${releaseResponse.status} ${releaseResponse.statusText})`
+    )
+  }
+  const release = await releaseResponse.json()
+  const asset = release.assets?.find((item) => item.name?.endsWith(assetSuffix))
+  if (!asset?.browser_download_url) {
+    throw new Error(
+      `TrafficMonitor ${release.tag_name ?? 'latest'} asset not found: *${assetSuffix}`
+    )
+  }
+
   const tempDir = path.join(TEMP_DIR, 'TrafficMonitor')
-  const tempZip = path.join(tempDir, `${arch}.zip`)
+  const tempZip = path.join(tempDir, asset.name)
+  const extractedDir = path.join(tempDir, 'extracted')
   if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir, { recursive: true })
   }
-  await downloadFile(
-    `${PERZIKE_RUN_REPO}/releases/download/monitor/${arch}.zip`,
-    tempZip
-  )
+  await downloadFile(asset.browser_download_url, tempZip)
+
   const zip = new AdmZip(tempZip)
+  const executableEntry = zip
+    .getEntries()
+    .find(
+      (entry) =>
+        !entry.isDirectory &&
+        path.posix.basename(entry.entryName).toLowerCase() === 'trafficmonitor.exe'
+    )
+  if (!executableEntry) {
+    throw new Error(`TrafficMonitor.exe not found in ${asset.name}`)
+  }
+
+  if (fs.existsSync(extractedDir)) {
+    fs.rmSync(extractedDir, { recursive: true })
+  }
+  zip.extractAllTo(extractedDir, true)
+
   const resDir = path.join(cwd, 'extra', 'files')
   const targetPath = path.join(resDir, 'TrafficMonitor')
   if (fs.existsSync(targetPath)) {
     fs.rmSync(targetPath, { recursive: true })
   }
-  zip.extractAllTo(targetPath, true)
+  fs.mkdirSync(resDir, { recursive: true })
+  const packageDir = path.dirname(
+    path.join(extractedDir, ...executableEntry.entryName.split('/').filter(Boolean))
+  )
+  fs.renameSync(packageDir, targetPath)
+  fs.writeFileSync(path.join(targetPath, 'global_cfg.ini'), '\n[config]\nportable_mode = false\n')
 
-  console.log(`[INFO]: TrafficMonitor finished`)
+  console.log(`[INFO]: TrafficMonitor ${release.tag_name} (${asset.name}) finished`)
 }
 
 const resolve7zip = () =>
@@ -515,5 +578,7 @@ async function runTask() {
   return runTask()
 }
 
-runTask()
-runTask()
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  runTask()
+  runTask()
+}

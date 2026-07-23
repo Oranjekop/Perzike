@@ -27,9 +27,10 @@ const AppNotificationProvider: React.FC = () => {
 
   return (
     <Toast.Provider
-      className="app-nodrag top-14 right-4"
+      className="app-toast-region app-nodrag top-14 right-4"
       maxVisibleToasts={maxVisibleAppNotifications}
       placement="top end"
+      width="min(460px, calc(100vw - 2rem))"
     />
   )
 }

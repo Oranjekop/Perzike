@@ -26,16 +26,14 @@ export async function startProcessWithElevation(command: string, args: string[])
   }
 
   try {
-    const escapedCommand = command.replace(/'/g, "''")
-    const escapedArgs = windowsArgumentList(args).replace(/'/g, "''")
     const { stdout } = await execFilePromise(
       'powershell.exe',
       [
         '-NoProfile',
         '-ExecutionPolicy',
         'Bypass',
-        '-Command',
-        `& { $p = Start-Process -FilePath '${escapedCommand}' -ArgumentList '${escapedArgs}' -Verb RunAs -WindowStyle Hidden -PassThru; if ($null -eq $p) { exit 1 }; [Console]::Out.Write($p.Id) }`
+        '-EncodedCommand',
+        encodePowerShellCommand(buildWindowsElevationScript(command, args, false))
       ],
       { timeout: 30000 }
     )
@@ -57,12 +55,7 @@ export async function stopProcessWithElevation(pid: number): Promise<void> {
     return
   }
 
-  await execWithElevation(pathJoinSystem32('taskkill.exe'), [
-    '/PID',
-    String(pid),
-    '/T',
-    '/F'
-  ])
+  await execWithElevation(pathJoinSystem32('taskkill.exe'), ['/PID', String(pid), '/T', '/F'])
 }
 
 function pathJoinSystem32(fileName: string): string {
@@ -89,22 +82,53 @@ function windowsArgumentList(args: string[]): string {
   return args.map(windowsArgQuote).join(' ')
 }
 
+function powerShellQuote(value: string): string {
+  return `'${value.replace(/'/g, "''")}'`
+}
+
+function encodePowerShellCommand(script: string): string {
+  return Buffer.from(script, 'utf16le').toString('base64')
+}
+
+function buildWindowsElevationScript(command: string, args: string[], wait: boolean): string {
+  const parameters = [
+    `FilePath = ${powerShellQuote(command)}`,
+    "Verb = 'RunAs'",
+    "WindowStyle = 'Hidden'",
+    'PassThru = $true'
+  ]
+
+  if (args.length > 0) {
+    parameters.push(`ArgumentList = ${powerShellQuote(windowsArgumentList(args))}`)
+  }
+  if (wait) {
+    parameters.push('Wait = $true')
+  }
+
+  const completion = wait ? 'exit $process.ExitCode' : '[Console]::Out.Write($process.Id)'
+  return [
+    '$OutputEncoding = [Console]::OutputEncoding = [Text.UTF8Encoding]::new()',
+    `$startParameters = @{ ${parameters.join('; ')} }`,
+    '$process = Start-Process @startParameters',
+    'if ($null -eq $process) { exit 1 }',
+    completion
+  ].join('; ')
+}
+
 export async function execWithElevation(command: string, args: string[]): Promise<void> {
   if (process.platform === 'win32') {
     try {
       if (await isRunningAsAdmin()) {
         await execFilePromise(command, args, { timeout: 30000 })
       } else {
-        const escapedCommand = command.replace(/'/g, "''")
-        const escapedArgs = windowsArgumentList(args).replace(/'/g, "''")
         await execFilePromise(
           'powershell.exe',
           [
             '-NoProfile',
             '-ExecutionPolicy',
             'Bypass',
-            '-Command',
-            `& { $p = Start-Process -FilePath '${escapedCommand}' -ArgumentList '${escapedArgs}' -Verb RunAs -WindowStyle Hidden -PassThru -Wait; exit $p.ExitCode }`
+            '-EncodedCommand',
+            encodePowerShellCommand(buildWindowsElevationScript(command, args, true))
           ],
           { timeout: 30000 }
         )

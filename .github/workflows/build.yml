@@ -176,6 +176,7 @@ jobs:
 
       - name: Install Dependencies and Prepare
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           npm_config_arch: ${{ matrix.arch }}
           npm_config_target_arch: ${{ matrix.arch }}
         shell: bash
@@ -185,6 +186,7 @@ jobs:
 
       - name: Build
         env:
+          SKIP_MONITOR_PREPARE: '1'
           npm_config_arch: ${{ matrix.arch }}
           npm_config_target_arch: ${{ matrix.arch }}
         shell: bash

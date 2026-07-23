@@ -9,6 +9,37 @@
   src: url('./twemoji.ttf');
 }
 
+/* Theme tokens are colors only. Card geometry and interaction stay theme-neutral below. */
+:root {
+  --app-card-surface: hsl(var(--heroui-content1));
+  --app-card-hover-surface: hsl(var(--heroui-content2));
+  --app-card-border-color: hsl(var(--heroui-divider) / 0.82);
+  --app-card-hover-border-color: hsl(var(--heroui-primary) / 0.34);
+  --app-page-header-shadow-color: rgb(75 129 181 / 0.045);
+  --app-setting-shadow-color: rgb(64 112 158 / 0.06);
+  --app-sidebar-shadow-color: rgb(68 116 165 / 0.055);
+  --app-selected-shadow-color: hsl(var(--heroui-primary) / 0.18);
+  --app-shadow-small-near-color: rgb(15 23 42 / 0.03);
+  --app-shadow-small-far-color: rgb(90 140 210 / 0.09);
+  --app-shadow-medium-near-color: rgb(15 23 42 / 0.04);
+  --app-shadow-medium-far-color: rgb(90 140 210 / 0.12);
+  --app-ripple-color: hsl(var(--heroui-primary) / 0.8);
+}
+
+.dark {
+  --app-card-surface: hsl(var(--heroui-content1) / 0.96);
+  --app-card-hover-surface: hsl(var(--heroui-content2) / 0.96);
+  --app-page-header-shadow-color: rgb(0 0 0 / 0.12);
+  --app-setting-shadow-color: rgb(0 0 0 / 0.16);
+  --app-sidebar-shadow-color: rgb(0 0 0 / 0.16);
+  --app-selected-shadow-color: rgb(0 0 0 / 0.22);
+  --app-shadow-small-near-color: rgb(0 0 0 / 0.28);
+  --app-shadow-small-far-color: rgb(0 0 0 / 0.18);
+  --app-shadow-medium-near-color: rgb(0 0 0 / 0.28);
+  --app-shadow-medium-far-color: rgb(0 0 0 / 0.2);
+  --app-ripple-color: hsl(var(--heroui-primary) / 0.22);
+}
+
 html,
 body,
 #root {
@@ -60,7 +91,7 @@ body {
 
 .app-page-header {
   background: hsl(var(--heroui-background) / 0.9) !important;
-  box-shadow: 0 10px 28px rgb(75 129 181 / 0.045);
+  box-shadow: 0 10px 28px var(--app-page-header-shadow-color);
 }
 
 .app-page-header > .app-drag > .header {
@@ -82,7 +113,7 @@ body {
 .setting-accordion > div {
   border: 1px solid hsl(var(--heroui-divider) / 0.9);
   border-radius: 14px !important;
-  box-shadow: 0 10px 30px rgb(64 112 158 / 0.06) !important;
+  box-shadow: 0 10px 30px var(--app-setting-shadow-color) !important;
 }
 
 .setting-accordion {
@@ -113,9 +144,9 @@ body {
 
 .app-sidebar-grid > div > div,
 .outbound-mode-card {
-  border: 1px solid hsl(var(--heroui-divider) / 0.82);
+  border: 1px solid var(--app-card-border-color);
   border-radius: 13px;
-  box-shadow: 0 8px 22px rgb(68 116 165 / 0.055) !important;
+  box-shadow: 0 8px 22px var(--app-sidebar-shadow-color) !important;
 }
 
 .app-sidebar-grid > div > div {
@@ -135,18 +166,18 @@ body {
 
 .app-sidebar-grid > div > div:not(.bg-primary):hover,
 .outbound-mode-card:hover {
-  border-color: hsl(var(--heroui-primary) / 0.34);
+  border-color: var(--app-card-hover-border-color);
 }
 
 .app-sidebar-grid > div > div.bg-primary {
   border-color: hsl(var(--heroui-primary));
-  box-shadow: 0 8px 20px hsl(var(--heroui-primary) / 0.18) !important;
+  box-shadow: 0 8px 20px var(--app-selected-shadow-color) !important;
 }
 
 .app-page-content .shadow-small,
 .app-page-content .shadow-sm,
 .app-page-content .shadow-medium {
-  border: 1px solid hsl(var(--heroui-divider) / 0.82);
+  border: 1px solid var(--app-card-border-color);
   border-radius: 14px;
 }
 
@@ -167,15 +198,33 @@ body {
   text-transform: uppercase;
 }
 
-.dark .app-page-header {
-  box-shadow: 0 10px 28px rgb(0 0 0 / 0.12);
+/* Keep long process errors inside the application notification viewport. */
+.app-toast-region {
+  width: min(460px, calc(100vw - 2rem));
+  min-width: 0;
+  max-width: calc(100vw - 2rem);
 }
 
-.dark .setting-card,
-.dark .setting-accordion > div,
-.dark .app-sidebar-grid > div > div,
-.dark .outbound-mode-card {
-  box-shadow: 0 10px 24px rgb(0 0 0 / 0.16) !important;
+.app-toast-region [data-slot='toast'] {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.app-toast-region [data-slot='toast-content'] {
+  min-width: 0;
+}
+
+.app-toast-region :is([data-slot='toast-title'], [data-slot='toast-description']) {
+  width: 100%;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.app-toast-region [data-slot='toast-description'] {
+  max-height: 8rem;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .driver-popover {
@@ -256,96 +305,34 @@ body {
 
 /* Theme-colored ripple for proxy group expand/collapse cards. */
 .proxy-group-card .heroui-ripple {
-  background-color: hsl(var(--heroui-primary) / 0.8) !important;
+  background-color: var(--app-ripple-color) !important;
 }
 
 /* Soften card shadows to better match the light blue background. */
 .shadow-small,
 .shadow-sm {
   box-shadow:
-    0 1px 2px rgb(15 23 42 / 0.03),
-    0 10px 24px rgb(90 140 210 / 0.09) !important;
+    0 1px 2px var(--app-shadow-small-near-color),
+    0 10px 24px var(--app-shadow-small-far-color) !important;
 }
 
 .shadow-medium {
   box-shadow:
-    0 2px 6px rgb(15 23 42 / 0.04),
-    0 14px 30px rgb(90 140 210 / 0.12) !important;
+    0 2px 6px var(--app-shadow-medium-near-color),
+    0 14px 30px var(--app-shadow-medium-far-color) !important;
 }
 
-.dark .outbound-mode-card {
-  background-color: hsl(var(--heroui-content1) / 0.98) !important;
-  border: none !important;
+.app-sidebar-grid > div > div:not(.bg-primary),
+.outbound-mode-card,
+.proxy-group-card {
+  background-color: var(--app-card-surface) !important;
 }
 
-.dark
-  :is(
-    .sysproxy-card,
-    .tun-card,
-    .dns-card,
-    .sniff-card,
-    .proxy-card,
-    .conn-card,
-    .profile-card,
-    .mihomo-core-card,
-    .rule-card,
-    .resource-card,
-    .override-card,
-    .log-card,
-    .substore-card
-  )
-  > div:not(.bg-primary) {
-  background-color: hsl(var(--heroui-content1) / 0.98) !important;
-  border: none !important;
-}
-
-.dark
-  :is(
-    .sysproxy-card,
-    .tun-card,
-    .dns-card,
-    .sniff-card,
-    .proxy-card,
-    .conn-card,
-    .profile-card,
-    .mihomo-core-card,
-    .rule-card,
-    .resource-card,
-    .override-card,
-    .log-card,
-    .substore-card
-  )
-  > div:not(.bg-primary):hover {
-  background-color: hsl(var(--heroui-content2) / 0.98) !important;
-}
-
-.dark
-  :is(
-    .sysproxy-card,
-    .tun-card,
-    .dns-card,
-    .sniff-card,
-    .proxy-card,
-    .conn-card,
-    .profile-card,
-    .mihomo-core-card,
-    .rule-card,
-    .resource-card,
-    .override-card,
-    .log-card,
-    .substore-card
-  )
-  > div.bg-primary {
-  border: none !important;
-}
-
-.dark .proxy-group-card {
-  background-color: hsl(var(--heroui-content1) / 0.98) !important;
-  border: none !important;
-}
-
-.dark .proxy-group-card:hover {
-  background-color: hsl(var(--heroui-content2) / 0.98) !important;
+.app-sidebar-grid > div > div:not(.bg-primary):hover,
+.outbound-mode-card:hover,
+.proxy-group-card:hover {
+  background-color: var(--app-card-hover-surface) !important;
+  border-color: var(--app-card-hover-border-color);
 }
 
 /* Full-width compact variant for cards configured as a single sidebar row. */
@@ -436,11 +423,14 @@ body {
   background-color: transparent;
 }
 
+*::-webkit-scrollbar-thumb {
+  border-radius: 5px;
+}
+
 /* Light mode */
 @media (prefers-color-scheme: light) {
   *::-webkit-scrollbar-thumb {
     background: #c0c1c58f;
-    border-radius: 5px;
   }
 
   *::-webkit-scrollbar-thumb:hover {
@@ -452,7 +442,6 @@ body {
 @media (prefers-color-scheme: dark) {
   *::-webkit-scrollbar-thumb {
     background: #c0c1c550;
-    border-radius: 5px;
   }
 
   *::-webkit-scrollbar-thumb:hover {
@@ -460,101 +449,10 @@ body {
   }
 }
 
-/* Dark theme refinement: neutral surfaces, lighter hierarchy, and no heavy blue glow. */
+/* Dark theme surface color; layout remains shared with light mode. */
 .dark body,
 .dark main {
   background-color: hsl(var(--heroui-background)) !important;
-}
-
-.dark .shadow-small,
-.dark .shadow-sm {
-  box-shadow:
-    0 1px 2px rgb(0 0 0 / 0.28),
-    0 8px 18px rgb(0 0 0 / 0.18) !important;
-}
-
-.dark .shadow-medium {
-  box-shadow:
-    0 2px 6px rgb(0 0 0 / 0.28),
-    0 14px 30px rgb(0 0 0 / 0.2) !important;
-}
-
-.dark .proxy-group-card .heroui-ripple {
-  background-color: hsl(var(--heroui-primary) / 0.22) !important;
-}
-
-.dark
-  :is(
-    .sysproxy-card,
-    .tun-card,
-    .dns-card,
-    .sniff-card,
-    .proxy-card,
-    .conn-card,
-    .profile-card,
-    .mihomo-core-card,
-    .rule-card,
-    .resource-card,
-    .override-card,
-    .log-card,
-    .substore-card
-  )
-  > div:not(.bg-primary),
-.dark .outbound-mode-card,
-.dark .proxy-group-card {
-  background-color: hsl(var(--heroui-content1) / 0.96) !important;
-  border: none !important;
-}
-
-.dark
-  :is(
-    .sysproxy-card,
-    .tun-card,
-    .dns-card,
-    .sniff-card,
-    .proxy-card,
-    .conn-card,
-    .profile-card,
-    .mihomo-core-card,
-    .rule-card,
-    .resource-card,
-    .override-card,
-    .log-card,
-    .substore-card
-  )
-  > div:not(.bg-primary):hover,
-.dark .proxy-group-card:hover {
-  background-color: hsl(var(--heroui-content2) / 0.96) !important;
-  border: none !important;
-}
-
-.dark
-  :is(
-    .sysproxy-card,
-    .tun-card,
-    .dns-card,
-    .sniff-card,
-    .proxy-card,
-    .conn-card,
-    .profile-card,
-    .mihomo-core-card,
-    .rule-card,
-    .resource-card,
-    .override-card,
-    .log-card,
-    .substore-card
-  )
-  > div.bg-primary {
-  border: 1px solid hsl(var(--heroui-primary)) !important;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.22) !important;
-}
-
-.dark .app-sidebar-grid > div > div:not(.bg-primary) {
-  border: 1px solid hsl(var(--heroui-divider) / 0.82) !important;
-}
-
-.dark .app-sidebar-grid > div > div:not(.bg-primary):hover {
-  border-color: hsl(var(--heroui-primary) / 0.34) !important;
 }
 
 /* Keep the top-right window-control area visually continuous with the title bar. */
