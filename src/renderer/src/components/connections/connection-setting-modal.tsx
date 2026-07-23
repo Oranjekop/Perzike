@@ -7,7 +7,7 @@ import {
   Switch,
   ModalBody,
   Input
-} from '@heroui/react'
+} from '@renderer/components/ui/heroui'
 import React, { useState } from 'react'
 import SettingItem from '../base/base-setting-item'
 import { useAppConfig } from '@renderer/hooks/use-app-config'

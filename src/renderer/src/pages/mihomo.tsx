@@ -1,4 +1,4 @@
-import { Button, Select, SelectItem, Switch, Tab, Tabs } from '@heroui/react'
+import { Button, Select, SelectItem, Switch, Tab, Tabs } from '@renderer/components/ui/heroui'
 import BasePage from '@renderer/components/base/base-page'
 import SettingCard from '@renderer/components/base/base-setting-card'
 import SettingItem from '@renderer/components/base/base-setting-item'

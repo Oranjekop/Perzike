@@ -1,4 +1,4 @@
-import { Button, Tooltip } from '@heroui/react'
+import { Button, Tooltip } from '@renderer/components/ui/heroui'
 import SettingCard from '../base/base-setting-card'
 import SettingItem from '../base/base-setting-item'
 import {

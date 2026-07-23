@@ -10,7 +10,7 @@ import {
   Tab,
   Tabs,
   Tooltip
-} from '@heroui/react'
+} from '@renderer/components/ui/heroui'
 import React, { useState, useEffect, useRef } from 'react'
 import SettingItem from '../base/base-setting-item'
 import { useAppConfig } from '@renderer/hooks/use-app-config'

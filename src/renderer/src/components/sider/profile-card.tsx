@@ -1,4 +1,4 @@
-import { Button, Card, CardBody, CardFooter, Chip, Progress, Tooltip } from '@heroui/react'
+import { Button, Card, CardBody, CardFooter, Chip, Progress, Tooltip } from '@renderer/components/ui/heroui'
 import { useProfileConfig } from '@renderer/hooks/use-profile-config'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { calcTraffic, calcPercent } from '@renderer/utils/calc'

@@ -1,4 +1,4 @@
-import { Button, Card, CardBody } from '@heroui/react'
+import { Button, Card, CardBody } from '@renderer/components/ui/heroui'
 import { mihomoUnfixedProxy } from '@renderer/utils/ipc'
 import React, { useMemo, useState } from 'react'
 import { FaMapPin } from 'react-icons/fa6'

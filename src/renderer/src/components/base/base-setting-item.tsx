@@ -1,4 +1,4 @@
-import { Divider } from '@heroui/react'
+import { Divider } from '@renderer/components/ui/heroui'
 
 import React from 'react'
 

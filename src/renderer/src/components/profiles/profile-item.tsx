@@ -10,7 +10,7 @@ import {
   DropdownTrigger,
   Progress,
   Tooltip
-} from '@heroui/react'
+} from '@renderer/components/ui/heroui'
 import { calcPercent, calcTraffic } from '@renderer/utils/calc'
 import { IoMdMore, IoMdRefresh } from 'react-icons/io'
 import dayjs from 'dayjs'

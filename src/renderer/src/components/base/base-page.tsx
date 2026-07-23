@@ -1,4 +1,4 @@
-import { Button, Divider } from '@heroui/react'
+import { Button, Divider } from '@renderer/components/ui/heroui'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { platform } from '@renderer/utils/init'
 import { isAlwaysOnTop, setAlwaysOnTop } from '@renderer/utils/ipc'

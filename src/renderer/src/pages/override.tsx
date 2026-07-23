@@ -6,7 +6,7 @@ import {
   DropdownMenu,
   DropdownTrigger,
   Input
-} from '@heroui/react'
+} from '@renderer/components/ui/heroui'
 import BasePage from '@renderer/components/base/base-page'
 import { getFilePath, readTextFile } from '@renderer/utils/ipc'
 import { useEffect, useRef, useState } from 'react'

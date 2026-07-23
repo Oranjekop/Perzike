@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import SettingCard from '../base/base-setting-card'
 import SettingItem from '../base/base-setting-item'
-import { Button } from '@heroui/react'
+import { Button } from '@renderer/components/ui/heroui'
 import { listLocalBackups, localBackup } from '@renderer/utils/ipc'
 import LocalRestoreModal from './local-restore-modal'
 import { notify } from '@renderer/utils/notification'

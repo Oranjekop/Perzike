@@ -1,5 +1,5 @@
 import React from 'react'
-import { Button, Divider, Input, Tooltip } from '@heroui/react'
+import { Button, Divider, Input, Tooltip } from '@renderer/components/ui/heroui'
 import { MdDeleteForever } from 'react-icons/md'
 import type { ValidationResult } from '@renderer/utils/validate'
 

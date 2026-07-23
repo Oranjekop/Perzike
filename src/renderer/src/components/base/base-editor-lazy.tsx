@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react'
-import { Spinner } from '@heroui/react'
+import { Spinner } from '@renderer/components/ui/heroui'
 
 const BaseEditorComponent = React.lazy(() =>
   import('./base-editor').then((module) => ({ default: module.BaseEditor }))

@@ -6,7 +6,7 @@ import {
   ModalFooter,
   Button,
   Spinner
-} from '@heroui/react'
+} from '@renderer/components/ui/heroui'
 import React, { useEffect, useState } from 'react'
 import { BaseEditor } from '../base/base-editor-lazy'
 import { TextViewer } from '../base/text-viewer'

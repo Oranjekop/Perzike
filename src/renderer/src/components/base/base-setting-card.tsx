@@ -1,5 +1,5 @@
 import React from 'react'
-import { Accordion, AccordionItem, Card, CardBody } from '@heroui/react'
+import { Accordion, AccordionItem, Card, CardBody } from '@renderer/components/ui/heroui'
 
 interface Props {
   title?: string

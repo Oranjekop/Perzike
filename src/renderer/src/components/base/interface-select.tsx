@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Select, SelectItem } from '@heroui/react'
+import { Select, SelectItem } from '@renderer/components/ui/heroui'
 import { getInterfaces } from '@renderer/utils/ipc'
 
 const InterfaceSelect: React.FC<{

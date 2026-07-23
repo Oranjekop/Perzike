@@ -1,4 +1,4 @@
-import { Button, Input, Switch, Tab, Tabs } from '@heroui/react'
+import { Button, Input, Switch, Tab, Tabs } from '@renderer/components/ui/heroui'
 import SettingCard from '@renderer/components/base/base-setting-card'
 import SettingItem from '@renderer/components/base/base-setting-item'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'

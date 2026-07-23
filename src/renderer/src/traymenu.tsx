@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { ThemeProvider as NextThemesProvider } from 'next-themes'
-import { HeroUIProvider } from '@heroui/react'
+import { HeroUIProvider } from '@renderer/components/ui/heroui'
 import '@renderer/assets/traymenu.css'
 import TrayMenuApp from '@renderer/TrayMenuApp'
 import BaseErrorBoundary from './components/base/base-error-boundary'

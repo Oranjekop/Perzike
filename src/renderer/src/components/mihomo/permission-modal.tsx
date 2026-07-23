@@ -11,7 +11,7 @@ import {
   CardHeader,
   Chip,
   Divider
-} from '@heroui/react'
+} from '@renderer/components/ui/heroui'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import {
   checkCorePermission,

@@ -6,7 +6,7 @@ import {
   ModalFooter,
   Button,
   Switch
-} from '@heroui/react'
+} from '@renderer/components/ui/heroui'
 import React, { useEffect, useState } from 'react'
 import { BaseEditor } from '../base/base-editor-lazy'
 import { getProfileStr, setProfileStr } from '@renderer/utils/ipc'

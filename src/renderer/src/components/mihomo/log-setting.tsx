@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Button, Input, Select, SelectItem, Switch, Tooltip } from '@heroui/react'
+import { Button, Input, Select, SelectItem, Switch, Tooltip } from '@renderer/components/ui/heroui'
 import { IoIosHelpCircle } from 'react-icons/io'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'

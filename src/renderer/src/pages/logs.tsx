@@ -3,7 +3,7 @@ import LogItem from '@renderer/components/logs/log-item'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
 import { startTransition, useEffect, useMemo, useRef, useState } from 'react'
-import { Button, Divider, Input } from '@heroui/react'
+import { Button, Divider, Input } from '@renderer/components/ui/heroui'
 import { Virtuoso } from 'react-virtuoso'
 import { IoLocationSharp } from 'react-icons/io5'
 import { CgTrash } from 'react-icons/cg'
@@ -16,7 +16,7 @@ import {
   setMihomoLogMaxEntries,
   subscribeMihomoLogs
 } from '@renderer/utils/mihomo-log-store'
-import { ListBox, Select } from '@heroui-v3/react'
+import { ListBox, Select } from '@heroui/react'
 import { restartMihomoLogs } from '@renderer/utils/ipc'
 import { notify } from '@renderer/utils/notification'
 
@@ -164,11 +164,11 @@ const Logs: React.FC = () => {
                 }
               }}
             >
-              <Select.Trigger className="h-8 min-h-8 rounded-lg bg-default-100 px-3 text-sm data-[hovered=true]:bg-default-200">
+              <Select.Trigger className="app-select-trigger h-8 min-h-8 rounded-lg px-3 text-sm">
                 <Select.Value className="-translate-y-px" />
                 <Select.Indicator className="size-4" />
               </Select.Trigger>
-              <Select.Popover className="min-w-0 rounded-lg">
+              <Select.Popover className="app-select-popover min-w-0 rounded-lg">
                 <ListBox className="w-24 rounded-lg p-1 text-sm">
                   <ListBox.Item
                     id="silent"

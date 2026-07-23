@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { Tabs, Tab } from '@heroui/react'
+import { Tabs, Tab } from '@renderer/components/ui/heroui'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
 import { useGroups } from '@renderer/hooks/use-groups'

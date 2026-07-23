@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import SettingCard from '../base/base-setting-card'
 import SettingItem from '../base/base-setting-item'
-import { Button, Input, Select, SelectItem, Switch, Tooltip } from '@heroui/react'
+import { Button, Input, Select, SelectItem, Switch, Tooltip } from '@renderer/components/ui/heroui'
 import { mihomoUpgradeUI, restartCore } from '@renderer/utils/ipc'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
 import EditableList from '../base/base-list-editor'
@@ -143,7 +143,7 @@ const ControllerSetting: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
-                    className="text-gray-500 hover:text-gray-700"
+                    className="text-foreground-500 hover:text-foreground"
                   >
                     {showPassword ? (
                       <AiOutlineEyeInvisible className="w-4 h-4" />

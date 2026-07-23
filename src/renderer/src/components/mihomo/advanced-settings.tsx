@@ -3,7 +3,7 @@ import SettingCard from '../base/base-setting-card'
 import SettingItem from '../base/base-setting-item'
 import InterfaceSelect from '../base/interface-select'
 import { restartCore } from '@renderer/utils/ipc'
-import { Button, Input, Switch, Tab, Tabs, Tooltip } from '@heroui/react'
+import { Button, Input, Switch, Tab, Tabs, Tooltip } from '@renderer/components/ui/heroui'
 import { useState } from 'react'
 import { IoIosHelpCircle } from 'react-icons/io'
 

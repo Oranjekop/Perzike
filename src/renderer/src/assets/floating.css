@@ -1,8 +1,4 @@
-@import 'tailwindcss';
-@plugin './hero.mjs';
-@import '@heroui-v3/styles';
-@source '../../../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
-@custom-variant dark (&:is(.dark *));
+@import './main.css';
 
 .floating-text {
   font-family:
@@ -12,7 +8,9 @@
     BlinkMacSystemFont;
 }
 
-html {
+html,
+body,
+.dark body {
   background: none !important;
   background-color: transparent !important;
 }

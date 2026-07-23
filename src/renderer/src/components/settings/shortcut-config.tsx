@@ -1,4 +1,4 @@
-import { Button, Input } from '@heroui/react'
+import { Button, Input } from '@renderer/components/ui/heroui'
 import SettingCard from '../base/base-setting-card'
 import SettingItem from '../base/base-setting-item'
 import { useAppConfig } from '@renderer/hooks/use-app-config'

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { Button, ScrollShadow, Chip, Accordion, AccordionItem } from '@heroui/react'
+import { Button, ScrollShadow, Chip, Accordion, AccordionItem } from '@renderer/components/ui/heroui'
 import { IoRefresh, IoClose, IoCheckmarkCircle } from 'react-icons/io5'
 import { useGroups } from './hooks/use-groups'
 import { mihomoChangeProxy, mihomoGroupDelay, mihomoCloseConnections } from './utils/ipc'

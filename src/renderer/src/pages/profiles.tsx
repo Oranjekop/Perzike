@@ -8,7 +8,7 @@ import {
   DropdownMenu,
   DropdownTrigger,
   Input
-} from '@heroui/react'
+} from '@renderer/components/ui/heroui'
 import BasePage from '@renderer/components/base/base-page'
 import ProfileItem from '@renderer/components/profiles/profile-item'
 import EditInfoModal from '@renderer/components/profiles/edit-info-modal'

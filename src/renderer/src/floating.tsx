@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { ThemeProvider as NextThemesProvider } from 'next-themes'
-import { HeroUIProvider } from '@heroui/react'
+import { HeroUIProvider } from '@renderer/components/ui/heroui'
 import '@renderer/assets/floating.css'
 import FloatingApp from '@renderer/FloatingApp'
 import BaseErrorBoundary from './components/base/base-error-boundary'

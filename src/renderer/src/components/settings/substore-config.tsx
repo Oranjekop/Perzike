@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import SettingCard from '@renderer/components/base/base-setting-card'
 import SettingItem from '@renderer/components/base/base-setting-item'
-import { Button, Input, Switch } from '@heroui/react'
+import { Button, Input, Switch } from '@renderer/components/ui/heroui'
 import {
   startSubStoreFrontendServer,
   startSubStoreBackendServer,
