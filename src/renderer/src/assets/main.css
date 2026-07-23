@@ -24,6 +24,10 @@
   --app-shadow-medium-near-color: rgb(15 23 42 / 0.04);
   --app-shadow-medium-far-color: rgb(90 140 210 / 0.12);
   --app-ripple-color: hsl(var(--heroui-primary) / 0.8);
+  --app-input-surface: hsl(var(--heroui-default-100));
+  --app-input-hover-surface: hsl(var(--heroui-default-200));
+  --app-input-border-color: hsl(var(--heroui-divider) / 0.68);
+  --app-input-placeholder-color: hsl(var(--heroui-default-500));
 }
 
 .dark {
@@ -38,6 +42,10 @@
   --app-shadow-medium-near-color: rgb(0 0 0 / 0.28);
   --app-shadow-medium-far-color: rgb(0 0 0 / 0.2);
   --app-ripple-color: hsl(var(--heroui-primary) / 0.22);
+  --app-input-surface: #242b38;
+  --app-input-hover-surface: #2a3342;
+  --app-input-border-color: #364155;
+  --app-input-placeholder-color: #8f9aac;
 }
 
 html,
@@ -184,6 +192,27 @@ body {
 .app-page-content input,
 .app-page-content textarea {
   letter-spacing: -0.008em;
+}
+
+/* Keep input geometry shared across themes; only the surface colors change. */
+[data-slot='input-wrapper'].bg-default-100:not(.bg-transparent) {
+  background-color: var(--app-input-surface) !important;
+  box-shadow: inset 0 0 0 1px var(--app-input-border-color) !important;
+}
+
+[data-slot='input-wrapper'].bg-default-100:not(.bg-transparent)[data-hover='true'] {
+  background-color: var(--app-input-hover-surface) !important;
+}
+
+[data-slot='input-wrapper'].bg-default-100:not(.bg-transparent)[data-focus='true'] {
+  background-color: var(--app-input-surface) !important;
+  box-shadow: inset 0 0 0 1px hsl(var(--heroui-focus)) !important;
+}
+
+[data-slot='input-wrapper'].bg-default-100:not(.bg-transparent)
+  :is(input, textarea)::placeholder {
+  color: var(--app-input-placeholder-color);
+  opacity: 1;
 }
 
 .app-page-content table {
