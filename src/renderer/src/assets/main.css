@@ -4,6 +4,13 @@
 
 /* Compatibility utility names used by the application, backed entirely by v3 tokens. */
 @theme inline {
+  --text-tiny: 0.75rem;
+  --text-small: 0.875rem;
+  --text-medium: 1rem;
+  --text-large: 1.125rem;
+  --radius-small: 0.5rem;
+  --radius-medium: 0.75rem;
+  --radius-large: 0.875rem;
   --color-content: hsl(var(--heroui-content1));
   --color-content1: hsl(var(--heroui-content1));
   --color-content2: hsl(var(--heroui-content2));
@@ -170,6 +177,680 @@ body {
   font-family: 'Microsoft YaHei UI', 'PingFang SC', 'Noto Sans CJK SC', sans-serif;
   font-weight: 400;
   letter-spacing: -0.012em;
+}
+
+/* HeroUI v3 changes component geometry. Keep the v2 metrics used by the existing layouts. */
+.legacy-card {
+  gap: 0 !important;
+  padding: 0 !important;
+}
+
+.legacy-chip {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 0 !important;
+  width: fit-content;
+  min-width: min-content;
+  max-width: max-content;
+  padding-block: 0 !important;
+  white-space: nowrap;
+}
+
+.legacy-chip--sm {
+  height: 24px !important;
+  min-height: 24px !important;
+  padding-inline: 4px !important;
+  font-size: 12px !important;
+  line-height: 16px !important;
+}
+
+.legacy-chip--md {
+  height: 28px !important;
+  min-height: 28px !important;
+  padding-inline: 4px !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+}
+
+.legacy-chip--lg {
+  height: 32px !important;
+  min-height: 32px !important;
+  padding-inline: 8px !important;
+  font-size: 16px !important;
+  line-height: 24px !important;
+}
+
+.legacy-chip--sm .legacy-chip-label {
+  padding-inline: 4px !important;
+}
+
+.legacy-chip--md .legacy-chip-label,
+.legacy-chip--lg .legacy-chip-label {
+  padding-inline: 8px !important;
+}
+
+.legacy-chip--bordered,
+.legacy-chip--dot {
+  border-width: 2px !important;
+  background: transparent !important;
+}
+
+.legacy-badge {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.legacy-badge-label {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding-inline: 4px !important;
+  border-radius: 9999px !important;
+  white-space: nowrap;
+}
+
+.legacy-badge-label--sm {
+  min-width: 16px !important;
+  height: 16px !important;
+  min-height: 16px !important;
+  font-size: 12px !important;
+  line-height: 16px !important;
+}
+
+.legacy-badge-label--md {
+  min-width: 20px !important;
+  height: 20px !important;
+  min-height: 20px !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+}
+
+.legacy-badge-label--lg {
+  min-width: 24px !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+}
+
+.legacy-progress-track {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+  background: hsl(var(--heroui-default-200) / 0.5) !important;
+}
+
+.legacy-progress-track--sm {
+  height: 4px !important;
+}
+
+.legacy-progress-track--md {
+  height: 12px !important;
+}
+
+.legacy-progress-track--lg {
+  height: 20px !important;
+}
+
+.legacy-progress-fill {
+  height: 100% !important;
+}
+
+.legacy-button {
+  flex-shrink: 0;
+  border-radius: 12px !important;
+  font-weight: 400;
+}
+
+.legacy-button--sm {
+  min-width: 64px !important;
+  width: auto;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding-inline: 12px !important;
+  gap: 8px !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  line-height: 16px !important;
+}
+
+.legacy-button--md {
+  min-width: 80px !important;
+  width: auto;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding-inline: 16px !important;
+  gap: 8px !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+}
+
+.legacy-button--lg {
+  min-width: 96px !important;
+  width: auto;
+  height: 48px !important;
+  min-height: 48px !important;
+  padding-inline: 24px !important;
+  gap: 12px !important;
+  border-radius: 14px !important;
+  font-size: 16px !important;
+  line-height: 24px !important;
+}
+
+.legacy-button--icon-only {
+  min-width: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+}
+
+.legacy-button--icon-only.legacy-button--sm {
+  width: 32px !important;
+}
+
+.legacy-button--icon-only.legacy-button--md {
+  width: 40px !important;
+}
+
+.legacy-button--icon-only.legacy-button--lg {
+  width: 48px !important;
+}
+
+.legacy-button--light {
+  color: hsl(var(--heroui-foreground)) !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.legacy-button--flat.legacy-button--color-default {
+  color: hsl(var(--heroui-default-600)) !important;
+  background: hsl(var(--heroui-default-200) / 0.4) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.legacy-button--solid.legacy-button--color-default {
+  color: hsl(var(--heroui-foreground)) !important;
+  background: hsl(var(--heroui-default-200)) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.legacy-button--solid.legacy-button--color-primary,
+.legacy-button--shadow.legacy-button--color-primary {
+  color: hsl(var(--heroui-primary-foreground)) !important;
+  background: hsl(var(--heroui-primary)) !important;
+  border-color: transparent !important;
+}
+
+.legacy-button--flat.legacy-button--color-primary {
+  color: hsl(var(--heroui-primary)) !important;
+  background: hsl(var(--heroui-primary) / 0.2) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.legacy-button--solid.legacy-button--color-secondary,
+.legacy-button--shadow.legacy-button--color-secondary {
+  color: hsl(var(--heroui-secondary-foreground)) !important;
+  background: hsl(var(--heroui-secondary)) !important;
+}
+
+.legacy-button--solid.legacy-button--color-success,
+.legacy-button--shadow.legacy-button--color-success {
+  color: hsl(var(--heroui-success-foreground)) !important;
+  background: hsl(var(--heroui-success)) !important;
+}
+
+.legacy-button--solid.legacy-button--color-warning,
+.legacy-button--shadow.legacy-button--color-warning {
+  color: hsl(var(--heroui-warning-foreground)) !important;
+  background: hsl(var(--heroui-warning)) !important;
+}
+
+.legacy-button--flat.legacy-button--color-secondary {
+  color: hsl(var(--heroui-secondary)) !important;
+  background: hsl(var(--heroui-secondary) / 0.2) !important;
+}
+
+.legacy-button--flat.legacy-button--color-success {
+  color: hsl(var(--heroui-success)) !important;
+  background: hsl(var(--heroui-success) / 0.2) !important;
+}
+
+.legacy-button--flat.legacy-button--color-warning {
+  color: hsl(var(--heroui-warning)) !important;
+  background: hsl(var(--heroui-warning) / 0.2) !important;
+}
+
+.legacy-button--bordered,
+.legacy-button--ghost {
+  border-width: 2px !important;
+  border-style: solid !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.legacy-button--bordered.legacy-button--color-default,
+.legacy-button--ghost.legacy-button--color-default {
+  color: hsl(var(--heroui-foreground)) !important;
+  border-color: hsl(var(--heroui-default-200)) !important;
+}
+
+.legacy-button--bordered.legacy-button--color-primary,
+.legacy-button--ghost.legacy-button--color-primary {
+  color: hsl(var(--heroui-primary)) !important;
+  border-color: hsl(var(--heroui-primary)) !important;
+}
+
+.legacy-button--light.legacy-button--color-primary {
+  color: hsl(var(--heroui-primary)) !important;
+}
+
+.legacy-radius--none {
+  border-radius: 0 !important;
+}
+
+.legacy-radius--sm {
+  border-radius: 8px !important;
+}
+
+.legacy-radius--md {
+  border-radius: 12px !important;
+}
+
+.legacy-radius--lg {
+  border-radius: 14px !important;
+}
+
+.legacy-radius--full {
+  border-radius: 9999px !important;
+}
+
+.legacy-switch-control {
+  position: relative;
+  display: flex !important;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 4px !important;
+  border-radius: 9999px !important;
+}
+
+.legacy-switch-thumb {
+  position: static !important;
+  flex-shrink: 0;
+  margin-inline-start: 0;
+  transform: none !important;
+  background: #fff !important;
+  transition: margin 250ms ease, width 250ms ease !important;
+}
+
+.legacy-switch--sm .legacy-switch-control {
+  width: 40px !important;
+  height: 24px !important;
+}
+
+.legacy-switch--sm .legacy-switch-thumb {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.legacy-switch--sm[data-selected='true'] .legacy-switch-thumb {
+  margin-inline-start: 16px;
+}
+
+.legacy-switch--md .legacy-switch-control {
+  width: 48px !important;
+  height: 28px !important;
+}
+
+.legacy-switch--md .legacy-switch-thumb {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.legacy-switch--md[data-selected='true'] .legacy-switch-thumb {
+  margin-inline-start: 20px;
+}
+
+.legacy-switch--lg .legacy-switch-control {
+  width: 56px !important;
+  height: 32px !important;
+}
+
+.legacy-switch--lg .legacy-switch-thumb {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.legacy-switch--lg[data-selected='true'] .legacy-switch-thumb {
+  margin-inline-start: 24px;
+}
+
+.legacy-radio-group {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 8px !important;
+}
+
+.legacy-radio-group.flex-row {
+  flex-direction: row !important;
+}
+
+.legacy-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 0 !important;
+}
+
+.legacy-radio-control {
+  display: inline-flex !important;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border-width: 2px !important;
+  border-color: hsl(var(--heroui-default-400)) !important;
+  border-radius: 9999px !important;
+  background: transparent !important;
+}
+
+.legacy-radio:is([data-selected='true'], [aria-checked='true']) .legacy-radio-control {
+  border-color: hsl(var(--heroui-primary)) !important;
+  background: transparent !important;
+}
+
+.legacy-radio-control--sm {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.legacy-radio-control--md {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.legacy-radio-control--lg {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.legacy-radio-indicator {
+  border-radius: 9999px !important;
+  background: hsl(var(--heroui-primary)) !important;
+}
+
+.legacy-radio-indicator--sm {
+  width: 6px !important;
+  height: 6px !important;
+}
+
+.legacy-radio-indicator--md {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+.legacy-radio-indicator--lg {
+  width: 10px !important;
+  height: 10px !important;
+}
+
+.legacy-radio-content--sm {
+  margin-inline-start: 4px !important;
+  font-size: 14px !important;
+}
+
+.legacy-radio-content--md,
+.legacy-radio-content--lg {
+  margin-inline-start: 8px !important;
+}
+
+.legacy-radio-content--md {
+  font-size: 16px !important;
+}
+
+.legacy-radio-content--lg {
+  font-size: 18px !important;
+}
+
+.legacy-tabs-list {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 8px !important;
+  height: fit-content;
+  padding: 4px !important;
+  overflow-x: auto;
+  border-radius: 12px !important;
+}
+
+.legacy-tabs-tab {
+  position: relative;
+  z-index: 0;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 12px !important;
+  padding-block: 4px !important;
+  border-radius: 8px !important;
+}
+
+.legacy-tabs--sm .legacy-tabs-tab {
+  height: 28px !important;
+  font-size: 12px !important;
+  line-height: 16px !important;
+}
+
+.legacy-tabs--md .legacy-tabs-tab {
+  height: 32px !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+}
+
+.legacy-tabs--lg .legacy-tabs-tab {
+  height: 36px !important;
+  border-radius: 12px !important;
+  font-size: 16px !important;
+  line-height: 24px !important;
+}
+
+.legacy-tabs-indicator {
+  border-radius: 8px !important;
+}
+
+.legacy-tabs--color-primary .legacy-tabs-indicator {
+  background: hsl(var(--heroui-primary)) !important;
+}
+
+.legacy-tabs--color-primary .legacy-tabs-tab[aria-selected='true'] .legacy-tabs-content {
+  color: hsl(var(--heroui-primary-foreground)) !important;
+}
+
+.legacy-tabs--color-secondary .legacy-tabs-indicator {
+  background: hsl(var(--heroui-secondary)) !important;
+}
+
+.legacy-tabs--color-success .legacy-tabs-indicator {
+  background: hsl(var(--heroui-success)) !important;
+}
+
+.legacy-tabs--color-warning .legacy-tabs-indicator {
+  background: hsl(var(--heroui-warning)) !important;
+}
+
+.legacy-tabs--color-danger .legacy-tabs-indicator {
+  background: hsl(var(--heroui-danger)) !important;
+}
+
+.legacy-tabs--color-default .legacy-tabs-indicator {
+  background: hsl(var(--heroui-default-400)) !important;
+}
+
+.legacy-tabs--color-secondary .legacy-tabs-tab[aria-selected='true'] .legacy-tabs-content,
+.legacy-tabs--color-success .legacy-tabs-tab[aria-selected='true'] .legacy-tabs-content,
+.legacy-tabs--color-warning .legacy-tabs-tab[aria-selected='true'] .legacy-tabs-content,
+.legacy-tabs--color-danger .legacy-tabs-tab[aria-selected='true'] .legacy-tabs-content,
+.legacy-tabs--color-default .legacy-tabs-tab[aria-selected='true'] .legacy-tabs-content {
+  color: hsl(var(--heroui-foreground)) !important;
+}
+
+.legacy-tabs--underlined .legacy-tabs-list {
+  gap: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.legacy-tabs--underlined .legacy-tabs-tab {
+  border-radius: 0 !important;
+}
+
+.legacy-tabs--underlined .legacy-tabs-indicator {
+  width: 80% !important;
+  height: 2px !important;
+  inset-block: auto 0 !important;
+  inset-inline: 10% !important;
+  border-radius: 0 !important;
+}
+
+.legacy-tabs--underlined.legacy-tabs--color-primary
+  .legacy-tabs-tab[aria-selected='true']
+  .legacy-tabs-content {
+  color: hsl(var(--heroui-primary)) !important;
+}
+
+.legacy-tabs--underlined.legacy-tabs--color-danger
+  .legacy-tabs-tab[aria-selected='true']
+  .legacy-tabs-content {
+  color: hsl(var(--heroui-danger)) !important;
+}
+
+.legacy-listbox-item,
+.legacy-dropdown-item {
+  min-height: 32px !important;
+  padding: 6px 10px !important;
+  border-radius: 6px !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+}
+
+.legacy-accordion {
+  width: 100%;
+  padding-inline: 8px !important;
+}
+
+.legacy-accordion--splitted {
+  display: flex;
+  flex-direction: column;
+  gap: 8px !important;
+  padding-inline: 0 !important;
+}
+
+.legacy-accordion--splitted .legacy-accordion-item {
+  padding-inline: 16px !important;
+  border-radius: 12px !important;
+  background: hsl(var(--heroui-content1)) !important;
+}
+
+.legacy-accordion-trigger {
+  display: flex !important;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  gap: 12px !important;
+  padding-block: 16px !important;
+}
+
+.legacy-accordion--compact .legacy-accordion-trigger {
+  padding-block: 8px !important;
+}
+
+.legacy-accordion-title {
+  flex: 1;
+  color: hsl(var(--heroui-foreground));
+  font-size: 16px !important;
+  line-height: 24px !important;
+  text-align: start;
+}
+
+.legacy-accordion-content {
+  padding-block: 8px !important;
+}
+
+.legacy-accordion--compact .legacy-accordion-content {
+  padding-block: 4px !important;
+}
+
+.legacy-modal-dialog {
+  gap: 0 !important;
+  padding: 0 !important;
+  border-radius: 14px !important;
+  background: hsl(var(--heroui-content1)) !important;
+}
+
+.legacy-modal-container--wide {
+  width: 100vw !important;
+  max-width: none !important;
+}
+
+.legacy-modal-header {
+  display: flex !important;
+  flex: initial;
+  padding: 16px 24px !important;
+  font-size: 18px !important;
+  line-height: 28px !important;
+  font-weight: 600 !important;
+}
+
+.legacy-modal-body {
+  display: flex !important;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px !important;
+  padding: 8px 24px !important;
+}
+
+.legacy-modal-footer {
+  display: flex !important;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 8px !important;
+  padding: 16px 24px !important;
+}
+
+.legacy-checkbox {
+  display: inline-flex;
+  align-items: center;
+}
+
+.legacy-checkbox-control {
+  display: inline-flex !important;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px !important;
+}
+
+.legacy-checkbox--sm {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.legacy-checkbox--md {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.legacy-checkbox--lg {
+  width: 24px !important;
+  height: 24px !important;
 }
 
 .app-shell {
@@ -447,15 +1128,6 @@ body {
 }
 
 .switch__control {
-  box-shadow: inset 0 0 0 1px var(--app-input-border-color);
-}
-
-.button--secondary {
-  --button-bg: var(--app-input-surface);
-  --button-bg-hover: var(--app-input-hover-surface);
-  --button-bg-pressed: var(--app-input-hover-surface);
-  --button-fg: hsl(var(--heroui-foreground));
-
   box-shadow: inset 0 0 0 1px var(--app-input-border-color);
 }
 

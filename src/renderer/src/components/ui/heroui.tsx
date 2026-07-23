@@ -40,6 +40,7 @@ export const HeroUIProvider: React.FC<React.PropsWithChildren> = ({ children }) 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const buttonVariant = (color?: string, variant?: string): any => {
   if (color === 'danger') return variant === 'solid' ? 'danger' : 'danger-soft'
+  if (color === 'success' || color === 'warning') return 'primary'
   if (variant === 'light') return 'ghost'
   if (variant === 'bordered' || variant === 'ghost') return 'outline'
   if (variant === 'flat') return 'secondary'
@@ -57,6 +58,10 @@ const mapButtonProps = (props: LooseProps): LooseProps => {
     startContent,
     children,
     className,
+    fullWidth,
+    isIconOnly,
+    radius,
+    size = 'md',
     onClick,
     onPress,
     ...rest
@@ -66,7 +71,20 @@ const mapButtonProps = (props: LooseProps): LooseProps => {
     variant: buttonVariant(color, variant),
     isPending: isLoading || isPending,
     isDisabled: disabled || props.isDisabled,
-    className: cn(variant === 'shadow' && 'shadow-medium', className),
+    className: cn(
+      'legacy-button',
+      `legacy-button--${size}`,
+      `legacy-button--${variant ?? 'solid'}`,
+      `legacy-button--color-${color ?? 'default'}`,
+      isIconOnly && 'legacy-button--icon-only',
+      fullWidth && 'w-full',
+      radius && `legacy-radius--${radius}`,
+      variant === 'shadow' && 'shadow-medium',
+      className
+    ),
+    fullWidth,
+    isIconOnly,
+    size,
     onPress: onPress ?? onClick,
     children: (
       <>
@@ -102,6 +120,7 @@ export const Card = forwardRef<HTMLDivElement, LooseProps>(
       role={isPressable ? 'button' : props.role}
       tabIndex={isPressable ? 0 : props.tabIndex}
       className={cn(
+        'legacy-card',
         fullWidth && 'w-full',
         isPressable && 'cursor-pointer',
         radius === 'sm' && 'rounded-lg',
@@ -122,14 +141,38 @@ export const Card = forwardRef<HTMLDivElement, LooseProps>(
 )
 Card.displayName = 'Card'
 
-export const CardBody = V3.Card.Content
-export const CardHeader = V3.Card.Header
-export const CardFooter = V3.Card.Footer
+export const CardBody: React.FC<LooseProps> = ({ className, ...props }) => (
+  <V3.Card.Content
+    {...props}
+    className={cn(
+      'legacy-card-body relative flex flex-auto flex-1 flex-col w-full h-auto p-3 break-words text-left overflow-y-auto',
+      className
+    )}
+  />
+)
+
+export const CardHeader: React.FC<LooseProps> = ({ className, ...props }) => (
+  <V3.Card.Header
+    {...props}
+    className={cn(
+      'legacy-card-header flex w-full shrink-0 items-center justify-start overflow-inherit p-3',
+      className
+    )}
+  />
+)
+
+export const CardFooter: React.FC<LooseProps> = ({ className, ...props }) => (
+  <V3.Card.Footer
+    {...props}
+    className={cn('legacy-card-footer flex h-auto w-full items-center overflow-hidden p-3', className)}
+  />
+)
 
 export const Chip: React.FC<LooseProps> = ({
   color = 'default',
   variant,
   radius,
+  size = 'md',
   startContent,
   className,
   classNames,
@@ -139,8 +182,19 @@ export const Chip: React.FC<LooseProps> = ({
   <V3.Chip
     {...props}
     color={color === 'primary' || color === 'secondary' ? 'accent' : color}
-    variant={variant === 'solid' ? 'primary' : variant === 'flat' ? 'soft' : 'tertiary'}
+    variant={
+      variant == null || variant === 'solid'
+        ? 'primary'
+        : variant === 'flat'
+          ? 'soft'
+          : 'tertiary'
+    }
     className={cn(
+      'legacy-chip',
+      `legacy-chip--${size}`,
+      `legacy-chip--${variant ?? 'solid'}`,
+      `legacy-chip--color-${color}`,
+      `legacy-radius--${radius ?? 'full'}`,
       variant === 'bordered' && 'border border-divider',
       variant === 'dot' &&
         'border border-divider before:size-1.5 before:rounded-full before:bg-current',
@@ -150,7 +204,7 @@ export const Chip: React.FC<LooseProps> = ({
     )}
   >
     {startContent}
-    <V3.Chip.Label className={classNames?.content}>{children}</V3.Chip.Label>
+    <V3.Chip.Label className={cn('legacy-chip-label', classNames?.content)}>{children}</V3.Chip.Label>
   </V3.Chip>
 )
 
@@ -169,6 +223,8 @@ export const Badge: React.FC<LooseProps> = ({
   children,
   color,
   variant,
+  size = 'md',
+  shape = 'rectangle',
   showOutline,
   className,
   ...props
@@ -177,17 +233,41 @@ export const Badge: React.FC<LooseProps> = ({
     {...props}
     color={color === 'primary' || color === 'secondary' ? 'accent' : color}
     variant={variant === 'flat' ? 'soft' : 'primary'}
-    className={className}
+    className={cn('legacy-badge', className)}
   >
     <V3.Badge.Anchor>{children}</V3.Badge.Anchor>
-    <V3.Badge.Label className={cn(showOutline === false && 'ring-0')}>{content}</V3.Badge.Label>
+    <V3.Badge.Label
+      className={cn(
+        'legacy-badge-label',
+        `legacy-badge-label--${size}`,
+        `legacy-badge-label--${shape}`,
+        showOutline === false && 'ring-0'
+      )}
+    >
+      {content}
+    </V3.Badge.Label>
   </V3.Badge>
 )
 
-export const Progress: React.FC<LooseProps> = ({ value, className, classNames }) => (
-  <V3.ProgressBar value={value} className={cn(classNames?.base, className)}>
-    <V3.ProgressBar.Track className={classNames?.track}>
-      <V3.ProgressBar.Fill className={classNames?.indicator} />
+export const Progress: React.FC<LooseProps> = ({
+  value,
+  className,
+  classNames,
+  size = 'md',
+  radius = 'full'
+}) => (
+  <V3.ProgressBar value={value} className={cn('legacy-progress', classNames?.base, className)}>
+    <V3.ProgressBar.Track
+      className={cn(
+        'legacy-progress-track',
+        `legacy-progress-track--${size}`,
+        `legacy-radius--${radius}`,
+        classNames?.track
+      )}
+    >
+      <V3.ProgressBar.Fill
+        className={cn('legacy-progress-fill', `legacy-radius--${radius}`, classNames?.indicator)}
+      />
     </V3.ProgressBar.Track>
   </V3.ProgressBar>
 )
@@ -236,8 +316,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           data-hover={hovered || undefined}
           data-focus={focused || undefined}
           className={cn(
-            'legacy-input-wrapper flex w-full items-center gap-2 rounded-lg bg-default-100 px-3',
-            size === 'sm' ? 'h-8 min-h-8' : size === 'lg' ? 'h-11 min-h-11' : 'h-10 min-h-10',
+            'legacy-input-wrapper flex w-full items-center gap-2 bg-default-100',
+            size === 'sm'
+              ? 'h-8 min-h-8 rounded-lg px-2 text-sm'
+              : size === 'lg'
+                ? 'h-12 min-h-12 rounded-[14px] px-3 text-base'
+                : 'h-10 min-h-10 rounded-xl px-3 text-sm',
             classNames?.mainWrapper,
             classNames?.inputWrapper
           )}
@@ -298,31 +382,46 @@ export const Switch: React.FC<SwitchProps> = ({
   isSelected,
   onChange,
   onValueChange,
+  size = 'md',
   ...props
 }) => (
   <V3.Switch
     {...props}
     isSelected={isSelected}
     onChange={onValueChange ?? onChange}
-    className={cn(classNames?.base, className)}
+    className={cn('legacy-switch', `legacy-switch--${size}`, classNames?.base, className)}
   >
     {children && <V3.Switch.Content className={classNames?.label}>{children}</V3.Switch.Content>}
-    <V3.Switch.Control className={classNames?.wrapper}>
-      <V3.Switch.Thumb className={classNames?.thumb} />
+    <V3.Switch.Control className={cn('legacy-switch-control', classNames?.wrapper)}>
+      <V3.Switch.Thumb className={cn('legacy-switch-thumb', classNames?.thumb)} />
     </V3.Switch.Control>
   </V3.Switch>
 )
 
-export const RadioGroup: React.FC<LooseProps> = ({ orientation, className, ...props }) => (
-  <V3.RadioGroup {...props} className={cn(orientation === 'horizontal' && 'flex-row', className)} />
+export const RadioGroup: React.FC<LooseProps> = ({
+  orientation,
+  className,
+  onChange,
+  onValueChange,
+  ...props
+}) => (
+  <V3.RadioGroup
+    {...props}
+    onChange={onValueChange ?? onChange}
+    className={cn('legacy-radio-group', orientation === 'horizontal' && 'flex-row', className)}
+  />
 )
 
-export const Radio: React.FC<LooseProps> = ({ children, ...props }) => (
-  <V3.Radio {...props} value={props.value}>
-    <V3.Radio.Control>
-      <V3.Radio.Indicator />
+export const Radio: React.FC<LooseProps> = ({ children, size = 'md', ...props }) => (
+  <V3.Radio {...props} value={props.value} className={cn('legacy-radio', props.className)}>
+    <V3.Radio.Control className={cn('legacy-radio-control', `legacy-radio-control--${size}`)}>
+      <V3.Radio.Indicator
+        className={cn('legacy-radio-indicator', `legacy-radio-indicator--${size}`)}
+      />
     </V3.Radio.Control>
-    <V3.Radio.Content>{children}</V3.Radio.Content>
+    <V3.Radio.Content className={cn('legacy-radio-content', `legacy-radio-content--${size}`)}>
+      {children}
+    </V3.Radio.Content>
   </V3.Radio>
 )
 
@@ -332,8 +431,11 @@ export const Tabs: React.FC<LooseProps> = ({
   children,
   className,
   classNames,
+  color = 'default',
   fullWidth,
+  radius,
   selectedKey,
+  size = 'md',
   variant,
   ...props
 }) => {
@@ -343,20 +445,35 @@ export const Tabs: React.FC<LooseProps> = ({
       {...props}
       selectedKey={selectedKey}
       variant={variant === 'underlined' ? 'secondary' : 'primary'}
-      className={cn(fullWidth && 'w-full', classNames?.base, className)}
+      className={cn(
+        'legacy-tabs',
+        `legacy-tabs--${size}`,
+        `legacy-tabs--${variant ?? 'solid'}`,
+        `legacy-tabs--color-${color}`,
+        radius && `legacy-tabs--radius-${radius}`,
+        fullWidth && 'w-full',
+        classNames?.base,
+        className
+      )}
     >
       <V3.Tabs.ListContainer>
-        <V3.Tabs.List className={cn(fullWidth && 'w-full', classNames?.tabList)}>
+        <V3.Tabs.List
+          className={cn('legacy-tabs-list', fullWidth && 'w-full', classNames?.tabList)}
+        >
           {items.map((item, index) => {
             const itemProps = item.props as LooseProps
             return (
               <V3.Tabs.Tab
                 id={(item.key ?? index) as Key}
                 key={item.key ?? index}
-                className={cn(classNames?.tab, itemProps.className)}
+                className={cn('legacy-tabs-tab', classNames?.tab, itemProps.className)}
               >
-                <span className={classNames?.tabContent}>{itemProps.title}</span>
-                <V3.Tabs.Indicator className={classNames?.cursor} />
+                <span className={cn('legacy-tabs-content', classNames?.tabContent)}>
+                  {itemProps.title}
+                </span>
+                <V3.Tabs.Indicator
+                  className={cn('legacy-tabs-indicator', classNames?.cursor)}
+                />
               </V3.Tabs.Tab>
             )
           })}
@@ -406,7 +523,7 @@ export const Select: React.FC<LooseProps> = ({
   return (
     <V3.Select
       {...props}
-      className={className}
+      className={cn('w-full', classNames?.base, className)}
       value={value}
       selectionMode={selectionMode}
       onChange={(nextValue: Key | Key[] | null) => {
@@ -417,8 +534,12 @@ export const Select: React.FC<LooseProps> = ({
     >
       <V3.Select.Trigger
         className={cn(
-          'app-select-trigger rounded-lg px-3',
-          size === 'sm' ? 'h-8 min-h-8 text-sm' : 'min-h-10',
+          'app-select-trigger',
+          size === 'sm'
+            ? 'h-8 min-h-8 rounded-lg px-2 text-sm'
+            : size === 'lg'
+              ? 'h-12 min-h-12 rounded-[14px] px-3 text-base'
+              : 'h-10 min-h-10 rounded-xl px-3 text-sm',
           classNames?.trigger
         )}
       >
@@ -437,7 +558,10 @@ export const Select: React.FC<LooseProps> = ({
                 id={id}
                 key={id}
                 textValue={itemProps.textValue ?? String(itemProps.children ?? id)}
-                className={cn('min-h-8 rounded-md px-2.5 py-1.5 text-sm', itemProps.className)}
+                className={cn(
+                  'legacy-listbox-item min-h-8 rounded-md px-2.5 py-1.5 text-sm',
+                  itemProps.className
+                )}
               >
                 {itemProps.children}
                 <V3.ListBox.ItemIndicator />
@@ -477,18 +601,11 @@ export const Dropdown: React.FC<LooseProps> = ({ children, ...props }) => (
 export const DropdownTrigger: React.FC<LooseProps> = ({ children }) => {
   const child = Children.only(children) as React.ReactElement<LooseProps>
   const mapped = mapButtonProps(child.props)
-  const { fullWidth, isIconOnly, size = 'md', variant, ...triggerProps } = mapped
+  const { fullWidth: _fullWidth, isIconOnly: _isIconOnly, size: _size, ...triggerProps } = mapped
   return (
     <V3.Dropdown.Trigger
       {...triggerProps}
-      className={cn(
-        'button',
-        `button--${variant}`,
-        `button--${size}`,
-        fullWidth && 'button--full-width',
-        isIconOnly && 'button--icon-only',
-        mapped.className
-      )}
+      className={mapped.className}
     />
   )
 }
@@ -514,6 +631,7 @@ export const DropdownMenu: React.FC<LooseProps> = ({
                 id={id}
                 key={id}
                 className={cn(
+                  'legacy-dropdown-item min-h-8 rounded-md px-2.5 py-1.5 text-sm',
                   color === 'danger' && 'text-danger',
                   showDivider && 'border-b border-divider'
                 )}
@@ -540,6 +658,7 @@ export const Accordion: React.FC<LooseProps> = ({
   className,
   defaultExpandedKeys,
   itemClasses,
+  isCompact,
   selectionMode,
   variant,
   ...props
@@ -548,7 +667,12 @@ export const Accordion: React.FC<LooseProps> = ({
   return (
     <V3.Accordion
       {...props}
-      className={className}
+      className={cn(
+        'legacy-accordion',
+        `legacy-accordion--${variant ?? 'light'}`,
+        isCompact && 'legacy-accordion--compact',
+        className
+      )}
       variant={variant === 'splitted' ? 'surface' : 'default'}
       defaultExpandedKeys={defaultExpandedKeys}
       allowsMultipleExpanded={selectionMode === 'multiple'}
@@ -560,13 +684,17 @@ export const Accordion: React.FC<LooseProps> = ({
           <V3.Accordion.Item
             id={id}
             key={id}
-            className={cn(itemClasses?.base, itemProps.className)}
+            className={cn('legacy-accordion-item', itemClasses?.base, itemProps.className)}
           >
             <V3.Accordion.Heading>
-              <V3.Accordion.Trigger className={itemClasses?.trigger}>
+              <V3.Accordion.Trigger
+                className={cn('legacy-accordion-trigger', itemClasses?.trigger)}
+              >
                 {(state: LooseProps) => (
                   <>
-                    <span className={itemClasses?.title}>{itemProps.title}</span>
+                    <span className={cn('legacy-accordion-title', itemClasses?.title)}>
+                      {itemProps.title}
+                    </span>
                     {typeof itemProps.indicator === 'function' ? (
                       itemProps.indicator({ isOpen: state.isExpanded })
                     ) : (
@@ -576,8 +704,10 @@ export const Accordion: React.FC<LooseProps> = ({
                 )}
               </V3.Accordion.Trigger>
             </V3.Accordion.Heading>
-            <V3.Accordion.Panel>
-              <V3.Accordion.Body className={itemClasses?.content}>
+            <V3.Accordion.Panel className="legacy-accordion-panel">
+              <V3.Accordion.Body
+                className={cn('legacy-accordion-content', itemClasses?.content)}
+              >
                 {itemProps.children}
               </V3.Accordion.Body>
             </V3.Accordion.Panel>
@@ -615,12 +745,22 @@ export const ModalContent: React.FC<LooseProps> = ({ children, className }) => {
       className={context.classNames?.backdrop}
     >
       <V3.Modal.Container
-        size={['xs', 'sm', 'md', 'lg', 'full'].includes(context.size) ? context.size : 'lg'}
+        size={
+          ['xs', 'sm', 'md', 'lg', 'full'].includes(context.size ?? 'md')
+            ? (context.size ?? 'md')
+            : 'lg'
+        }
         scroll={context.scrollBehavior}
-        className={context.classNames?.wrapper}
+        className={cn(
+          'legacy-modal-container',
+          ['xl', '2xl', '3xl', '4xl', '5xl'].includes(context.size) &&
+            'legacy-modal-container--wide',
+          context.classNames?.wrapper
+        )}
       >
         <V3.Modal.Dialog
           className={cn(
+            'legacy-modal-dialog',
             context.size === '5xl' && 'max-w-5xl',
             context.size === '4xl' && 'max-w-4xl',
             context.size === '3xl' && 'max-w-3xl',
@@ -639,23 +779,33 @@ export const ModalContent: React.FC<LooseProps> = ({ children, className }) => {
 }
 
 export const ModalHeader: React.FC<LooseProps> = ({ children, className, ...props }) => (
-  <V3.Modal.Header {...props} className={className}>
+  <V3.Modal.Header {...props} className={cn('legacy-modal-header', className)}>
     <V3.Modal.Heading>{children}</V3.Modal.Heading>
   </V3.Modal.Header>
 )
-export const ModalBody = V3.Modal.Body
-export const ModalFooter = V3.Modal.Footer
+export const ModalBody: React.FC<LooseProps> = ({ className, ...props }) => (
+  <V3.Modal.Body {...props} className={cn('legacy-modal-body', className)} />
+)
+export const ModalFooter: React.FC<LooseProps> = ({ className, ...props }) => (
+  <V3.Modal.Footer {...props} className={cn('legacy-modal-footer', className)} />
+)
 
 export const Checkbox: React.FC<LooseProps> = ({
   checked,
   children,
   isSelected,
   onValueChange,
+  size = 'md',
   ...props
 }) => (
-  <V3.Checkbox {...props} isSelected={isSelected ?? checked} onChange={onValueChange}>
-    <V3.Checkbox.Control>
-      <V3.Checkbox.Indicator />
+  <V3.Checkbox
+    {...props}
+    isSelected={isSelected ?? checked}
+    onChange={onValueChange}
+    className={cn('legacy-checkbox', props.className)}
+  >
+    <V3.Checkbox.Control className={cn('legacy-checkbox-control', `legacy-checkbox--${size}`)}>
+      <V3.Checkbox.Indicator className="legacy-checkbox-indicator" />
     </V3.Checkbox.Control>
     <V3.Checkbox.Content>{children}</V3.Checkbox.Content>
   </V3.Checkbox>
