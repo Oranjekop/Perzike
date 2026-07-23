@@ -504,6 +504,7 @@ const Connections: React.FC = () => {
   return (
     <BasePage
       title="连接"
+      contentClassName="overflow-y-hidden"
       header={
         <>
           <div className="flex">
@@ -580,83 +581,85 @@ const Connections: React.FC = () => {
       {isSettingModalOpen && (
         <ConnectionSettingModal onClose={() => setIsSettingModalOpen(false)} />
       )}
-      <div className="overflow-x-auto sticky top-0 z-40">
-        <div className="flex p-2 gap-2">
-          <Tabs
-            size="sm"
-            color={tab === 'active' ? 'primary' : 'danger'}
-            selectedKey={tab}
-            variant="underlined"
-            className="w-fit h-8"
-            onSelectionChange={handleTabChange}
-          >
-            <Tab
-              key="active"
-              title={
-                <Badge
-                  color={tab === 'active' ? 'primary' : 'default'}
-                  size="sm"
-                  shape="circle"
-                  variant="flat"
-                  content={activeConnections.length}
-                  showOutline={false}
-                >
-                  <span className="p-1">活动中</span>
-                </Badge>
-              }
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="shrink-0 overflow-x-auto">
+          <div className="flex p-2 gap-2">
+            <Tabs
+              size="sm"
+              color={tab === 'active' ? 'primary' : 'danger'}
+              selectedKey={tab}
+              variant="underlined"
+              className="w-fit h-8"
+              onSelectionChange={handleTabChange}
+            >
+              <Tab
+                key="active"
+                title={
+                  <Badge
+                    color={tab === 'active' ? 'primary' : 'default'}
+                    size="sm"
+                    shape="circle"
+                    variant="flat"
+                    content={activeConnections.length}
+                    showOutline={false}
+                  >
+                    <span className="p-1">活动中</span>
+                  </Badge>
+                }
+              />
+              <Tab
+                key="closed"
+                title={
+                  <Badge
+                    color={tab === 'closed' ? 'danger' : 'default'}
+                    size="sm"
+                    shape="circle"
+                    variant="flat"
+                    content={closedConnections.length}
+                    showOutline={false}
+                  >
+                    <span className="p-1">已关闭</span>
+                  </Badge>
+                }
+              />
+            </Tabs>
+            <Input
+              variant="flat"
+              size="sm"
+              value={filter}
+              placeholder="筛选过滤"
+              isClearable
+              onValueChange={setFilter}
             />
-            <Tab
-              key="closed"
-              title={
-                <Badge
-                  color={tab === 'closed' ? 'danger' : 'default'}
-                  size="sm"
-                  shape="circle"
-                  variant="flat"
-                  content={closedConnections.length}
-                  showOutline={false}
-                >
-                  <span className="p-1">已关闭</span>
-                </Badge>
-              }
-            />
-          </Tabs>
-          <Input
-            variant="flat"
-            size="sm"
-            value={filter}
-            placeholder="筛选过滤"
-            isClearable
-            onValueChange={setFilter}
-          />
 
-          <Select
-            classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}
-            size="sm"
-            className="w-45 min-w-30"
-            selectedKeys={new Set([connectionOrderBy])}
-            disallowEmptySelection={true}
-            onSelectionChange={handleOrderByChange}
-          >
-            <SelectItem key="upload">上传量</SelectItem>
-            <SelectItem key="download">下载量</SelectItem>
-            <SelectItem key="uploadSpeed">上传速度</SelectItem>
-            <SelectItem key="downloadSpeed">下载速度</SelectItem>
-            <SelectItem key="time">时间</SelectItem>
-            <SelectItem key="process">进程名称</SelectItem>
-          </Select>
-          <Button size="sm" isIconOnly className="bg-content2" onPress={handleDirectionToggle}>
-            {connectionDirection === 'asc' ? (
-              <HiSortAscending className="text-lg" />
-            ) : (
-              <HiSortDescending className="text-lg" />
-            )}
-          </Button>
+            <Select
+              classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}
+              size="sm"
+              className="w-45 min-w-30"
+              selectedKeys={new Set([connectionOrderBy])}
+              disallowEmptySelection={true}
+              onSelectionChange={handleOrderByChange}
+            >
+              <SelectItem key="upload">上传量</SelectItem>
+              <SelectItem key="download">下载量</SelectItem>
+              <SelectItem key="uploadSpeed">上传速度</SelectItem>
+              <SelectItem key="downloadSpeed">下载速度</SelectItem>
+              <SelectItem key="time">时间</SelectItem>
+              <SelectItem key="process">进程名称</SelectItem>
+            </Select>
+            <Button size="sm" isIconOnly className="bg-content2" onPress={handleDirectionToggle}>
+              {connectionDirection === 'asc' ? (
+                <HiSortAscending className="text-lg" />
+              ) : (
+                <HiSortDescending className="text-lg" />
+              )}
+            </Button>
+          </div>
+          <Divider />
         </div>
-        <Divider />
-      </div>
-      <div className="h-[calc(100vh-100px)] mt-px">
-        <Virtuoso data={filteredConnections} itemContent={renderConnectionItem} />
+        <div className="min-h-0 flex-1 mt-px">
+          <Virtuoso data={filteredConnections} itemContent={renderConnectionItem} />
+        </div>
       </div>
     </BasePage>
   )
