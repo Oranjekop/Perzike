@@ -8,6 +8,7 @@ import {
 } from '../config'
 import icoIcon from '../../../build/icon.ico?asset'
 import pngIcon from '../../../build/icon.png?asset'
+import darkPngIcon from '../../../build/icon-dark.png?asset'
 import {
   mihomoChangeProxy,
   mihomoCloseConnections,
@@ -23,6 +24,7 @@ import {
   ipcMain,
   Menu,
   nativeImage,
+  nativeTheme,
   screen,
   shell,
   Tray
@@ -36,6 +38,27 @@ import { join } from 'path'
 
 export let tray: Tray | null = null
 let customTrayWindow: BrowserWindow | null = null
+
+function getTrayIcon(): Electron.NativeImage {
+  if (process.platform === 'darwin') {
+    const icon = nativeImage.createFromPath(pngIcon).resize({ height: 16 })
+    icon.setTemplateImage(true)
+    return icon
+  }
+
+  const iconPath = nativeTheme.shouldUseDarkColors
+    ? darkPngIcon
+    : process.platform === 'win32'
+      ? icoIcon
+      : pngIcon
+  return nativeImage.createFromPath(iconPath)
+}
+
+function updateTrayThemeIcon(): void {
+  tray?.setImage(getTrayIcon())
+}
+
+nativeTheme.on('updated', updateTrayThemeIcon)
 
 function formatDelayText(delay: number): string {
   if (delay === 0) {
@@ -448,17 +471,15 @@ export const buildContextMenu = async (): Promise<Menu> => {
 export async function createTray(): Promise<void> {
   const { useDockIcon = true } = await getAppConfig()
   if (process.platform === 'linux') {
-    tray = new Tray(pngIcon)
+    tray = new Tray(getTrayIcon())
     const menu = await buildContextMenu()
     tray.setContextMenu(menu)
   }
   if (process.platform === 'darwin') {
-    const icon = nativeImage.createFromPath(pngIcon).resize({ height: 16 })
-    icon.setTemplateImage(true)
-    tray = new Tray(icon)
+    tray = new Tray(getTrayIcon())
   }
   if (process.platform === 'win32') {
-    tray = new Tray(icoIcon)
+    tray = new Tray(getTrayIcon())
   }
   tray?.setToolTip('Perzike')
   tray?.setIgnoreDoubleClickEvents(true)

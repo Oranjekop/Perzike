@@ -1,19 +1,12 @@
 import { electronApp, optimizer, is } from './utils/electron-utils'
 import { registerIpcMainHandlers } from './utils/ipc'
 import windowStateKeeper from 'electron-window-state'
-import {
-  app,
-  shell,
-  BrowserWindow,
-  Menu,
-  powerMonitor,
-  ipcMain,
-  nativeTheme
-} from 'electron'
+import { app, shell, BrowserWindow, Menu, powerMonitor, ipcMain, nativeTheme } from 'electron'
 import { addOverrideItem, addProfileItem, getAppConfig, patchControledMihomoConfig } from './config'
 import { quitWithoutCore, startCore, stopCore } from './core/manager'
 import { disableSysProxySync, triggerSysProxy } from './sys/sysproxy'
 import icon from '../../build/icon.png?asset'
+import darkIcon from '../../build/icon-dark.png?asset'
 import { createTray } from './resolve/tray'
 import { createApplicationMenu } from './resolve/menu'
 import { init } from './utils/init'
@@ -56,6 +49,22 @@ function getResolvedTitleBarTheme(theme: AppTheme): 'light' | 'dark' {
   }
   return nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
 }
+
+function getRuntimeIcon(): string {
+  return nativeTheme.shouldUseDarkColors ? darkIcon : icon
+}
+
+function updateRuntimeIcon(): void {
+  if (!app.isReady()) return
+
+  if (process.platform === 'darwin') {
+    app.dock?.setIcon(getRuntimeIcon())
+  } else {
+    mainWindow?.setIcon(getRuntimeIcon())
+  }
+}
+
+nativeTheme.on('updated', updateRuntimeIcon)
 
 async function scheduleLightweightMode(): Promise<void> {
   const {
@@ -317,6 +326,7 @@ app.whenReady().then(async () => {
     optimizer.watchWindowShortcuts(window)
   })
   const appConfig = await getAppConfig()
+  nativeTheme.themeSource = appConfig.appTheme ?? 'system'
   const { showFloatingWindow: showFloating = false, disableTray = false } = appConfig
   registerIpcMainHandlers()
 
@@ -561,7 +571,7 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
             ...titleBarOverlayColors[titleBarOverlayTheme]
           },
       autoHideMenuBar: true,
-      ...(process.platform === 'linux' ? { icon: icon } : {}),
+      ...(process.platform !== 'darwin' ? { icon: getRuntimeIcon() } : {}),
       webPreferences: {
         preload: join(__dirname, '../preload/index.js'),
         spellcheck: false,
@@ -569,6 +579,7 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
         ...(is.dev ? { webSecurity: false } : {})
       }
     })
+    updateRuntimeIcon()
     mainWindowState.manage(mainWindow)
     mainWindow.on('ready-to-show', async () => {
       const { silentStart = false } = await getAppConfig()

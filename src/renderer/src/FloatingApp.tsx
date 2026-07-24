@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import appIcon from './assets/app-icon.png'
-import appIconDark from './assets/app-icon-dark.png'
+import appIconDark from '../../../build/icon-dark.png'
 import { calcTraffic } from './utils/calc'
 import { showContextMenu, triggerMainWindow } from './utils/ipc'
 import { useAppConfig } from './hooks/use-app-config'

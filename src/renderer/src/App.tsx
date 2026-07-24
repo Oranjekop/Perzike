@@ -36,7 +36,7 @@ import useSWR from 'swr'
 import ConfirmModal from '@renderer/components/base/base-confirm'
 import { notify } from '@renderer/utils/notification'
 import appIcon from '@renderer/assets/app-icon.png'
-import appIconDark from '@renderer/assets/app-icon-dark.png'
+import appIconDark from '../../../build/icon-dark.png'
 
 let navigate: NavigateFunction
 
