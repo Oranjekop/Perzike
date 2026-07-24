@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import appIcon from './assets/app-icon.png'
+import appIconDark from './assets/app-icon-dark.png'
 import { calcTraffic } from './utils/calc'
 import { showContextMenu, triggerMainWindow } from './utils/ipc'
 import { useAppConfig } from './hooks/use-app-config'
@@ -83,7 +84,13 @@ const FloatingApp: React.FC = () => {
             <img
               src={appIcon}
               alt=""
-              className="floating-icon h-full w-full object-contain p-[5px]"
+              className="floating-icon h-full w-full object-contain p-[5px] dark:hidden"
+              draggable={false}
+            />
+            <img
+              src={appIconDark}
+              alt=""
+              className="floating-icon hidden h-full w-full object-contain p-[5px] dark:block"
               draggable={false}
             />
           </div>
