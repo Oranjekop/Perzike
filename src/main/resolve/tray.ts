@@ -7,6 +7,7 @@ import {
   patchControledMihomoConfig
 } from '../config'
 import icoIcon from '../../../build/icon.ico?asset'
+import darkIcoIcon from '../../../build/icon-dark.ico?asset'
 import pngIcon from '../../../build/icon.png?asset'
 import darkPngIcon from '../../../build/icon-dark.png?asset'
 import {
@@ -47,7 +48,9 @@ function getTrayIcon(): Electron.NativeImage {
   }
 
   const iconPath = nativeTheme.shouldUseDarkColors
-    ? darkPngIcon
+    ? process.platform === 'win32'
+      ? darkIcoIcon
+      : darkPngIcon
     : process.platform === 'win32'
       ? icoIcon
       : pngIcon

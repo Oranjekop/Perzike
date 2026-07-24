@@ -6,7 +6,9 @@ import { addOverrideItem, addProfileItem, getAppConfig, patchControledMihomoConf
 import { quitWithoutCore, startCore, stopCore } from './core/manager'
 import { disableSysProxySync, triggerSysProxy } from './sys/sysproxy'
 import icon from '../../build/icon.png?asset'
+import icoIcon from '../../build/icon.ico?asset'
 import darkIcon from '../../build/icon-dark.png?asset'
+import darkIcoIcon from '../../build/icon-dark.ico?asset'
 import { createTray } from './resolve/tray'
 import { createApplicationMenu } from './resolve/menu'
 import { init } from './utils/init'
@@ -51,6 +53,9 @@ function getResolvedTitleBarTheme(theme: AppTheme): 'light' | 'dark' {
 }
 
 function getRuntimeIcon(): string {
+  if (process.platform === 'win32') {
+    return nativeTheme.shouldUseDarkColors ? darkIcoIcon : icoIcon
+  }
   return nativeTheme.shouldUseDarkColors ? darkIcon : icon
 }
 
@@ -59,6 +64,14 @@ function updateRuntimeIcon(): void {
 
   if (process.platform === 'darwin') {
     app.dock?.setIcon(getRuntimeIcon())
+  } else if (process.platform === 'win32') {
+    const runtimeIcon = getRuntimeIcon()
+    mainWindow?.setIcon(runtimeIcon)
+    mainWindow?.setAppDetails({
+      appId: 'perzike.app',
+      appIconPath: runtimeIcon,
+      appIconIndex: 0
+    })
   } else {
     mainWindow?.setIcon(getRuntimeIcon())
   }
@@ -582,6 +595,7 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
     updateRuntimeIcon()
     mainWindowState.manage(mainWindow)
     mainWindow.on('ready-to-show', async () => {
+      updateRuntimeIcon()
       const { silentStart = false } = await getAppConfig()
       if (!silentStart) {
         if (quitTimeout) {
