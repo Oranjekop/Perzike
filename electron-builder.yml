@@ -25,12 +25,13 @@ protocols:
     - 'mihomo'
     - 'perzike'
 win:
-  icon: build/icon.ico
+  icon: build/icon-dark.ico
   target:
     - nsis
     - 7z
   artifactName: ${name}-windows-${version}-${arch}-portable.${ext}
 nsis:
+  installerIcon: build/installerIcon.ico
   artifactName: ${name}-windows-${version}-${arch}-setup.${ext}
   uninstallDisplayName: ${productName}
   allowToChangeInstallationDirectory: true
