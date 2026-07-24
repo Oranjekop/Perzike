@@ -3,7 +3,7 @@ import LogItem from '@renderer/components/logs/log-item'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
 import { startTransition, useEffect, useMemo, useRef, useState } from 'react'
-import { Button, Divider, Input } from '@heroui/react'
+import { Button, Divider, Input, Select, SelectItem } from '@heroui/react'
 import { Virtuoso } from 'react-virtuoso'
 import { IoLocationSharp } from 'react-icons/io5'
 import { CgTrash } from 'react-icons/cg'
@@ -16,7 +16,6 @@ import {
   setMihomoLogMaxEntries,
   subscribeMihomoLogs
 } from '@renderer/utils/mihomo-log-store'
-import { ListBox, Select } from '@heroui-v3/react'
 import { restartMihomoLogs } from '@renderer/utils/ipc'
 import { notify } from '@renderer/utils/notification'
 
@@ -151,67 +150,27 @@ const Logs: React.FC = () => {
             <Select
               aria-label="日志等级过滤"
               className="w-24 shrink-0"
-              value={activeLogLevelFilter}
-              onChange={async (value) => {
-                if (Array.isArray(value) || value == null) return
-                if (value === activeLogLevelFilter) return
+              classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}
+              size="sm"
+              selectedKeys={new Set([activeLogLevelFilter])}
+              disallowEmptySelection
+              onSelectionChange={async (selection) => {
+                const value = selection.currentKey as LogLevel | undefined
+                if (!value || value === activeLogLevelFilter) return
 
                 try {
-                  await patchAppConfig({ realtimeLogLevel: value as LogLevel })
+                  await patchAppConfig({ realtimeLogLevel: value })
                   await restartMihomoLogs()
                 } catch (error) {
                   notify(error, { variant: 'danger' })
                 }
               }}
             >
-              <Select.Trigger className="h-8 min-h-8 rounded-lg bg-default-100 px-3 text-sm data-[hovered=true]:bg-default-200">
-                <Select.Value className="-translate-y-px" />
-                <Select.Indicator className="size-4" />
-              </Select.Trigger>
-              <Select.Popover className="min-w-0 rounded-lg">
-                <ListBox className="w-24 rounded-lg p-1 text-sm">
-                  <ListBox.Item
-                    id="silent"
-                    textValue="静默"
-                    className="min-h-8 rounded-md px-2.5 py-1.5 text-sm data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
-                  >
-                    静默
-                    <ListBox.ItemIndicator className="size-3.5" />
-                  </ListBox.Item>
-                  <ListBox.Item
-                    id="error"
-                    textValue="错误"
-                    className="min-h-8 rounded-md px-2.5 py-1.5 text-sm data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
-                  >
-                    错误
-                    <ListBox.ItemIndicator className="size-3.5" />
-                  </ListBox.Item>
-                  <ListBox.Item
-                    id="warning"
-                    textValue="警告"
-                    className="min-h-8 rounded-md px-2.5 py-1.5 text-sm data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
-                  >
-                    警告
-                    <ListBox.ItemIndicator className="size-3.5" />
-                  </ListBox.Item>
-                  <ListBox.Item
-                    id="info"
-                    textValue="信息"
-                    className="min-h-8 rounded-md px-2.5 py-1.5 text-sm data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
-                  >
-                    信息
-                    <ListBox.ItemIndicator className="size-3.5" />
-                  </ListBox.Item>
-                  <ListBox.Item
-                    id="debug"
-                    textValue="调试"
-                    className="min-h-8 rounded-md px-2.5 py-1.5 text-sm data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
-                  >
-                    调试
-                    <ListBox.ItemIndicator className="size-3.5" />
-                  </ListBox.Item>
-                </ListBox>
-              </Select.Popover>
+              <SelectItem key="silent">静默</SelectItem>
+              <SelectItem key="error">错误</SelectItem>
+              <SelectItem key="warning">警告</SelectItem>
+              <SelectItem key="info">信息</SelectItem>
+              <SelectItem key="debug">调试</SelectItem>
             </Select>
             <Button
               size="sm"
