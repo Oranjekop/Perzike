@@ -18,6 +18,14 @@ files:
 extraResources:
   - from: './extra/'
     to: ''
+  - from: './build/icon.ico'
+    to: 'runtime-icons/icon.ico'
+  - from: './build/icon-dark.ico'
+    to: 'runtime-icons/icon-dark.ico'
+  - from: './build/icon.png'
+    to: 'runtime-icons/icon.png'
+  - from: './build/icon-dark.png'
+    to: 'runtime-icons/icon-dark.png'
 protocols:
   name: 'Perzike URI Scheme'
   schemes:

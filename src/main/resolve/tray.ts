@@ -42,23 +42,46 @@ let customTrayWindow: BrowserWindow | null = null
 
 function getTrayIcon(): Electron.NativeImage {
   if (process.platform === 'darwin') {
-    const icon = nativeImage.createFromPath(pngIcon).resize({ height: 16 })
+    const iconPath = app.isPackaged
+      ? join(process.resourcesPath, 'runtime-icons', 'icon.png')
+      : pngIcon
+    const icon = nativeImage.createFromPath(iconPath).resize({ height: 16 })
     icon.setTemplateImage(true)
     return icon
   }
 
-  const iconPath = nativeTheme.shouldUseDarkColors
-    ? process.platform === 'win32'
-      ? darkIcoIcon
-      : darkPngIcon
-    : process.platform === 'win32'
-      ? icoIcon
-      : pngIcon
+  const useDarkIcon = nativeTheme.shouldUseDarkColors
+  const iconName =
+    process.platform === 'win32'
+      ? useDarkIcon
+        ? 'icon-dark.ico'
+        : 'icon.ico'
+      : useDarkIcon
+        ? 'icon-dark.png'
+        : 'icon.png'
+  const iconPath = app.isPackaged
+    ? join(process.resourcesPath, 'runtime-icons', iconName)
+    : useDarkIcon
+      ? process.platform === 'win32'
+        ? darkIcoIcon
+        : darkPngIcon
+      : process.platform === 'win32'
+        ? icoIcon
+        : pngIcon
   return nativeImage.createFromPath(iconPath)
 }
 
 function updateTrayThemeIcon(): void {
-  tray?.setImage(getTrayIcon())
+  if (!tray) return
+
+  try {
+    const icon = getTrayIcon()
+    if (!icon.isEmpty()) {
+      tray.setImage(icon)
+    }
+  } catch (error) {
+    console.error('Failed to update the tray icon:', error)
+  }
 }
 
 nativeTheme.on('updated', updateTrayThemeIcon)
@@ -473,21 +496,26 @@ export const buildContextMenu = async (): Promise<Menu> => {
 
 export async function createTray(): Promise<void> {
   const { useDockIcon = true } = await getAppConfig()
-  if (process.platform === 'linux') {
-    tray = new Tray(getTrayIcon())
-    const menu = await buildContextMenu()
-    tray.setContextMenu(menu)
+  let trayIcon: Electron.NativeImage
+  try {
+    trayIcon = getTrayIcon()
+  } catch (error) {
+    console.error('Failed to load the tray icon:', error)
+    return
   }
-  if (process.platform === 'darwin') {
-    tray = new Tray(getTrayIcon())
-  }
-  if (process.platform === 'win32') {
-    tray = new Tray(getTrayIcon())
+  if (trayIcon.isEmpty()) {
+    console.error('Failed to create the tray icon: the icon resource is empty')
+  } else {
+    tray = new Tray(trayIcon)
+    if (process.platform === 'linux') {
+      const menu = await buildContextMenu()
+      tray.setContextMenu(menu)
+    }
   }
   tray?.setToolTip('Perzike')
   tray?.setIgnoreDoubleClickEvents(true)
   if (process.platform === 'darwin') {
-    if (!useDockIcon && app.dock) {
+    if (tray && !useDockIcon && app.dock) {
       app.dock.hide()
     }
     ipcMain.on('trayIconUpdate', async (_, png: string) => {

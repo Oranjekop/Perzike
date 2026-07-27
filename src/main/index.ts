@@ -1,7 +1,16 @@
 import { electronApp, optimizer, is } from './utils/electron-utils'
 import { registerIpcMainHandlers } from './utils/ipc'
 import windowStateKeeper from 'electron-window-state'
-import { app, shell, BrowserWindow, Menu, powerMonitor, ipcMain, nativeTheme } from 'electron'
+import {
+  app,
+  shell,
+  BrowserWindow,
+  Menu,
+  powerMonitor,
+  ipcMain,
+  nativeImage,
+  nativeTheme
+} from 'electron'
 import { addOverrideItem, addProfileItem, getAppConfig, patchControledMihomoConfig } from './config'
 import { quitWithoutCore, startCore, stopCore } from './core/manager'
 import { disableSysProxySync, triggerSysProxy } from './sys/sysproxy'
@@ -53,17 +62,38 @@ function getResolvedTitleBarTheme(theme: AppTheme): 'light' | 'dark' {
 }
 
 function getRuntimeIcon(): string {
-  if (process.platform === 'win32') {
-    return nativeTheme.shouldUseDarkColors ? darkIcoIcon : icoIcon
+  const useDarkIcon = nativeTheme.shouldUseDarkColors
+
+  if (app.isPackaged) {
+    const iconName =
+      process.platform === 'win32'
+        ? useDarkIcon
+          ? 'icon-dark.ico'
+          : 'icon.ico'
+        : useDarkIcon
+          ? 'icon-dark.png'
+          : 'icon.png'
+    return join(process.resourcesPath, 'runtime-icons', iconName)
   }
-  return nativeTheme.shouldUseDarkColors ? darkIcon : icon
+
+  if (process.platform === 'win32') {
+    return useDarkIcon ? darkIcoIcon : icoIcon
+  }
+  return useDarkIcon ? darkIcon : icon
 }
 
 function updateRuntimeIcon(): void {
   if (!app.isReady()) return
 
   if (process.platform === 'darwin') {
-    app.dock?.setIcon(getRuntimeIcon())
+    try {
+      const dockIcon = nativeImage.createFromPath(getRuntimeIcon())
+      if (!dockIcon.isEmpty()) {
+        app.dock?.setIcon(dockIcon)
+      }
+    } catch (error) {
+      console.error('Failed to update the macOS dock icon:', error)
+    }
   } else if (process.platform === 'win32') {
     const runtimeIcon = getRuntimeIcon()
     mainWindow?.setIcon(runtimeIcon)
