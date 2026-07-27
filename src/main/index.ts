@@ -82,7 +82,7 @@ function getRuntimeIcon(): string {
   return useDarkIcon ? darkIcon : icon
 }
 
-function updateRuntimeIcon(): void {
+export function updateRuntimeIcon(): void {
   if (!app.isReady()) return
 
   if (process.platform === 'darwin') {

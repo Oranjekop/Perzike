@@ -71,7 +71,7 @@ function getTrayIcon(): Electron.NativeImage {
   return nativeImage.createFromPath(iconPath)
 }
 
-function updateTrayThemeIcon(): void {
+export function updateTrayThemeIcon(): void {
   if (!tray) return
 
   try {

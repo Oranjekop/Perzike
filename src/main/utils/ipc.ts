@@ -115,14 +115,21 @@ import {
   webdavRestore
 } from '../resolve/backup'
 import { getInterfaces } from '../sys/interface'
-import { closeTrayIcon, copyEnv, setDockVisible, showTrayIcon } from '../resolve/tray'
+import {
+  closeTrayIcon,
+  copyEnv,
+  setDockVisible,
+  showTrayIcon,
+  updateTrayThemeIcon
+} from '../resolve/tray'
 import { registerShortcut } from '../resolve/shortcut'
 import {
   closeMainWindow,
   mainWindow,
   setNotQuitDialog,
   showMainWindow,
-  triggerMainWindow
+  triggerMainWindow,
+  updateRuntimeIcon
 } from '..'
 import { subStoreCollections, subStoreSubs } from '../core/subStoreApi'
 import path from 'path'
@@ -360,6 +367,8 @@ export function registerIpcMainHandlers(): void {
   ipcMain.handle('getGistUrl', ipcErrorWrapper(getGistUrl))
   ipcMain.handle('setNativeTheme', (_e, theme) => {
     setNativeTheme(theme)
+    updateRuntimeIcon()
+    updateTrayThemeIcon()
   })
   ipcMain.handle('setTitleBarOverlay', (_e, overlay) =>
     ipcErrorWrapper(async (overlay): Promise<void> => {
