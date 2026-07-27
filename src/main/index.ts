@@ -95,13 +95,7 @@ export function updateRuntimeIcon(): void {
       console.error('Failed to update the macOS dock icon:', error)
     }
   } else if (process.platform === 'win32') {
-    const runtimeIcon = getRuntimeIcon()
-    mainWindow?.setIcon(runtimeIcon)
-    mainWindow?.setAppDetails({
-      appId: 'perzike.app',
-      appIconPath: runtimeIcon,
-      appIconIndex: 0
-    })
+    mainWindow?.setIcon(getRuntimeIcon())
   } else {
     mainWindow?.setIcon(getRuntimeIcon())
   }

@@ -33,7 +33,7 @@ protocols:
     - 'mihomo'
     - 'perzike'
 win:
-  icon: build/icon-dark.ico
+  icon: build/icon.ico
   target:
     - nsis
     - 7z
