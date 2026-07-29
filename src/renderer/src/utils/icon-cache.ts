@@ -3,6 +3,8 @@ const ICON_CACHE_KEY_PREFIX = 'icon_'
 const ICON_CACHE_INDEX_KEY = 'icon_cache_index'
 
 export function saveIconToCache(path: string, dataURL: string): void {
+  if (path === 'mihomo') return
+
   try {
     const indexStr = localStorage.getItem(ICON_CACHE_INDEX_KEY)
     const index: string[] = indexStr ? JSON.parse(indexStr) : []
@@ -42,6 +44,11 @@ export function saveIconToCache(path: string, dataURL: string): void {
 
 export function getIconFromCache(path: string): string | null {
   try {
+    if (path === 'mihomo') {
+      localStorage.removeItem(ICON_CACHE_KEY_PREFIX + path)
+      return null
+    }
+
     const dataURL = localStorage.getItem(ICON_CACHE_KEY_PREFIX + path)
     if (dataURL) {
       const indexStr = localStorage.getItem(ICON_CACHE_INDEX_KEY)
