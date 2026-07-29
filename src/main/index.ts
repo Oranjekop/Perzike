@@ -16,8 +16,6 @@ import { quitWithoutCore, startCore, stopCore } from './core/manager'
 import { disableSysProxySync, triggerSysProxy } from './sys/sysproxy'
 import icon from '../../build/icon.png?asset'
 import icoIcon from '../../build/icon.ico?asset'
-import darkIcon from '../../build/icon-dark.png?asset'
-import darkIcoIcon from '../../build/icon-dark.ico?asset'
 import { createTray } from './resolve/tray'
 import { createApplicationMenu } from './resolve/menu'
 import { init } from './utils/init'
@@ -62,24 +60,15 @@ function getResolvedTitleBarTheme(theme: AppTheme): 'light' | 'dark' {
 }
 
 function getRuntimeIcon(): string {
-  const useDarkIcon = nativeTheme.shouldUseDarkColors
-
   if (app.isPackaged) {
-    const iconName =
-      process.platform === 'win32'
-        ? useDarkIcon
-          ? 'icon-dark.ico'
-          : 'icon.ico'
-        : useDarkIcon
-          ? 'icon-dark.png'
-          : 'icon.png'
+    const iconName = process.platform === 'win32' ? 'icon.ico' : 'icon.png'
     return join(process.resourcesPath, 'runtime-icons', iconName)
   }
 
   if (process.platform === 'win32') {
-    return useDarkIcon ? darkIcoIcon : icoIcon
+    return icoIcon
   }
-  return useDarkIcon ? darkIcon : icon
+  return icon
 }
 
 export function updateRuntimeIcon(): void {
@@ -100,8 +89,6 @@ export function updateRuntimeIcon(): void {
     mainWindow?.setIcon(getRuntimeIcon())
   }
 }
-
-nativeTheme.on('updated', updateRuntimeIcon)
 
 async function scheduleLightweightMode(): Promise<void> {
   const {

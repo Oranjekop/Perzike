@@ -36,7 +36,6 @@ import useSWR from 'swr'
 import ConfirmModal from '@renderer/components/base/base-confirm'
 import { notify } from '@renderer/utils/notification'
 import appIcon from '@renderer/assets/app-icon.png'
-import appIconDark from '../../../build/icon-dark.png'
 
 let navigate: NavigateFunction
 
@@ -436,8 +435,7 @@ const App: React.FC = () => {
               className={`flex justify-between p-2 ${!useWindowFrame && platform === 'darwin' ? 'ml-15' : ''}`}
             >
               <div className="app-brand flex ml-1 items-center gap-2">
-                <img className="app-brand-mark dark:hidden" src={appIcon} alt="" />
-                <img className="app-brand-mark hidden dark:block" src={appIconDark} alt="" />
+                <img className="app-brand-mark" src={appIcon} alt="" />
                 <div className="app-brand-copy">
                   <h3 className="text-lg font-semibold leading-5">Perzike</h3>
                 </div>
