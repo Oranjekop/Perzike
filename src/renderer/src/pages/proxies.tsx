@@ -584,7 +584,7 @@ const Proxies: React.FC = () => {
                     {proxies.map((proxy) => {
                       const isSelected = proxy.name === group.now
                       return (
-                        <div key={proxy.name} data-selected={isSelected}>
+                        <div key={proxy.name} data-selected={isSelected} className="h-full">
                           <ProxyItem
                             mutateProxies={mutate}
                             onProxyDelay={onProxyDelay}
