@@ -293,7 +293,10 @@ label:not([data-selected='true']) > input[type='radio'] + span {
 
 .app-toast-region [data-slot='toast'] {
   max-width: 100%;
-  overflow: hidden;
+}
+
+.app-toast-region [data-slot='toast'][data-frontmost='true'] {
+  overflow: visible;
 }
 
 .app-toast-region [data-slot='toast-content'] {
