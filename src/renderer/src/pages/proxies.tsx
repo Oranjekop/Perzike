@@ -491,7 +491,7 @@ const Proxies: React.FC = () => {
 
   const cardContent = useMemo(
     () => (
-      <div ref={cardListRef} className="proxy-group-card-list grid gap-3 p-2">
+      <div ref={cardListRef} className="proxy-group-card-list grid gap-2 p-2">
         {visibleGroups.map((group, groupIndex) => {
           const groupSearchValue = searchValueMap.get(group.name) ?? ''
           const isGroupDelaying = delaying.get(group.name) ?? false
