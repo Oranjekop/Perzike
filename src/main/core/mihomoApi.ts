@@ -42,16 +42,10 @@ function closeWebSocket(ws: WebSocket): void {
 export const getAxios = async (force: boolean = false): Promise<AxiosInstance> => {
   const { corePermissionMode = 'elevated' } = await getAppConfig()
   const nextMode = corePermissionMode === 'service' ? 'service' : 'direct'
-  const currentSocketPath = nextMode === 'service' ? serviceIpcPath() : mihomoIpcPath()
   const currentBaseURL =
     nextMode === 'service' ? 'http://localhost/core/controller' : 'http://localhost'
 
-  if (
-    axiosIns &&
-    (axiosIns.defaults.socketPath !== currentSocketPath ||
-      axiosIns.defaults.baseURL !== currentBaseURL ||
-      axiosMode !== nextMode)
-  ) {
+  if (axiosIns && (axiosIns.defaults.baseURL !== currentBaseURL || axiosMode !== nextMode)) {
     force = true
   }
 
@@ -63,7 +57,7 @@ export const getAxios = async (force: boolean = false): Promise<AxiosInstance> =
   } else {
     axiosIns = axios.create({
       baseURL: currentBaseURL,
-      socketPath: currentSocketPath,
+      socketPath: mihomoIpcPath(),
       timeout: 15000
     })
 

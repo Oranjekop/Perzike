@@ -16,7 +16,7 @@ import {
   saveFileStrWithElevation,
   setFileStr
 } from '@renderer/utils/ipc'
-import yaml from 'js-yaml'
+import { dump, load } from 'js-yaml'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import ConfirmModal from '../base/base-confirm'
 import { notify } from '@renderer/utils/notification'
@@ -43,7 +43,7 @@ function getViewerContent(
   title: string
 ): string {
   try {
-    const parsedYaml = yaml.load(fileContent)
+    const parsedYaml = load(fileContent)
     if (!parsedYaml || typeof parsedYaml !== 'object') {
       return fileContent
     }
@@ -51,11 +51,11 @@ function getViewerContent(
     const yamlObj = parsedYaml as Record<string, unknown>
     const payload = yamlObj[privderType]?.[title]?.payload
     if (payload) {
-      return yaml.dump(privderType === 'proxy-providers' ? { proxies: payload } : { rules: payload })
+      return dump(privderType === 'proxy-providers' ? { proxies: payload } : { rules: payload })
     }
 
     const targetObj = yamlObj[privderType]?.[title]
-    return targetObj ? yaml.dump(targetObj) : fileContent
+    return targetObj ? dump(targetObj) : fileContent
   } catch {
     return fileContent
   }

@@ -103,12 +103,13 @@ export async function getAppConfig(force = false): Promise<AppConfig> {
 
 export async function patchAppConfig(patch: Partial<AppConfig>): Promise<void> {
   const previousPromise = writePromise
-  writePromise = (async () => {
+  const currentPromise = (async () => {
     await previousPromise
     appConfig = deepMerge(appConfig, patch)
     await safeWriteConfig(stringifyYaml(encryptConfig(appConfig)))
   })()
-  await writePromise
+  writePromise = currentPromise.catch(() => {})
+  await currentPromise
 }
 
 export async function deleteProxyGroupState(profileId: string): Promise<void> {
