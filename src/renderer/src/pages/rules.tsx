@@ -22,8 +22,8 @@ const Rules: React.FC = () => {
   }, [rules, filter])
 
   return (
-    <BasePage title="分流规则">
-      <div className="sticky top-0 z-40">
+    <BasePage title="分流规则" contentClassName="flex min-h-0 flex-col overflow-y-hidden">
+      <div className="sticky top-0 z-40 shrink-0">
         <div className="flex p-2">
           <Input
             size="sm"
@@ -35,12 +35,10 @@ const Rules: React.FC = () => {
         </div>
         <Divider />
       </div>
-      <div className="h-[calc(100vh-100px)] mt-px">
-        <div className="h-full overflow-y-auto">
-          {filteredRules.map((rule, i) => (
-            <RuleItem key={`${rule.type}-${rule.payload}-${i}`} index={i} rule={rule} />
-          ))}
-        </div>
+      <div className="mt-px min-h-0 flex-1 overflow-y-auto">
+        {filteredRules.map((rule, i) => (
+          <RuleItem key={`${rule.type}-${rule.payload}-${i}`} index={i} rule={rule} />
+        ))}
       </div>
     </BasePage>
   )

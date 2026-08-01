@@ -630,6 +630,7 @@ const Proxies: React.FC = () => {
   return (
     <BasePage
       title="代理组"
+      contentClassName={!isCardMode ? 'overflow-y-hidden' : undefined}
       header={
         <Button
           size="sm"
@@ -654,7 +655,7 @@ const Proxies: React.FC = () => {
       ) : isCardMode ? (
         cardContent
       ) : (
-        <div className="h-full">
+        <div className="h-full min-h-0">
           <Virtuoso
             ref={virtuosoRef}
             data={rows}
