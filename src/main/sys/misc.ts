@@ -1,4 +1,4 @@
-import { exec, execFile, execSync, spawn } from 'child_process'
+import { exec, execSync, spawn } from 'child_process'
 import { app, dialog, nativeTheme, shell } from 'electron'
 import { readFile } from 'fs/promises'
 import path from 'path'
@@ -9,12 +9,11 @@ import {
   mihomoCorePath,
   overridePath,
   profilePath,
-  resourcesDir,
   resourcesFilesDir,
   taskDir
 } from '../utils/dirs'
 import { copyFileSync, writeFileSync } from 'fs'
-import { execWithElevation } from '../utils/elevation'
+import { execWithElevation, startProcessWithElevation } from '../utils/elevation'
 
 export function getFilePath(ext: string[]): string[] | undefined {
   return dialog.showOpenDialogSync({
@@ -38,9 +37,8 @@ export function openFile(type: 'profile' | 'override', id: string, ext?: 'yaml' 
 }
 
 export async function openUWPTool(): Promise<void> {
-  const execFilePromise = promisify(execFile)
-  const uwpToolPath = path.join(resourcesDir(), 'files', 'enableLoopback.exe')
-  await execFilePromise(uwpToolPath)
+  const uwpToolPath = path.join(resourcesFilesDir(), 'enableLoopback.exe')
+  await startProcessWithElevation(uwpToolPath, [])
 }
 
 export async function setupFirewall(): Promise<void> {

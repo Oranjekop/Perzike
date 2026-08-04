@@ -171,7 +171,11 @@ const Sysproxy: React.FC = () => {
               size="sm"
               color="primary"
               onPress={async () => {
-                await openUWPTool()
+                try {
+                  await openUWPTool()
+                } catch (error) {
+                  notify(error, { variant: 'danger' })
+                }
               }}
             >
               打开 UWP 工具
