@@ -14,7 +14,7 @@ import {
   taskDir
 } from '../utils/dirs'
 import { copyFileSync, writeFileSync } from 'fs'
-import { execWithElevation } from '../utils/elevation'
+import { execWithElevation, startProcessWithElevation } from '../utils/elevation'
 
 export function getFilePath(ext: string[]): string[] | undefined {
   return dialog.showOpenDialogSync({
@@ -40,7 +40,17 @@ export function openFile(type: 'profile' | 'override', id: string, ext?: 'yaml' 
 export async function openUWPTool(): Promise<void> {
   const execFilePromise = promisify(execFile)
   const uwpToolPath = path.join(resourcesDir(), 'files', 'enableLoopback.exe')
-  await execFilePromise(uwpToolPath)
+
+  try {
+    await execFilePromise(uwpToolPath)
+  } catch (error) {
+    const errorCode = error && typeof error === 'object' && 'code' in error ? error.code : undefined
+    if (process.platform !== 'win32' || errorCode !== 'EACCES') {
+      throw error
+    }
+
+    await startProcessWithElevation(uwpToolPath, [])
+  }
 }
 
 export async function setupFirewall(): Promise<void> {
