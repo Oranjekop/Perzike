@@ -20,13 +20,7 @@ import { notify } from '@renderer/utils/notification'
 import dayjs from 'dayjs'
 import React, { Key, useMemo, useState } from 'react'
 import useSWR from 'swr'
-import {
-  IoCalendarOutline,
-  IoChevronForward,
-  IoRefresh,
-  IoStatsChartOutline,
-  IoTrashOutline
-} from 'react-icons/io5'
+import { IoChevronForward, IoRefresh, IoTrashOutline } from 'react-icons/io5'
 
 const periods: Array<{ key: TrafficStatsPeriod; label: string }> = [
   { key: 'today', label: '今日' },
@@ -126,6 +120,7 @@ const TrafficStats: React.FC = () => {
           <Button
             size="sm"
             isIconOnly
+            className="app-nodrag"
             variant="light"
             title="刷新统计"
             onPress={() => void mutate()}
@@ -135,8 +130,8 @@ const TrafficStats: React.FC = () => {
           <Button
             size="sm"
             isIconOnly
+            className="app-nodrag"
             variant="light"
-            color="danger"
             title="清空历史"
             isLoading={clearing}
             onPress={() => void handleClear()}
@@ -148,13 +143,10 @@ const TrafficStats: React.FC = () => {
     >
       <div className="flex w-full flex-col gap-2 p-2">
         <Card fullWidth className="border border-default-200/70 bg-content1">
-          <CardBody className="gap-3 p-3 md:p-4">
+          <CardBody className="gap-3 p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <div className="flex items-center gap-2 text-sm font-semibold">
-                  <IoCalendarOutline className="text-primary" />
-                  时间段
-                </div>
+                <div className="text-sm font-semibold">时间段</div>
                 <p className="mt-1 text-xs text-foreground-500">
                   数据按本地日期保存，最多保留 400 天
                 </p>
@@ -181,10 +173,7 @@ const TrafficStats: React.FC = () => {
             <Divider />
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <div className="flex items-center gap-2 text-sm font-semibold">
-                  <IoStatsChartOutline className="text-primary" />
-                  分组方式
-                </div>
+                <div className="text-sm font-semibold">分组方式</div>
                 <p className="mt-1 text-xs text-foreground-500">点击列表项可查看该分组的三维明细</p>
               </div>
               <Tabs
@@ -226,9 +215,6 @@ const TrafficStats: React.FC = () => {
                   <div className="mt-1 text-3xl font-bold tracking-tight">
                     {isLoading ? '—' : calcTraffic(data?.total || 0)}
                   </div>
-                </div>
-                <div className="rounded-xl bg-primary/15 p-2.5 text-primary">
-                  <IoStatsChartOutline className="text-2xl" />
                 </div>
               </div>
               <div className="mt-5 grid grid-cols-2 gap-4">
@@ -334,14 +320,12 @@ const TrafficStats: React.FC = () => {
 
       <Modal
         isOpen={selectedKey !== undefined}
-        onOpenChange={(open) => {
-          if (!open) setSelectedKey(undefined)
-        }}
+        onOpenChange={() => setSelectedKey(undefined)}
         size="lg"
         scrollBehavior="inside"
         disableAnimation={disableAnimation}
         backdrop={disableAnimation ? 'transparent' : 'blur'}
-        classNames={{ backdrop: 'top-[48px]' }}
+        classNames={{ backdrop: 'top-[48px]', closeButton: 'app-nodrag' }}
       >
         <ModalContent>
           <ModalHeader className="flex flex-col gap-1 app-drag">
@@ -399,7 +383,11 @@ const TrafficStats: React.FC = () => {
             )}
           </ModalBody>
           <ModalFooter>
-            <Button variant="light" onPress={() => setSelectedKey(undefined)}>
+            <Button
+              className="app-nodrag"
+              variant="light"
+              onPress={() => setSelectedKey(undefined)}
+            >
               关闭
             </Button>
           </ModalFooter>
