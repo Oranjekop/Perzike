@@ -71,7 +71,7 @@ const SummaryMetric: React.FC<SummaryMetricProps> = ({
     </div>
     <div
       className={`${compact ? 'mt-0.5 text-base sm:text-lg' : 'mt-1 text-lg'} truncate font-semibold ${
-        tone === 'up' ? 'text-primary' : tone === 'down' ? 'text-secondary' : 'text-foreground'
+        tone === 'up' ? 'text-success' : tone === 'down' ? 'text-primary' : 'text-foreground'
       }`}
     >
       {value}
@@ -229,7 +229,7 @@ const TrafficStats: React.FC = () => {
                     {formatUpdatedAt(data?.updatedAt)}
                   </div>
                 </div>
-                <div className="mt-3 grid grid-cols-4 gap-3">
+                <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
                   <SummaryMetric
                     label="上传"
                     value={calcTraffic(data?.upload || 0)}
@@ -344,7 +344,8 @@ const TrafficStats: React.FC = () => {
         scrollBehavior="inside"
         disableAnimation={disableAnimation}
         backdrop={disableAnimation ? 'transparent' : 'blur'}
-        classNames={{ backdrop: 'top-[48px]', closeButton: 'app-nodrag' }}
+        hideCloseButton
+        classNames={{ backdrop: 'top-[48px]' }}
       >
         <ModalContent>
           <ModalHeader className="flex flex-col gap-1 app-drag">
