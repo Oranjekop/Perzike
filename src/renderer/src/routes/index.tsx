@@ -6,6 +6,7 @@ import Settings from '@renderer/pages/settings'
 import Profiles from '@renderer/pages/profiles'
 import Logs from '@renderer/pages/logs'
 import Connections from '@renderer/pages/connections'
+import TrafficStats from '@renderer/pages/traffic'
 import Mihomo from '@renderer/pages/mihomo'
 import Sysproxy from '@renderer/pages/syspeoxy'
 import Tun from '@renderer/pages/tun'
@@ -53,6 +54,10 @@ const routes = [
   {
     path: '/connections',
     element: <Connections />
+  },
+  {
+    path: '/traffic',
+    element: <TrafficStats />
   },
   {
     path: '/override',

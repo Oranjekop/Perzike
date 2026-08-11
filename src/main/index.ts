@@ -33,6 +33,7 @@ import iconv from 'iconv-lite'
 import { getAppConfigSync } from './config/app'
 import { getUserAgent } from './utils/userAgent'
 import { showNotification } from './utils/notification'
+import { flushTrafficStats } from './resolve/trafficStats'
 
 let quitTimeout: NodeJS.Timeout | null = null
 export let mainWindow: BrowserWindow | null = null
@@ -281,6 +282,7 @@ app.on('before-quit', async (e) => {
         clearTimeout(quitTimeout)
         quitTimeout = null
       }
+      await flushTrafficStats()
       await triggerSysProxy(false, false)
       await stopCore()
       exitApp()
@@ -296,6 +298,7 @@ app.on('before-quit', async (e) => {
         clearTimeout(quitTimeout)
         quitTimeout = null
       }
+      await flushTrafficStats()
       await triggerSysProxy(false, false)
       await stopCore()
       exitApp()
@@ -306,6 +309,7 @@ app.on('before-quit', async (e) => {
       clearTimeout(quitTimeout)
       quitTimeout = null
     }
+    await flushTrafficStats()
     await triggerSysProxy(false, false)
     await stopCore()
     exitApp()
@@ -317,6 +321,7 @@ powerMonitor.on('shutdown', async () => {
     clearTimeout(quitTimeout)
     quitTimeout = null
   }
+  await flushTrafficStats()
   await triggerSysProxy(false, false, true)
   await stopCore()
   exitApp()

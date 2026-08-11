@@ -251,6 +251,29 @@ export async function restartMihomoConnections(): Promise<void> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('restartMihomoConnections'))
 }
 
+export async function getTrafficStats(
+  period: TrafficStatsPeriod = 'today',
+  groupBy: TrafficStatsGroupBy = 'host'
+): Promise<TrafficStatsResult> {
+  return ipcErrorWrapper(
+    await window.electron.ipcRenderer.invoke('getTrafficStats', period, groupBy)
+  )
+}
+
+export async function getTrafficStatsDetail(
+  period: TrafficStatsPeriod,
+  groupBy: TrafficStatsGroupBy,
+  key: string
+): Promise<TrafficStatsDetailResult> {
+  return ipcErrorWrapper(
+    await window.electron.ipcRenderer.invoke('getTrafficStatsDetail', period, groupBy, key)
+  )
+}
+
+export async function clearTrafficStats(): Promise<void> {
+  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('clearTrafficStats'))
+}
+
 export async function startMonitor(): Promise<void> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('startMonitor'))
 }

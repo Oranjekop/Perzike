@@ -1,5 +1,5 @@
 import { useTheme } from 'next-themes'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavigateFunction, useLocation, useNavigate, useRoutes } from 'react-router-dom'
 import OutboundModeSwitcher from '@renderer/components/sider/outbound-mode-switcher'
 import SysproxySwitcher from '@renderer/components/sider/sysproxy-switcher'
@@ -23,6 +23,7 @@ import DNSCard from '@renderer/components/sider/dns-card'
 import SniffCard from '@renderer/components/sider/sniff-card'
 import OverrideCard from '@renderer/components/sider/override-card'
 import ConnCard from '@renderer/components/sider/conn-card'
+import TrafficCard from '@renderer/components/sider/traffic-card'
 import LogCard from '@renderer/components/sider/log-card'
 import MihomoCoreCard from '@renderer/components/sider/mihomo-core-card'
 import ResourceCard from '@renderer/components/sider/resource-card'
@@ -49,6 +50,7 @@ const defaultSiderOrder = [
   'proxy',
   'connection',
   'profile',
+  'traffic',
   'mihomo',
   'rule',
   'resource',
@@ -64,6 +66,7 @@ const siderCardRouteMap = {
   'proxy-card': '/proxies',
   'mihomo-core-card': '/mihomo',
   'conn-card': '/connections',
+  'traffic-card': '/traffic',
   'dns-card': '/dns',
   'sniff-card': '/sniffer',
   'log-card': '/logs',
@@ -98,7 +101,14 @@ const App: React.FC = () => {
     updateChannel = 'stable',
     disableAnimation = false
   } = appConfig || {}
-  const siderOrderArray = siderOrder ?? defaultSiderOrder
+  const siderOrderArray = useMemo(
+    () => {
+      if (!siderOrder) return defaultSiderOrder
+      if (siderOrder.length === 0 || siderOrder.includes('traffic')) return siderOrder
+      return [...siderOrder, 'traffic']
+    },
+    [siderOrder]
+  )
   const narrowWidth = platform === 'darwin' ? 70 : 60
   const [order, setOrder] = useState(siderOrderArray)
   const [siderWidthValue, setSiderWidthValue] = useState(siderWidth)
@@ -217,6 +227,7 @@ const App: React.FC = () => {
     proxy: ProxyCard,
     mihomo: MihomoCoreCard,
     connection: ConnCard,
+    traffic: TrafficCard,
     dns: DNSCard,
     sniff: SniffCard,
     log: LogCard,

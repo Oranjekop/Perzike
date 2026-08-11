@@ -135,6 +135,7 @@ import { getAppName } from './appName'
 import { getUserAgent } from './userAgent'
 import { appendAppLog, clearCachedMihomoLogs, getCachedMihomoLogs } from './log'
 import { showNotification } from './notification'
+import { clearTrafficStats, getTrafficStats, getTrafficStatsDetail } from '../resolve/trafficStats'
 
 function ipcErrorWrapper<T>( // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fn: (...args: any[]) => Promise<T> // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -265,6 +266,13 @@ export function registerIpcMainHandlers(): void {
   ipcMain.handle('restartCore', ipcErrorWrapper(restartCore))
   ipcMain.handle('stopCore', ipcErrorWrapper(stopCore))
   ipcMain.handle('restartMihomoConnections', ipcErrorWrapper(restartMihomoConnections))
+  ipcMain.handle('getTrafficStats', (_e, period, groupBy) =>
+    ipcErrorWrapper(async () => getTrafficStats(period, groupBy))()
+  )
+  ipcMain.handle('getTrafficStatsDetail', (_e, period, groupBy, key) =>
+    ipcErrorWrapper(async () => getTrafficStatsDetail(period, groupBy, key))()
+  )
+  ipcMain.handle('clearTrafficStats', ipcErrorWrapper(clearTrafficStats))
   ipcMain.handle('startMonitor', (_e, detached) => ipcErrorWrapper(startMonitor)(detached))
   ipcMain.handle('triggerSysProxy', (_e, enable, onlyActiveDevice, useRegistry) =>
     ipcErrorWrapper(triggerSysProxy)(enable, onlyActiveDevice, useRegistry)
