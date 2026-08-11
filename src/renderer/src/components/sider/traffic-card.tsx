@@ -12,7 +12,7 @@ interface Props {
 
 const TrafficCard: React.FC<Props> = ({ iconOnly }) => {
   const { appConfig } = useAppConfig()
-  const { trafficCardStatus = 'col-span-2', disableAnimation = false } = appConfig || {}
+  const { trafficCardStatus = 'col-span-1', disableAnimation = false } = appConfig || {}
   const location = useLocation()
   const navigate = useNavigate()
   const match = location.pathname.includes('/traffic')

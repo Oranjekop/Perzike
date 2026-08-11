@@ -30,7 +30,7 @@ const SiderConfig: React.FC = () => {
     resourceCardStatus = 'col-span-1',
     overrideCardStatus = 'col-span-1',
     connectionCardStatus = 'col-span-2',
-    trafficCardStatus = 'col-span-2',
+    trafficCardStatus = 'col-span-1',
     mihomoCoreCardStatus = 'col-span-2',
     dnsCardStatus = 'col-span-1',
     sniffCardStatus = 'col-span-1',

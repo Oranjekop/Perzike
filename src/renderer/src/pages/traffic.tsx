@@ -3,6 +3,8 @@ import {
   Card,
   CardBody,
   Divider,
+  Tab,
+  Tabs,
   Modal,
   ModalBody,
   ModalContent,
@@ -16,7 +18,7 @@ import { calcTraffic } from '@renderer/utils/calc'
 import { clearTrafficStats, getTrafficStats, getTrafficStatsDetail } from '@renderer/utils/ipc'
 import { notify } from '@renderer/utils/notification'
 import dayjs from 'dayjs'
-import React, { useMemo, useState } from 'react'
+import React, { Key, useMemo, useState } from 'react'
 import useSWR from 'swr'
 import {
   IoCalendarOutline,
@@ -144,8 +146,8 @@ const TrafficStats: React.FC = () => {
         </>
       }
     >
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 p-3 md:p-4">
-        <Card shadow="none" className="border border-divider bg-content1/80">
+      <div className="flex w-full flex-col gap-2 p-2">
+        <Card fullWidth className="border border-default-200/70 bg-content1">
           <CardBody className="gap-3 p-3 md:p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -157,27 +159,24 @@ const TrafficStats: React.FC = () => {
                   数据按本地日期保存，最多保留 400 天
                 </p>
               </div>
-              <div className="flex rounded-xl bg-content2 p-1" role="tablist" aria-label="时间段">
+              <Tabs
+                size="sm"
+                color="primary"
+                selectedKey={period}
+                className="w-fit shrink-0"
+                classNames={{
+                  cursor: 'bg-primary',
+                  tabContent: 'group-data-[selected=true]:text-primary-foreground'
+                }}
+                onSelectionChange={(key: Key) => {
+                  setPeriod(key as TrafficStatsPeriod)
+                  setSelectedKey(undefined)
+                }}
+              >
                 {periods.map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    role="tab"
-                    aria-selected={period === item.key}
-                    className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
-                      period === item.key
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-foreground-500 hover:text-foreground'
-                    }`}
-                    onClick={() => {
-                      setPeriod(item.key)
-                      setSelectedKey(undefined)
-                    }}
-                  >
-                    {item.label}
-                  </button>
+                  <Tab key={item.key} title={item.label} />
                 ))}
-              </div>
+              </Tabs>
             </div>
             <Divider />
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -188,33 +187,30 @@ const TrafficStats: React.FC = () => {
                 </div>
                 <p className="mt-1 text-xs text-foreground-500">点击列表项可查看该分组的三维明细</p>
               </div>
-              <div className="flex rounded-xl bg-content2 p-1" role="tablist" aria-label="分组方式">
+              <Tabs
+                size="sm"
+                color="primary"
+                selectedKey={groupBy}
+                className="w-fit shrink-0"
+                classNames={{
+                  cursor: 'bg-primary',
+                  tabContent: 'group-data-[selected=true]:text-primary-foreground'
+                }}
+                onSelectionChange={(key: Key) => {
+                  setGroupBy(key as TrafficStatsGroupBy)
+                  setSelectedKey(undefined)
+                }}
+              >
                 {groupings.map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    role="tab"
-                    aria-selected={groupBy === item.key}
-                    className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
-                      groupBy === item.key
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-foreground-500 hover:text-foreground'
-                    }`}
-                    onClick={() => {
-                      setGroupBy(item.key)
-                      setSelectedKey(undefined)
-                    }}
-                  >
-                    {item.label}
-                  </button>
+                  <Tab key={item.key} title={item.label} />
                 ))}
-              </div>
+              </Tabs>
             </div>
           </CardBody>
         </Card>
 
         {error && (
-          <Card shadow="none" className="border border-danger/30 bg-danger/10">
+          <Card fullWidth shadow="none" className="border border-danger/30 bg-danger/10">
             <CardBody className="p-4 text-sm text-danger">
               流量统计读取失败：{String(error)}
             </CardBody>
@@ -222,7 +218,7 @@ const TrafficStats: React.FC = () => {
         )}
 
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.2fr)]">
-          <Card shadow="none" className="border border-divider bg-content1/80">
+          <Card fullWidth className="border border-default-200/70 bg-content1">
             <CardBody className="p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -250,7 +246,7 @@ const TrafficStats: React.FC = () => {
             </CardBody>
           </Card>
 
-          <Card shadow="none" className="border border-divider bg-content1/80">
+          <Card fullWidth className="border border-default-200/70 bg-content1">
             <CardBody className="p-4">
               <div className="flex items-center justify-between gap-2">
                 <div>
@@ -291,7 +287,7 @@ const TrafficStats: React.FC = () => {
           </Card>
         </div>
 
-        <Card shadow="none" className="border border-divider bg-content1/80">
+        <Card fullWidth className="border border-default-200/70 bg-content1">
           <CardBody className="p-0">
             <div className="flex items-center justify-between gap-3 px-4 py-3">
               <div>
