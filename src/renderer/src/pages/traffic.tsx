@@ -56,13 +56,21 @@ interface SummaryMetricProps {
   label: string
   value: string
   tone?: 'default' | 'up' | 'down'
+  compact?: boolean
 }
 
-const SummaryMetric: React.FC<SummaryMetricProps> = ({ label, value, tone = 'default' }) => (
+const SummaryMetric: React.FC<SummaryMetricProps> = ({
+  label,
+  value,
+  tone = 'default',
+  compact = false
+}) => (
   <div className="min-w-0">
-    <div className="text-xs text-foreground-500">{label}</div>
+    <div className={compact ? 'text-[11px] text-foreground-500' : 'text-xs text-foreground-500'}>
+      {label}
+    </div>
     <div
-      className={`mt-1 truncate text-lg font-semibold ${
+      className={`${compact ? 'mt-0.5 text-base sm:text-lg' : 'mt-1 text-lg'} truncate font-semibold ${
         tone === 'up' ? 'text-primary' : tone === 'down' ? 'text-secondary' : 'text-foreground'
       }`}
     >
@@ -206,72 +214,83 @@ const TrafficStats: React.FC = () => {
           </Card>
         )}
 
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.2fr)]">
-          <Card fullWidth className="border border-default-200/70 bg-content1">
-            <CardBody className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-sm text-foreground-500">总流量</div>
-                  <div className="mt-1 text-3xl font-bold tracking-tight">
-                    {isLoading ? '—' : calcTraffic(data?.total || 0)}
+        <Card fullWidth className="border border-default-200/70 bg-content1">
+          <CardBody className="p-4">
+            <div className="grid gap-4 md:grid-cols-[minmax(250px,0.8fr)_minmax(0,1.2fr)] md:gap-5">
+              <div className="min-w-0">
+                <div className="flex items-end justify-between gap-3">
+                  <div>
+                    <div className="text-xs text-foreground-500">总流量</div>
+                    <div className="mt-0.5 text-2xl font-bold tracking-tight">
+                      {isLoading ? '—' : calcTraffic(data?.total || 0)}
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right text-[11px] text-foreground-500">
+                    {formatUpdatedAt(data?.updatedAt)}
                   </div>
                 </div>
-              </div>
-              <div className="mt-5 grid grid-cols-2 gap-4">
-                <SummaryMetric label="上传" value={calcTraffic(data?.upload || 0)} tone="up" />
-                <SummaryMetric label="下载" value={calcTraffic(data?.download || 0)} tone="down" />
-                <SummaryMetric label="请求数" value={`${data?.requests || 0}`} />
-                <SummaryMetric
-                  label="统计范围"
-                  value={periods.find((item) => item.key === period)?.label || ''}
-                />
-              </div>
-              <div className="mt-5 text-xs text-foreground-500">
-                {formatUpdatedAt(data?.updatedAt)}
-              </div>
-            </CardBody>
-          </Card>
-
-          <Card fullWidth className="border border-default-200/70 bg-content1">
-            <CardBody className="p-4">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <div className="text-sm font-semibold">每日流量</div>
-                  <div className="mt-1 text-xs text-foreground-500">上传与下载合计</div>
+                <div className="mt-3 grid grid-cols-4 gap-3">
+                  <SummaryMetric
+                    label="上传"
+                    value={calcTraffic(data?.upload || 0)}
+                    tone="up"
+                    compact
+                  />
+                  <SummaryMetric
+                    label="下载"
+                    value={calcTraffic(data?.download || 0)}
+                    tone="down"
+                    compact
+                  />
+                  <SummaryMetric label="请求数" value={`${data?.requests || 0}`} compact />
+                  <SummaryMetric
+                    label="统计范围"
+                    value={periods.find((item) => item.key === period)?.label || ''}
+                    compact
+                  />
                 </div>
-                <div className="text-xs text-foreground-500">{daily.length} 天</div>
               </div>
-              <div className="mt-4 flex h-32 items-end gap-1.5 overflow-hidden">
-                {daily.map((item) => {
-                  const height = Math.max(5, Math.round((item.total / maxDailyTotal) * 100))
-                  return (
-                    <div
-                      key={item.date}
-                      className="group flex h-full min-w-0 flex-1 flex-col justify-end"
-                    >
+
+              <div className="min-w-0 border-t border-divider pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <div className="text-sm font-semibold">每日流量</div>
+                    <div className="mt-0.5 text-[11px] text-foreground-500">上传与下载合计</div>
+                  </div>
+                  <div className="text-[11px] text-foreground-500">{daily.length} 天</div>
+                </div>
+                <div className="mt-3 flex h-24 items-end gap-1.5 overflow-hidden sm:h-28">
+                  {daily.map((item) => {
+                    const height = Math.max(5, Math.round((item.total / maxDailyTotal) * 100))
+                    return (
                       <div
-                        className="w-full rounded-t-md bg-primary/75 transition-all group-hover:bg-primary"
-                        style={{ height: `${height}%` }}
-                        title={`${item.date}: ${calcTraffic(item.total)}`}
-                      />
+                        key={item.date}
+                        className="group flex h-full min-w-0 flex-1 flex-col justify-end"
+                      >
+                        <div
+                          className="w-full rounded-t-md bg-primary/75 transition-all group-hover:bg-primary"
+                          style={{ height: `${height}%` }}
+                          title={`${item.date}: ${calcTraffic(item.total)}`}
+                        />
+                      </div>
+                    )
+                  })}
+                  {daily.length === 0 && (
+                    <div className="flex h-full w-full items-center justify-center rounded-lg bg-content2/60 text-xs text-foreground-500">
+                      暂无历史数据
                     </div>
-                  )
-                })}
-                {daily.length === 0 && (
-                  <div className="flex h-full w-full items-center justify-center rounded-lg bg-content2/60 text-sm text-foreground-500">
-                    暂无历史数据
+                  )}
+                </div>
+                {daily.length > 0 && (
+                  <div className="mt-1.5 flex justify-between text-[10px] text-foreground-400">
+                    <span>{formatDate(daily[0].date)}</span>
+                    <span>{formatDate(daily[daily.length - 1].date)}</span>
                   </div>
                 )}
               </div>
-              {daily.length > 0 && (
-                <div className="mt-2 flex justify-between text-[10px] text-foreground-400">
-                  <span>{formatDate(daily[0].date)}</span>
-                  <span>{formatDate(daily[daily.length - 1].date)}</span>
-                </div>
-              )}
-            </CardBody>
-          </Card>
-        </div>
+            </div>
+          </CardBody>
+        </Card>
 
         <Card fullWidth className="border border-default-200/70 bg-content1">
           <CardBody className="p-0">
