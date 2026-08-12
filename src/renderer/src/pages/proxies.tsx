@@ -23,6 +23,7 @@ import { useProxiesState } from '@renderer/hooks/use-proxies-state'
 import CollapseInput from '@renderer/components/base/collapse-input'
 import { includesIgnoreCase } from '@renderer/utils/includes'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
+import { getGroupTypeName } from '@renderer/utils/group-type'
 
 const calcAutoProxyCols = (): number => {
   if (window.matchMedia('(min-width: 1536px)').matches) {
@@ -341,6 +342,7 @@ const Proxies: React.FC = () => {
       const isGroupOpen = group ? (isOpenMap.get(group.name) ?? false) : false
       const groupSearchValue = group ? (searchValueMap.get(group.name) ?? '') : ''
       const isGroupDelaying = group ? (delaying.get(group.name) ?? false) : false
+      const groupTypeName = group ? getGroupTypeName(group.type) : ''
       return group ? (
         <div
           className={`w-full pt-2 ${index === groupCounts.length - 1 && !isGroupOpen ? 'pb-2' : ''} px-2`}
@@ -366,8 +368,8 @@ const Proxies: React.FC = () => {
                       <span className="flag-emoji inline-block">{group.name}</span>
                       {groupDisplayLayout === 'single' && (
                         <>
-                          <div title={group.type} className="inline ml-2 text-sm text-foreground-500">
-                            {group.type}
+                          <div title={groupTypeName} className="inline ml-2 text-sm text-foreground-500">
+                            {groupTypeName}
                           </div>
                           <div className="inline flag-emoji ml-2 text-sm text-foreground-500">{group.now}</div>
                         </>
@@ -375,7 +377,7 @@ const Proxies: React.FC = () => {
                     </div>
                     {groupDisplayLayout === 'double' && (
                       <div className="text-ellipsis whitespace-nowrap text-[10px] text-foreground-500 leading-tight flex-3 flex items-center">
-                        <span>{group.type}</span>
+                        <span>{groupTypeName}</span>
                         <span className="flag-emoji ml-1 inline-block">{group.now}</span>
                       </div>
                     )}
@@ -524,8 +526,8 @@ const Proxies: React.FC = () => {
                         <span className="flag-emoji inline-block">{group.name}</span>
                         {groupDisplayLayout === 'single' && (
                           <>
-                            <span className="ml-2 text-sm text-foreground-500" title={group.type}>
-                              {group.type}
+                            <span className="ml-2 text-sm text-foreground-500" title={getGroupTypeName(group.type)}>
+                              {getGroupTypeName(group.type)}
                             </span>
                             <span className="flag-emoji ml-2 text-sm text-foreground-500">
                               {group.now}
@@ -535,7 +537,7 @@ const Proxies: React.FC = () => {
                       </div>
                       {groupDisplayLayout === 'double' && (
                         <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[11px] leading-tight text-foreground-500">
-                          <span>{group.type}</span>
+                          <span>{getGroupTypeName(group.type)}</span>
                           <span className="flag-emoji ml-1 inline-block">{group.now}</span>
                         </div>
                       )}
