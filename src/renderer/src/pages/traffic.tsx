@@ -10,7 +10,8 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
-  Spinner
+  Spinner,
+  Pagination
 } from '@heroui/react'
 import BasePage from '@renderer/components/base/base-page'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
@@ -18,7 +19,7 @@ import { calcTraffic } from '@renderer/utils/calc'
 import { clearTrafficStats, getTrafficStats, getTrafficStatsDetail } from '@renderer/utils/ipc'
 import { notify } from '@renderer/utils/notification'
 import dayjs from 'dayjs'
-import React, { Key, useMemo, useState } from 'react'
+import React, { Key, useEffect, useMemo, useState } from 'react'
 import useSWR from 'swr'
 import { IoChevronForward, IoRefresh, IoTrashOutline } from 'react-icons/io5'
 
@@ -39,6 +40,8 @@ const groupLabels: Record<TrafficStatsGroupBy, string> = {
   strategy: '策略',
   interface: '网络接口'
 }
+
+const GROUP_PAGE_SIZE = 100
 
 const formatDate = (value: string): string => {
   const date = dayjs(value)
@@ -86,6 +89,7 @@ const TrafficStats: React.FC = () => {
   const [groupBy, setGroupBy] = useState<TrafficStatsGroupBy>('host')
   const [selectedKey, setSelectedKey] = useState<string>()
   const [clearing, setClearing] = useState(false)
+  const [groupPage, setGroupPage] = useState(1)
 
   const { data, error, isLoading, mutate } = useSWR<TrafficStatsResult>(
     ['trafficStats', period, groupBy],
@@ -103,6 +107,17 @@ const TrafficStats: React.FC = () => {
     [data?.daily]
   )
   const daily = useMemo(() => data?.daily.slice(-31) || [], [data?.daily])
+  const groupCount = data?.groups.length || 0
+  const groupPageCount = Math.max(1, Math.ceil(groupCount / GROUP_PAGE_SIZE))
+  const currentGroupPage = Math.min(groupPage, groupPageCount)
+  const pagedGroups = useMemo(() => {
+    const start = (currentGroupPage - 1) * GROUP_PAGE_SIZE
+    return data?.groups.slice(start, start + GROUP_PAGE_SIZE) || []
+  }, [currentGroupPage, data?.groups])
+
+  useEffect(() => {
+    setGroupPage((page) => Math.min(page, groupPageCount))
+  }, [groupPageCount])
 
   const handleClear = async (): Promise<void> => {
     if (clearing || !window.confirm('确定清空已保存的流量历史吗？此操作不可撤销。')) return
@@ -111,6 +126,7 @@ const TrafficStats: React.FC = () => {
       setClearing(true)
       await clearTrafficStats()
       setSelectedKey(undefined)
+      setGroupPage(1)
       await mutate()
       notify('流量历史已清空', { variant: 'success' })
     } catch (clearError) {
@@ -171,6 +187,7 @@ const TrafficStats: React.FC = () => {
                 onSelectionChange={(key: Key) => {
                   setPeriod(key as TrafficStatsPeriod)
                   setSelectedKey(undefined)
+                  setGroupPage(1)
                 }}
               >
                 {periods.map((item) => (
@@ -196,6 +213,7 @@ const TrafficStats: React.FC = () => {
                 onSelectionChange={(key: Key) => {
                   setGroupBy(key as TrafficStatsGroupBy)
                   setSelectedKey(undefined)
+                  setGroupPage(1)
                 }}
               >
                 {groupings.map((item) => (
@@ -306,7 +324,7 @@ const TrafficStats: React.FC = () => {
             <Divider />
             {(data?.groups.length || 0) > 0 ? (
               <div className="divide-y divide-divider">
-                {data?.groups.map((group) => (
+                {pagedGroups.map((group) => (
                   <button
                     key={group.key}
                     type="button"
@@ -331,6 +349,24 @@ const TrafficStats: React.FC = () => {
             ) : (
               <div className="flex min-h-36 items-center justify-center px-4 py-8 text-sm text-foreground-500">
                 还没有统计数据，产生连接后会自动记录。
+              </div>
+            )}
+            {groupPageCount > 1 && (
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-divider px-4 py-3">
+                <span className="text-xs text-foreground-500">
+                  第 {currentGroupPage} / {groupPageCount} 页，每页 {GROUP_PAGE_SIZE} 条
+                </span>
+                <Pagination
+                  aria-label="分组列表分页"
+                  size="sm"
+                  color="primary"
+                  variant="flat"
+                  total={groupPageCount}
+                  page={currentGroupPage}
+                  onChange={setGroupPage}
+                  showControls
+                  disableAnimation={disableAnimation}
+                />
               </div>
             )}
           </CardBody>
