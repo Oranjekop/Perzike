@@ -8,14 +8,12 @@ import {
   Menu,
   powerMonitor,
   ipcMain,
-  nativeImage,
   nativeTheme
 } from 'electron'
 import { addOverrideItem, addProfileItem, getAppConfig, patchControledMihomoConfig } from './config'
 import { quitWithoutCore, startCore, stopCore } from './core/manager'
 import { disableSysProxySync, triggerSysProxy } from './sys/sysproxy'
 import roundedIcon from '../../build/icon-rounded.png?asset'
-import roundedMacIcon from '../../build/icon-rounded-mac.png?asset'
 import icoIcon from '../../build/icon.ico?asset'
 import { createTray } from './resolve/tray'
 import { createApplicationMenu } from './resolve/menu'
@@ -63,34 +61,20 @@ function getResolvedTitleBarTheme(theme: AppTheme): 'light' | 'dark' {
 
 function getRuntimeIcon(): string {
   if (app.isPackaged) {
-    const iconName =
-      process.platform === 'win32'
-        ? 'icon.ico'
-        : process.platform === 'darwin'
-          ? 'icon-rounded-mac.png'
-          : 'icon-rounded.png'
+    const iconName = process.platform === 'win32' ? 'icon.ico' : 'icon-rounded.png'
     return join(process.resourcesPath, 'runtime-icons', iconName)
   }
 
   if (process.platform === 'win32') {
     return icoIcon
   }
-  return process.platform === 'darwin' ? roundedMacIcon : roundedIcon
+  return roundedIcon
 }
 
 export function updateRuntimeIcon(): void {
   if (!app.isReady()) return
 
-  if (process.platform === 'darwin') {
-    try {
-      const dockIcon = nativeImage.createFromPath(getRuntimeIcon())
-      if (!dockIcon.isEmpty()) {
-        app.dock?.setIcon(dockIcon)
-      }
-    } catch (error) {
-      console.error('Failed to update the macOS dock icon:', error)
-    }
-  } else if (process.platform === 'win32') {
+  if (process.platform === 'win32') {
     mainWindow?.setIcon(getRuntimeIcon())
   }
 }

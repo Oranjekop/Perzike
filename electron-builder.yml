@@ -24,8 +24,6 @@ extraResources:
     to: 'runtime-icons/icon.png'
   - from: './build/icon-rounded.png'
     to: 'runtime-icons/icon-rounded.png'
-  - from: './build/icon-rounded-mac.png'
-    to: 'runtime-icons/icon-rounded-mac.png'
 protocols:
   name: 'Perzike URI Scheme'
   schemes:
