@@ -443,14 +443,16 @@ const App: React.FC = () => {
             className={`app-drag sticky top-0 z-40 ${disableAnimation ? 'bg-background/95 backdrop-blur-sm' : 'bg-transparent backdrop-blur'} h-12.25`}
           >
             <div
-              className={`flex justify-between p-2 ${!useWindowFrame && platform === 'darwin' ? 'ml-15' : ''}`}
+              className={`flex ${platform === 'win32' ? 'justify-between' : 'justify-end gap-2'} p-2 ${!useWindowFrame && platform === 'darwin' ? 'ml-15' : ''}`}
             >
-              <div className="app-brand flex ml-1 items-center gap-2">
-                {platform === 'win32' && <img className="app-brand-mark" src={appIcon} alt="" />}
-                <div className="app-brand-copy">
-                  <h3 className="text-lg font-semibold leading-5">Perzike</h3>
+              {platform === 'win32' && (
+                <div className="app-brand flex ml-1 items-center gap-2">
+                  <img className="app-brand-mark" src={appIcon} alt="" />
+                  <div className="app-brand-copy">
+                    <h3 className="text-lg font-semibold leading-5">Perzike</h3>
+                  </div>
                 </div>
-              </div>
+              )}
               {latest && latest.version && <UpdaterButton latest={latest} />}
               <Button
                 size="sm"

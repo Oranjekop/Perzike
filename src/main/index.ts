@@ -15,6 +15,7 @@ import { addOverrideItem, addProfileItem, getAppConfig, patchControledMihomoConf
 import { quitWithoutCore, startCore, stopCore } from './core/manager'
 import { disableSysProxySync, triggerSysProxy } from './sys/sysproxy'
 import roundedIcon from '../../build/icon-rounded.png?asset'
+import roundedMacIcon from '../../build/icon-rounded-mac.png?asset'
 import icoIcon from '../../build/icon.ico?asset'
 import { createTray } from './resolve/tray'
 import { createApplicationMenu } from './resolve/menu'
@@ -62,14 +63,19 @@ function getResolvedTitleBarTheme(theme: AppTheme): 'light' | 'dark' {
 
 function getRuntimeIcon(): string {
   if (app.isPackaged) {
-    const iconName = process.platform === 'win32' ? 'icon.ico' : 'icon-rounded.png'
+    const iconName =
+      process.platform === 'win32'
+        ? 'icon.ico'
+        : process.platform === 'darwin'
+          ? 'icon-rounded-mac.png'
+          : 'icon-rounded.png'
     return join(process.resourcesPath, 'runtime-icons', iconName)
   }
 
   if (process.platform === 'win32') {
     return icoIcon
   }
-  return roundedIcon
+  return process.platform === 'darwin' ? roundedMacIcon : roundedIcon
 }
 
 export function updateRuntimeIcon(): void {
@@ -589,6 +595,7 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
       y: mainWindowState.y,
       show: false,
       frame: useWindowFrame,
+      title: process.platform === 'win32' ? 'Perzike' : '',
       fullscreenable: false,
       titleBarStyle: useWindowFrame ? 'default' : 'hidden',
       titleBarOverlay: useWindowFrame
@@ -625,6 +632,12 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
     })
     mainWindow.webContents.on('did-fail-load', () => {
       mainWindow?.webContents.reload()
+    })
+    mainWindow.webContents.on('page-title-updated', (event) => {
+      if (process.platform !== 'win32') {
+        event.preventDefault()
+        mainWindow?.setTitle('')
+      }
     })
 
     mainWindow.on('close', async (event) => {
