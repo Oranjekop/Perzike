@@ -22,6 +22,8 @@ extraResources:
     to: 'runtime-icons/icon.ico'
   - from: './build/icon.png'
     to: 'runtime-icons/icon.png'
+  - from: './build/icon-rounded.png'
+    to: 'runtime-icons/icon-rounded.png'
 protocols:
   name: 'Perzike URI Scheme'
   schemes:
@@ -45,6 +47,7 @@ nsis:
   createDesktopShortcut: false
   include: build/installer.nsh
 mac:
+  icon: build/icon-rounded.icns
   target:
     - pkg
   entitlementsInherit: build/entitlements.mac.plist
@@ -63,6 +66,7 @@ pkg:
   #   alignment: bottomleft
   #   file: build/background.png
 linux:
+  icon: build/icon-rounded.png
   desktop:
     entry:
       Name: Perzike

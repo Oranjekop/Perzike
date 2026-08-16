@@ -404,7 +404,7 @@ const App: React.FC = () => {
       {siderWidthValue === narrowWidth ? (
         <div style={{ width: `${narrowWidth}px` }} className="side app-sidebar h-full">
           <div className="app-drag flex justify-center items-center z-40 bg-transparent h-11.25">
-            {platform !== 'darwin' && (
+            {platform === 'win32' && (
               <span className="text-lg font-bold leading-8 tracking-wide select-none">P</span>
             )}
           </div>
@@ -446,7 +446,7 @@ const App: React.FC = () => {
               className={`flex justify-between p-2 ${!useWindowFrame && platform === 'darwin' ? 'ml-15' : ''}`}
             >
               <div className="app-brand flex ml-1 items-center gap-2">
-                <img className="app-brand-mark" src={appIcon} alt="" />
+                {platform === 'win32' && <img className="app-brand-mark" src={appIcon} alt="" />}
                 <div className="app-brand-copy">
                   <h3 className="text-lg font-semibold leading-5">Perzike</h3>
                 </div>
