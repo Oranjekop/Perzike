@@ -506,7 +506,7 @@ const Proxies: React.FC = () => {
               className="border border-default-200/50 bg-content1"
               shadow="sm"
             >
-              <CardBody className="px-3 py-2">
+              <CardBody className="px-2 py-2">
                 <div className="flex min-h-12 items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center">
                     {group.icon ? (
