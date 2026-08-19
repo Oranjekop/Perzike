@@ -518,6 +518,19 @@ export async function uninstallService(): Promise<void> {
 }
 
 export async function startService(): Promise<void> {
+  if (process.platform === 'darwin') {
+    try {
+      // macOS installs this service as a launchd daemon with RunAtLoad enabled.
+      // Reusing an already-running daemon avoids prompting for administrator
+      // privileges every time the app is launched at login.
+      await waitForServicePing()
+      return
+    } catch {
+      // The daemon is not available yet or is not installed; continue with
+      // the existing elevated start/recovery path below.
+    }
+  }
+
   try {
     const serviceConfigChanged = await ensureWindowsServiceListenConfig()
     await repairBundledCoreAccess()
