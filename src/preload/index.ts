@@ -5,7 +5,8 @@ import { electronAPI } from '@electron-toolkit/preload'
 const api = {
   webUtils: webUtils,
   platform: process.platform,
-  acrylicEnabled: process.argv.includes('--perzike-acrylic')
+  acrylicEnabled: process.argv.includes('--perzike-acrylic'),
+  nativeBackdropEnabled: process.argv.includes('--perzike-native-backdrop')
 }
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise

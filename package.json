@@ -45,6 +45,7 @@
     "is-ip": "^5.0.1",
     "js-yaml": "^5.2.1",
     "monaco-editor": "^0.52.2",
+    "plist": "^3.1.0",
     "qrcode.react": "^4.2.0",
     "webdav": "^5.10.0",
     "ws": "^8.21.0",

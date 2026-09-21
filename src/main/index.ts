@@ -557,10 +557,12 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
   try {
     const config = appConfig ?? (await getAppConfig())
     const { useWindowFrame = false } = config
-    const acrylicEnabled =
+    const nativeAcrylicEnabled =
       process.platform === 'win32' &&
       !useWindowFrame &&
       Number(osRelease().split('.').at(-1)) >= 22621
+    const nativeVibrancyEnabled = process.platform === 'darwin' && !useWindowFrame
+    const nativeBackdropEnabled = nativeAcrylicEnabled || nativeVibrancyEnabled
     const titleBarOverlayTheme = getResolvedTitleBarTheme(config.appTheme ?? 'system')
 
     const [mainWindowState] = await Promise.all([
@@ -584,7 +586,10 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
       y: mainWindowState.y,
       show: false,
       frame: useWindowFrame,
-      backgroundMaterial: acrylicEnabled ? 'acrylic' : undefined,
+      backgroundColor: nativeBackdropEnabled ? '#00000000' : undefined,
+      backgroundMaterial: nativeAcrylicEnabled ? 'acrylic' : undefined,
+      vibrancy: nativeVibrancyEnabled ? 'under-window' : undefined,
+      visualEffectState: nativeVibrancyEnabled ? 'active' : undefined,
       title: process.platform === 'win32' ? 'Perzike' : '',
       fullscreenable: false,
       titleBarStyle: useWindowFrame ? 'default' : 'hidden',
@@ -593,13 +598,16 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
         : {
             height: 48,
             ...titleBarOverlayColors[titleBarOverlayTheme],
-            ...(acrylicEnabled ? { color: '#00000000' } : {})
+            ...(nativeAcrylicEnabled ? { color: '#00000000' } : {})
           },
       autoHideMenuBar: true,
       ...(process.platform === 'win32' ? { icon: getRuntimeIcon() } : {}),
       webPreferences: {
         preload: join(__dirname, '../preload/index.js'),
-        additionalArguments: acrylicEnabled ? ['--perzike-acrylic'] : [],
+        additionalArguments: [
+          '--perzike-acrylic',
+          ...(nativeBackdropEnabled ? ['--perzike-native-backdrop'] : [])
+        ],
         spellcheck: false,
         sandbox: false,
         ...(is.dev ? { webSecurity: false } : {})
@@ -609,7 +617,7 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
     mainWindowState.manage(mainWindow)
     mainWindow.on('ready-to-show', async () => {
       updateRuntimeIcon()
-      if (acrylicEnabled) {
+      if (nativeAcrylicEnabled) {
         mainWindow?.setBackgroundMaterial('acrylic')
       }
       const { silentStart = false } = await getAppConfig()

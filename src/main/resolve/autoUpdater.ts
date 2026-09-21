@@ -6,7 +6,7 @@ import { dataDir, exeDir, exePath, isPortable, resourcesFilesDir } from '../util
 import { copyFile, rm, writeFile, readFile } from 'fs/promises'
 import path from 'path'
 import { existsSync } from 'fs'
-import { exec, execFile, spawn } from 'child_process'
+import { execFile, spawn } from 'child_process'
 import { promisify } from 'util'
 import { createHash } from 'crypto'
 import { setNotQuitDialog, mainWindow } from '..'
@@ -38,6 +38,48 @@ function quoteWindowsArgument(value: string): string {
   if (!/[ \t"]/.test(value)) return value
 
   return `"${value.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/g, '$1$1')}"`
+}
+
+const installedMacAppPath = '/Applications/Perzike.app'
+
+async function installMacUpdate(installerPath: string, version: string): Promise<void> {
+  const execFilePromise = promisify(execFile)
+  const script = [
+    'on run argv',
+    'do shell script ("/usr/sbin/installer -pkg " & quoted form of (item 1 of argv) & " -target /") with administrator privileges',
+    'end run'
+  ].join('\n')
+
+  await execFilePromise('/usr/bin/osascript', ['-e', script, '--', installerPath], {
+    timeout: 10 * 60 * 1000
+  })
+
+  const { stdout } = await execFilePromise(
+    '/usr/libexec/PlistBuddy',
+    [
+      '-c',
+      'Print :CFBundleShortVersionString',
+      path.join(installedMacAppPath, 'Contents', 'Info.plist')
+    ],
+    { timeout: 10000 }
+  )
+  const installedVersion = stdout.trim()
+  if (installedVersion !== version) {
+    throw new Error(`安装后的版本仍为 ${installedVersion || '未知'}，预期为 ${version}`)
+  }
+
+  const relaunch = spawn(
+    '/bin/sh',
+    [
+      '-c',
+      'while kill -0 "$1" 2>/dev/null; do sleep 0.2; done; /usr/bin/open "$2"',
+      'perzike-updater',
+      String(process.pid),
+      installedMacAppPath
+    ],
+    { detached: true, stdio: 'ignore' }
+  )
+  relaunch.unref()
 }
 
 async function launchWindowsInstaller(installerPath: string, args: string[]): Promise<void> {
@@ -274,15 +316,17 @@ export async function downloadAndInstallUpdate(version: string): Promise<void> {
     }
     if (file.endsWith('.pkg')) {
       try {
-        const execPromise = promisify(exec)
-        const shell = `installer -pkg ${path.join(dataDir(), file).replace(' ', '\\\\ ')} -target /`
-        const command = `do shell script "${shell}" with administrator privileges`
-        await execPromise(`osascript -e '${command}'`)
-        app.relaunch()
+        await installMacUpdate(path.join(dataDir(), file), version)
         setNotQuitDialog()
         app.quit()
-      } catch {
-        shell.openPath(path.join(dataDir(), file))
+      } catch (error) {
+        await appendAppLog(`[Updater]: macOS package install failed, ${error}\n`)
+        const openError = await shell.openPath(path.join(dataDir(), file))
+        if (openError) {
+          throw new Error(
+            `${error instanceof Error ? error.message : String(error)}；打开安装包失败：${openError}`
+          )
+        }
       }
     }
   } catch (e) {

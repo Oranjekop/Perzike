@@ -561,7 +561,7 @@ label:not([data-selected='true']) > input[type='radio'] + span {
   background-color: hsl(var(--heroui-content1) / 0.9) !important;
 }
 
-/* A single translucent tint lets the native acrylic backdrop show through. */
+/* Keep one translucent surface system across native and CSS-only backdrops. */
 .app-acrylic {
   --app-acrylic-tint: hsl(var(--heroui-background) / 0.86);
   --app-card-surface: hsl(var(--heroui-content1) / 0.84);
