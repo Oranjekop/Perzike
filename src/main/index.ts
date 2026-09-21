@@ -19,6 +19,7 @@ import { createTray } from './resolve/tray'
 import { createApplicationMenu } from './resolve/menu'
 import { init } from './utils/init'
 import { join } from 'path'
+import { release as osRelease } from 'os'
 import { initShortcut } from './resolve/shortcut'
 import { execSync, spawn } from 'child_process'
 import { createElevateTaskSync } from './sys/misc'
@@ -556,6 +557,10 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
   try {
     const config = appConfig ?? (await getAppConfig())
     const { useWindowFrame = false } = config
+    const acrylicEnabled =
+      process.platform === 'win32' &&
+      !useWindowFrame &&
+      Number(osRelease().split('.').at(-1)) >= 22621
     const titleBarOverlayTheme = getResolvedTitleBarTheme(config.appTheme ?? 'system')
 
     const [mainWindowState] = await Promise.all([
@@ -579,6 +584,12 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
       y: mainWindowState.y,
       show: false,
       frame: useWindowFrame,
+      backgroundColor: acrylicEnabled
+        ? titleBarOverlayTheme === 'dark'
+          ? '#0f151e'
+          : '#f7fbff'
+        : undefined,
+      backgroundMaterial: acrylicEnabled ? 'acrylic' : undefined,
       title: process.platform === 'win32' ? 'Perzike' : '',
       fullscreenable: false,
       titleBarStyle: useWindowFrame ? 'default' : 'hidden',
@@ -586,12 +597,14 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
         ? false
         : {
             height: 48,
-            ...titleBarOverlayColors[titleBarOverlayTheme]
+            ...titleBarOverlayColors[titleBarOverlayTheme],
+            ...(acrylicEnabled ? { color: '#00000000' } : {})
           },
       autoHideMenuBar: true,
       ...(process.platform === 'win32' ? { icon: getRuntimeIcon() } : {}),
       webPreferences: {
         preload: join(__dirname, '../preload/index.js'),
+        additionalArguments: acrylicEnabled ? ['--perzike-acrylic'] : [],
         spellcheck: false,
         sandbox: false,
         ...(is.dev ? { webSecurity: false } : {})

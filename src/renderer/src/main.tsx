@@ -19,6 +19,8 @@ import AppNotificationProvider from './components/base/app-notification-provider
 
 let F12Count = 0
 
+document.documentElement.classList.toggle('app-acrylic', window.api.acrylicEnabled)
+
 init().then(() => {
   document.addEventListener('keydown', (e) => {
     if (platform !== 'darwin' && e.ctrlKey && e.key === 'q') {

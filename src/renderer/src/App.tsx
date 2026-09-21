@@ -140,7 +140,7 @@ const App: React.FC = () => {
       const options = { height: 48 } as TitleBarOverlayOptions
       try {
         const colors = titleBarOverlayColors[getResolvedAppTheme()]
-        options.color = colors.color
+        options.color = window.api.acrylicEnabled ? '#00000000' : colors.color
         options.symbolColor = colors.symbolColor
         setTitleBarOverlay(options)
       } catch {
