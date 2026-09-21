@@ -569,14 +569,22 @@ label:not([data-selected='true']) > input[type='radio'] + span {
 /* A single translucent tint lets the native acrylic backdrop show through. */
 .app-acrylic {
   --app-acrylic-tint: rgb(247 251 255 / 0.24);
-  --app-card-surface: hsl(var(--heroui-content1) / 0.7);
-  --app-card-hover-surface: hsl(var(--heroui-content2) / 0.8);
+  --app-acrylic-chrome: rgb(247 251 255 / 0.34);
+  --app-card-surface: rgb(255 255 255 / 0.52);
+  --app-card-hover-surface: rgb(255 255 255 / 0.64);
+  --app-acrylic-card-border: rgb(255 255 255 / 0.68);
+  --app-acrylic-card-highlight: rgb(255 255 255 / 0.5);
+  --app-acrylic-card-shadow: rgb(63 104 145 / 0.12);
 }
 
 .app-acrylic.dark {
   --app-acrylic-tint: rgb(15 17 21 / 0.32);
-  --app-card-surface: hsl(var(--heroui-content1) / 0.66);
-  --app-card-hover-surface: hsl(var(--heroui-content2) / 0.78);
+  --app-acrylic-chrome: rgb(15 17 21 / 0.44);
+  --app-card-surface: rgb(34 40 51 / 0.52);
+  --app-card-hover-surface: rgb(43 51 65 / 0.66);
+  --app-acrylic-card-border: rgb(255 255 255 / 0.13);
+  --app-acrylic-card-highlight: rgb(255 255 255 / 0.08);
+  --app-acrylic-card-shadow: rgb(0 0 0 / 0.24);
 }
 
 .app-acrylic,
@@ -596,17 +604,40 @@ label:not([data-selected='true']) > input[type='radio'] + span {
 
 .app-acrylic .app-sidebar,
 .app-acrylic .app-main,
-.app-acrylic .app-page-content,
-.app-acrylic .app-page-header {
+.app-acrylic .app-page-content {
   background: transparent !important;
 }
 
-.app-acrylic .app-drag,
+.app-acrylic .app-sidebar > .app-drag,
+.app-acrylic .app-page-header {
+  background: var(--app-acrylic-chrome) !important;
+  backdrop-filter: blur(30px) saturate(1.4) !important;
+  box-shadow: none !important;
+}
+
+.app-acrylic .app-sidebar > .app-drag {
+  height: 56px !important;
+}
+
+.app-acrylic .app-page-header > .app-drag,
 .app-acrylic .app-drag > .header {
-  background-color: transparent !important;
+  background: transparent !important;
 }
 
 .app-acrylic .setting-card,
-.app-acrylic .setting-accordion > div {
+.app-acrylic .setting-accordion > div,
+.app-acrylic .app-sidebar-grid > div > div:not(.bg-primary),
+.app-acrylic .outbound-mode-card,
+.app-acrylic .app-page-content :is(.shadow-small, .shadow-sm, .shadow-medium) {
   background-color: var(--app-card-surface) !important;
+  border-color: var(--app-acrylic-card-border) !important;
+  backdrop-filter: blur(22px) saturate(1.32);
+  box-shadow:
+    inset 0 1px 0 var(--app-acrylic-card-highlight),
+    0 10px 28px var(--app-acrylic-card-shadow) !important;
+}
+
+.app-acrylic .app-sidebar-grid > div > div:not(.bg-primary):hover,
+.app-acrylic .outbound-mode-card:hover {
+  background-color: var(--app-card-hover-surface) !important;
 }
