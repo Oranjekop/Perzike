@@ -389,11 +389,6 @@ label:not([data-selected='true']) > input[type='radio'] + span {
   color: inherit;
 }
 
-/* Theme-colored ripple for proxy group expand/collapse cards. */
-.proxy-group-card .heroui-ripple {
-  background-color: var(--app-ripple-color) !important;
-}
-
 /* Soften card shadows to better match the light blue background. */
 .shadow-small,
 .shadow-sm {
@@ -639,4 +634,15 @@ label:not([data-selected='true']) > input[type='radio'] + span {
   background-color: var(--app-acrylic-selected) !important;
   border-color: var(--app-acrylic-selected) !important;
   box-shadow: 0 2px 6px var(--app-acrylic-selected-shadow) !important;
+}
+
+/* Tint the whole group card on press so no pale rim surrounds a ripple. */
+.proxy-group-card[data-pressed='true'] {
+  --app-card-surface: color-mix(in srgb, hsl(var(--heroui-content1) / 0.9) 88%, hsl(var(--heroui-primary)));
+  --app-card-hover-surface: var(--app-card-surface);
+  transform: none !important;
+  scale: 1 !important;
+  background-color: var(--app-card-surface) !important;
+  border-color: transparent !important;
+  background-clip: border-box;
 }

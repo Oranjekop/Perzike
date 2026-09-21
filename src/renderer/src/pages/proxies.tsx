@@ -347,7 +347,14 @@ const Proxies: React.FC = () => {
         <div
           className={`w-full pt-2 ${index === groupCounts.length - 1 && !isGroupOpen ? 'pb-2' : ''} px-2`}
         >
-          <Card as="div" isPressable fullWidth onPress={() => toggleOpen(index)} className="proxy-group-card">
+          <Card
+            as="div"
+            isPressable
+            disableRipple
+            fullWidth
+            onPress={() => toggleOpen(index)}
+            className="proxy-group-card"
+          >
             <CardBody className="w-full h-14">
               <div className="flex justify-between h-full">
                 <div className="flex items-center text-ellipsis overflow-hidden whitespace-nowrap h-full">
