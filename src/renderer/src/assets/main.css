@@ -574,7 +574,10 @@ label:not([data-selected='true']) > input[type='radio'] + span {
   --app-card-hover-surface: rgb(255 255 255 / 0.64);
   --app-acrylic-card-border: rgb(255 255 255 / 0.68);
   --app-acrylic-card-highlight: rgb(255 255 255 / 0.5);
-  --app-acrylic-card-shadow: rgb(63 104 145 / 0.12);
+  --app-acrylic-card-shadow: rgb(63 104 145 / 0.09);
+  --app-acrylic-selected: color-mix(in srgb, hsl(var(--heroui-primary)) 86%, #1677d2 14%);
+  --app-acrylic-selected-border: color-mix(in srgb, hsl(var(--heroui-primary)) 76%, #075cae 24%);
+  --app-acrylic-selected-shadow: hsl(var(--heroui-primary) / 0.22);
 }
 
 .app-acrylic.dark {
@@ -584,7 +587,10 @@ label:not([data-selected='true']) > input[type='radio'] + span {
   --app-card-hover-surface: rgb(43 51 65 / 0.66);
   --app-acrylic-card-border: rgb(255 255 255 / 0.13);
   --app-acrylic-card-highlight: rgb(255 255 255 / 0.08);
-  --app-acrylic-card-shadow: rgb(0 0 0 / 0.24);
+  --app-acrylic-card-shadow: rgb(0 0 0 / 0.18);
+  --app-acrylic-selected: color-mix(in srgb, hsl(var(--heroui-primary)) 88%, #075fb8 12%);
+  --app-acrylic-selected-border: color-mix(in srgb, hsl(var(--heroui-primary)) 80%, #55a7f5 20%);
+  --app-acrylic-selected-shadow: rgb(0 0 0 / 0.24);
 }
 
 .app-acrylic,
@@ -634,10 +640,19 @@ label:not([data-selected='true']) > input[type='radio'] + span {
   backdrop-filter: blur(22px) saturate(1.32);
   box-shadow:
     inset 0 1px 0 var(--app-acrylic-card-highlight),
-    0 10px 28px var(--app-acrylic-card-shadow) !important;
+    0 3px 12px var(--app-acrylic-card-shadow) !important;
 }
 
 .app-acrylic .app-sidebar-grid > div > div:not(.bg-primary):hover,
 .app-acrylic .outbound-mode-card:hover {
   background-color: var(--app-card-hover-surface) !important;
+}
+
+.app-acrylic .app-sidebar-grid > div > div.bg-primary {
+  color: hsl(var(--heroui-primary-foreground)) !important;
+  background-color: var(--app-acrylic-selected) !important;
+  border-color: var(--app-acrylic-selected-border) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.2),
+    0 3px 10px var(--app-acrylic-selected-shadow) !important;
 }
