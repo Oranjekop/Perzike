@@ -568,9 +568,9 @@ label:not([data-selected='true']) > input[type='radio'] + span {
 
 /* A single translucent tint lets the native acrylic backdrop show through. */
 .app-acrylic {
-  --app-acrylic-tint: hsl(var(--heroui-background) / 0.92);
-  --app-card-surface: hsl(var(--heroui-content1) / 0.9);
-  --app-card-hover-surface: hsl(var(--heroui-content2) / 0.94);
+  --app-acrylic-tint: hsl(var(--heroui-background) / 0.86);
+  --app-card-surface: hsl(var(--heroui-content1) / 0.84);
+  --app-card-hover-surface: hsl(var(--heroui-content2) / 0.9);
   --app-acrylic-card-shadow: rgb(63 104 145 / 0.09);
   --app-acrylic-selected: hsl(var(--heroui-primary));
   --app-acrylic-selected-shadow: hsl(var(--heroui-primary) / 0.22);
@@ -624,7 +624,7 @@ label:not([data-selected='true']) > input[type='radio'] + span {
   /* Paint the same surface through the border, without a white outline. */
   border-color: transparent !important;
   background-clip: border-box;
-  backdrop-filter: blur(22px) saturate(1.08);
+  backdrop-filter: blur(30px) saturate(1.12);
   box-shadow: 0 2px 6px var(--app-acrylic-card-shadow) !important;
 }
 
