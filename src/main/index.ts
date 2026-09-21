@@ -585,6 +585,7 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
       show: false,
       frame: useWindowFrame,
       transparent: acrylicEnabled,
+      roundedCorners: true,
       backgroundColor: acrylicEnabled ? '#00000000' : undefined,
       backgroundMaterial: acrylicEnabled ? 'acrylic' : undefined,
       title: process.platform === 'win32' ? 'Perzike' : '',

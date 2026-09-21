@@ -568,15 +568,23 @@ label:not([data-selected='true']) > input[type='radio'] + span {
 
 /* A single translucent tint lets the native acrylic backdrop show through. */
 .app-acrylic {
-  --app-acrylic-tint: rgb(247 251 255 / 0.72);
-  --app-card-surface: hsl(var(--heroui-content1) / 0.72);
-  --app-card-hover-surface: hsl(var(--heroui-content2) / 0.84);
+  --app-acrylic-tint: rgb(247 251 255 / 0.38);
+  --app-acrylic-edge: rgb(255 255 255 / 0.68);
+  --app-card-surface: hsl(var(--heroui-content1) / 0.6);
+  --app-card-hover-surface: hsl(var(--heroui-content2) / 0.72);
 }
 
 .app-acrylic.dark {
-  --app-acrylic-tint: rgb(17 22 30 / 0.74);
-  --app-card-surface: hsl(var(--heroui-content1) / 0.7);
-  --app-card-hover-surface: hsl(var(--heroui-content2) / 0.82);
+  --app-acrylic-tint: rgb(17 22 30 / 0.42);
+  --app-acrylic-edge: rgb(255 255 255 / 0.12);
+  --app-card-surface: hsl(var(--heroui-content1) / 0.56);
+  --app-card-hover-surface: hsl(var(--heroui-content2) / 0.7);
+}
+
+.app-acrylic,
+.app-acrylic body,
+.app-acrylic #root {
+  background: transparent !important;
 }
 
 .app-acrylic body,
@@ -586,6 +594,9 @@ label:not([data-selected='true']) > input[type='radio'] + span {
 
 .app-acrylic .app-shell {
   background: var(--app-acrylic-tint) !important;
+  border: 1px solid var(--app-acrylic-edge);
+  border-radius: 10px;
+  overflow: hidden;
 }
 
 .app-acrylic .app-sidebar,
