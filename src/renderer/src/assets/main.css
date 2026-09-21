@@ -127,7 +127,7 @@ body {
 .setting-accordion > div {
   border: 1px solid hsl(var(--heroui-divider) / 0.9);
   border-radius: 14px !important;
-  box-shadow: 0 10px 30px var(--app-setting-shadow-color) !important;
+  box-shadow: 0 0 8px var(--app-setting-shadow-color) !important;
 }
 
 .setting-accordion {
@@ -160,7 +160,7 @@ body {
 .outbound-mode-card {
   border: 1px solid var(--app-card-border-color);
   border-radius: 13px;
-  box-shadow: 0 8px 22px var(--app-sidebar-shadow-color) !important;
+  box-shadow: 0 0 8px var(--app-sidebar-shadow-color) !important;
 }
 
 .app-sidebar-grid > div > div {
@@ -185,7 +185,7 @@ body {
 
 .app-sidebar-grid > div > div.bg-primary {
   border-color: hsl(var(--heroui-primary));
-  box-shadow: 0 8px 20px var(--app-selected-shadow-color) !important;
+  box-shadow: 0 0 8px var(--app-selected-shadow-color) !important;
 }
 
 .app-page-content .shadow-small,
@@ -389,18 +389,18 @@ label:not([data-selected='true']) > input[type='radio'] + span {
   color: inherit;
 }
 
-/* Soften card shadows to better match the light blue background. */
+/* Center card shadows so all four edges receive the same soft separation. */
 .shadow-small,
 .shadow-sm {
   box-shadow:
-    0 1px 2px var(--app-shadow-small-near-color),
-    0 10px 24px var(--app-shadow-small-far-color) !important;
+    0 0 2px var(--app-shadow-small-near-color),
+    0 0 6px var(--app-shadow-small-far-color) !important;
 }
 
 .shadow-medium {
   box-shadow:
-    0 2px 6px var(--app-shadow-medium-near-color),
-    0 14px 30px var(--app-shadow-medium-far-color) !important;
+    0 0 3px var(--app-shadow-medium-near-color),
+    0 0 8px var(--app-shadow-medium-far-color) !important;
 }
 
 .app-sidebar-grid > div > div:not(.bg-primary),
@@ -620,7 +620,7 @@ label:not([data-selected='true']) > input[type='radio'] + span {
   border-color: transparent !important;
   background-clip: border-box;
   backdrop-filter: blur(30px) saturate(1.12);
-  box-shadow: 0 2px 6px var(--app-acrylic-card-shadow) !important;
+  box-shadow: 0 0 6px var(--app-acrylic-card-shadow) !important;
 }
 
 .app-acrylic .app-sidebar-grid > div > div:not(.bg-primary):hover,
@@ -633,7 +633,7 @@ label:not([data-selected='true']) > input[type='radio'] + span {
   color: hsl(var(--heroui-primary-foreground)) !important;
   background-color: var(--app-acrylic-selected) !important;
   border-color: var(--app-acrylic-selected) !important;
-  box-shadow: 0 2px 6px var(--app-acrylic-selected-shadow) !important;
+  box-shadow: 0 0 6px var(--app-acrylic-selected-shadow) !important;
 }
 
 /* Tint the whole group card on press so no pale rim surrounds a ripple. */
