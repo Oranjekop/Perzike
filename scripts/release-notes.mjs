@@ -124,6 +124,18 @@ if (
   bullets.push('移除旧的 Telegram 发布通知脚本')
 }
 
+const tunStackDiff = git([
+  'diff',
+  '--unified=0',
+  previousTag || EMPTY_TREE,
+  currentRef,
+  '--',
+  'src/renderer/src/pages/tun.tsx'
+])
+if (/^\+\s*<Tab key="mips"/m.test(tunStackDiff)) {
+  bullets.push('支持 Mihomo MIPS TUN 协议栈，并根据内核版本控制选项可用性')
+}
+
 const rules = [
   {
     message: '调整 GitHub Actions 发布流程，自动生成并使用中文发布日志',

@@ -4,15 +4,26 @@ import SettingCard from '@renderer/components/base/base-setting-card'
 import SettingItem from '@renderer/components/base/base-setting-item'
 import EditableList from '@renderer/components/base/base-list-editor'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
-import { restartCore, setupFirewall } from '@renderer/utils/ipc'
+import { mihomoVersion, restartCore, setupFirewall } from '@renderer/utils/ipc'
 import { platform } from '@renderer/utils/init'
-import React, { Key, useState } from 'react'
+import React, { Key, useEffect, useState } from 'react'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { notify } from '@renderer/utils/notification'
+import PubSub from 'pubsub-js'
+import useSWR from 'swr'
+
+const supportsMipsStack = (version?: string): boolean => {
+  const match = /^v?(\d+)\.(\d+)\.(\d+)(?:$|[-+])/i.exec(version ?? '')
+  if (!match) return false
+  const [major, minor, patch] = match.slice(1).map(Number)
+  return major > 1 || (major === 1 && (minor > 19 || (minor === 19 && patch >= 31)))
+}
 
 const Tun: React.FC = () => {
   const { controledMihomoConfig, patchControledMihomoConfig } = useControledMihomoConfig()
   const { appConfig, patchAppConfig } = useAppConfig()
+  const { data: coreVersion, mutate: refreshCoreVersion } = useSWR('mihomoVersion', mihomoVersion)
+  const mipsSupported = supportsMipsStack(coreVersion?.version)
   const { autoSetDNSMode = 'exec' } = appConfig || {}
   const { tun } = controledMihomoConfig || {}
   const [loading, setLoading] = useState(false)
@@ -29,6 +40,18 @@ const Tun: React.FC = () => {
     mtu = 1500
   } = tun || {}
   const [changed, setChanged] = useState(false)
+  useEffect(() => {
+    const token = PubSub.subscribe('mihomo-core-changed', () => {
+      void refreshCoreVersion()
+    })
+    const unsubscribeCoreStarted = window.electron.ipcRenderer.on('core-started', () => {
+      void refreshCoreVersion()
+    })
+    return () => {
+      PubSub.unsubscribe(token)
+      unsubscribeCoreStarted()
+    }
+  }, [refreshCoreVersion])
   const [values, originSetValues] = useState({
     device,
     stack,
@@ -47,6 +70,12 @@ const Tun: React.FC = () => {
   }
 
   const onSave = async (patch: Partial<MihomoConfig>): Promise<void> => {
+    if (values.stack === 'mips' && !mipsSupported) {
+      notify('当前内核不支持 MIPS 堆栈（需要 Mihomo v1.19.31 或更新版本）', {
+        variant: 'danger'
+      })
+      return
+    }
     await patchControledMihomoConfig(patch)
     await restartCore()
     setChanged(false)
@@ -128,7 +157,15 @@ const Tun: React.FC = () => {
               </Tabs>
             </SettingItem>
           )}
-          <SettingItem title="Tun 模式堆栈" divider>
+          <SettingItem
+            title="Tun 模式堆栈"
+            actions={
+              !mipsSupported && (
+                <span className="ml-2 text-xs text-default-400">MIPS 需 v1.19.31+</span>
+              )
+            }
+            divider
+          >
             <Tabs
               size="sm"
               color="primary"
@@ -137,11 +174,15 @@ const Tun: React.FC = () => {
                 cursor: 'bg-primary',
                 tabContent: 'group-data-[selected=true]:text-primary-foreground'
               }}
-              onSelectionChange={(key: Key) => setValues({ ...values, stack: key as TunStack })}
+              onSelectionChange={(key: Key) => {
+                if (key === 'mips' && !mipsSupported) return
+                setValues({ ...values, stack: key as TunStack })
+              }}
             >
               <Tab key="gvisor" title="gVisor" />
               <Tab key="mixed" title="Mixed" />
               <Tab key="system" title="System" />
+              <Tab key="mips" title="MIPS" isDisabled={!mipsSupported} />
             </Tabs>
           </SettingItem>
           {platform !== 'darwin' && (
