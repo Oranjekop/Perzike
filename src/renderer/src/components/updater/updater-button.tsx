@@ -78,7 +78,7 @@ const UpdaterButton: React.FC<Props> = (props) => {
       ) : (
         <Button
           isIconOnly
-          className={`fixed right-11.25 app-nodrag`}
+          className="app-nodrag ml-auto mr-2 shrink-0"
           color="danger"
           size="sm"
           onPress={() => {
