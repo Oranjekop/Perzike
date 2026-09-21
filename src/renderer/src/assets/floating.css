@@ -18,7 +18,7 @@ html {
 }
 
 .app-nodrag {
-  -webkit-app-region: none;
+  -webkit-app-region: no-drag;
 }
 
 .app-drag {

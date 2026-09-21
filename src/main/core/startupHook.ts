@@ -31,7 +31,7 @@ function hookTouchCommand(file: string): string {
 
 function coreHookDir(): string {
   if (process.platform === 'win32' && process.env.ProgramData) {
-    return path.join(process.env.ProgramData, 'sparkle', 'core-hooks')
+    return path.join(process.env.ProgramData, 'perzike', 'core-hooks')
   }
   return path.join(dataDir(), 'core-hooks')
 }

@@ -2,13 +2,14 @@ import axios, { AxiosInstance } from 'axios'
 import { getAppConfig, getControledMihomoConfig } from '../config'
 import { mainWindow } from '..'
 import WebSocket from 'ws'
-import { customTrayWindow, tray } from '../resolve/tray'
+import { tray } from '../resolve/tray'
 import { calcTraffic } from '../utils/calc'
 import { getRuntimeConfig } from './factory'
 import { floatingWindow } from '../resolve/floatingWindow'
 import { mihomoIpcPath, serviceIpcPath } from '../utils/dirs'
 import { publishMihomoLog } from '../utils/log'
 import { createSignedServiceAxios, getServiceAuthHeaders } from '../service/api'
+import { recordTrafficConnections } from '../resolve/trafficStats'
 
 let axiosIns: AxiosInstance = null!
 let mihomoTrafficWs: WebSocket | null = null
@@ -20,6 +21,7 @@ let memoryReconnectTimer: NodeJS.Timeout | null = null
 let mihomoLogsWs: WebSocket | null = null
 let logsRetry = 10
 let logsReconnectTimer: NodeJS.Timeout | null = null
+let mihomoLogHandlers: Set<(log: ControllerLog) => void> | undefined
 let mihomoConnectionsWs: WebSocket | null = null
 let connectionsRetry = 10
 let connectionsReconnectTimer: NodeJS.Timeout | null = null
@@ -141,90 +143,85 @@ export const mihomoProxies = async (): Promise<ControllerProxies> => {
   return await instance.get('/proxies')
 }
 
-function isControllerGroupDetail(
-  proxy: ControllerProxiesDetail | ControllerGroupDetail | undefined
-): proxy is ControllerGroupDetail {
-  return Boolean(proxy && 'all' in proxy)
-}
-
-const PROVIDER_DETAIL_FETCH_THRESHOLD = 8
-
-async function resolveProviderProxies(
-  names: Set<string>,
-  providerNames: Set<string>,
-  fallbackToAllProviders: boolean
-): Promise<Record<string, ControllerProxiesDetail>> {
-  if (names.size === 0) return {}
-
-  const providers =
-    fallbackToAllProviders || providerNames.size > PROVIDER_DETAIL_FETCH_THRESHOLD
-      ? Object.values((await mihomoProxyProviders()).providers)
-      : await Promise.all([...providerNames].map((name) => mihomoProxyProvider(name)))
-
-  const providerProxies: Record<string, ControllerProxiesDetail> = {}
-  providers.forEach((provider) => {
-    provider.proxies?.forEach((proxy) => {
-      if (names.has(proxy.name)) {
-        providerProxies[proxy.name] = proxy
-      }
-    })
-  })
-  return providerProxies
-}
-
 export const mihomoGroups = async (): Promise<ControllerMixedGroup[]> => {
   const { mode = 'rule' } = await getControledMihomoConfig()
+  const { showHiddenProxyGroups = false } = await getAppConfig()
   if (mode === 'direct') return []
-  const [proxies, runtime] = await Promise.all([mihomoProxies(), getRuntimeConfig()])
-  const rawGroups: { group: ControllerGroupDetail & { testUrl?: string }; providers: string[] }[] =
-    []
+  const proxies = await mihomoProxies()
+  const runtime = await getRuntimeConfig()
+  const providerProxyMap = new Map<string, ControllerProxiesDetail>()
+  const groups: ControllerMixedGroup[] = []
+  const shouldShowGroup = (group: ControllerGroupDetail): boolean =>
+    showHiddenProxyGroups || !group.hidden
 
-  runtime?.['proxy-groups']?.forEach((group: { name: string; url?: string; use?: string[] }) => {
-    const proxy = proxies.proxies[group.name]
-    if (isControllerGroupDetail(proxy) && !proxy.hidden) {
-      rawGroups.push({ group: { ...proxy, testUrl: group.url }, providers: group.use || [] })
-    }
-  })
-
-  if (!rawGroups.find(({ group }) => group.name === 'GLOBAL')) {
-    const global = proxies.proxies['GLOBAL']
-    if (isControllerGroupDetail(global) && !global.hidden) {
-      rawGroups.push({ group: global, providers: [] })
-    }
+  try {
+    const providers = await mihomoProxyProviders()
+    Object.values(providers.providers).forEach((provider) => {
+      provider.proxies?.forEach((proxy) => {
+        providerProxyMap.set(proxy.name, proxy)
+      })
+    })
+  } catch {
+    // Provider details are best-effort. Groups can still render from controller proxy data.
   }
 
-  const missingProxyNames = new Set<string>()
-  const providerNames = new Set<string>()
-  let fallbackToAllProviders = false
-  rawGroups.forEach(({ group, providers }) => {
-    group.all.forEach((name) => {
-      if (!proxies.proxies[name]) {
-        missingProxyNames.add(name)
-        if (providers.length > 0) {
-          providers.forEach((provider) => providerNames.add(provider))
-        } else {
-          fallbackToAllProviders = true
-        }
+  const getGroupProxy = (
+    group: ControllerGroupDetail,
+    name: string
+  ): ControllerProxiesDetail | ControllerGroupDetail => {
+    const proxy = proxies.proxies[name]
+    if (proxy) return proxy
+
+    const extra = group.extra?.[name]
+    const providerProxy = providerProxyMap.get(name)
+    if (providerProxy) {
+      return {
+        ...providerProxy,
+        alive: extra?.alive ?? providerProxy.alive,
+        history: extra?.history ?? providerProxy.history
       }
-    })
-  })
+    }
 
-  const providerProxies = await resolveProviderProxies(
-    missingProxyNames,
-    providerNames,
-    fallbackToAllProviders
-  )
-  const groups: ControllerMixedGroup[] = []
-  rawGroups.forEach(({ group }) => {
-    const newAll = group.all
-      .map((name) => proxies.proxies[name] || providerProxies[name])
-      .filter((proxy): proxy is ControllerProxiesDetail | ControllerGroupDetail => Boolean(proxy))
-    groups.push({ ...group, all: newAll })
+    return {
+      alive: extra?.alive ?? true,
+      extra: {},
+      history: extra?.history ?? [],
+      id: name,
+      name,
+      tfo: false,
+      type: 'Compatible',
+      udp: false,
+      xudp: false,
+      'dialer-proxy': '',
+      interface: '',
+      mptcp: false,
+      'routing-mark': 0,
+      smux: false,
+      uot: false
+    }
+  }
+  runtime?.['proxy-groups']?.forEach((group: { name: string; url?: string }) => {
+    const { name, url } = group
+    if (proxies.proxies[name] && 'all' in proxies.proxies[name]) {
+      const newGroup = proxies.proxies[name]
+      if (!shouldShowGroup(newGroup)) return
+      newGroup.testUrl = url
+      const newAll = newGroup.all.map((name) => getGroupProxy(newGroup, name))
+      groups.push({ ...newGroup, all: newAll })
+    }
   })
-
+  if (!groups.find((group) => group.name === 'GLOBAL')) {
+    const newGlobal = proxies.proxies['GLOBAL']
+    if (newGlobal && 'all' in newGlobal && shouldShowGroup(newGlobal)) {
+      const newAll = newGlobal.all.map((name) => getGroupProxy(newGlobal, name))
+      groups.push({ ...newGlobal, all: newAll })
+    }
+  }
   if (mode === 'global') {
     const global = groups.findIndex((group) => group.name === 'GLOBAL')
-    if (global > 0) groups.unshift(groups.splice(global, 1)[0])
+    if (global > 0) {
+      groups.unshift(groups.splice(global, 1)[0])
+    }
   }
   return groups
 }
@@ -232,11 +229,6 @@ export const mihomoGroups = async (): Promise<ControllerMixedGroup[]> => {
 export const mihomoProxyProviders = async (): Promise<ControllerProxyProviders> => {
   const instance = await getAxios()
   return await instance.get('/providers/proxies')
-}
-
-const mihomoProxyProvider = async (name: string): Promise<ControllerProxyProviderDetail> => {
-  const instance = await getAxios()
-  return await instance.get(`/providers/proxies/${encodeURIComponent(name)}`)
 }
 
 export const mihomoUpdateProxyProviders = async (name: string): Promise<void> => {
@@ -269,16 +261,12 @@ export const mihomoUnfixedProxy = async (group: string): Promise<ControllerProxi
 
 export const mihomoProxyDelay = async (
   proxy: string,
-  url?: string,
-  provider?: string
+  url?: string
 ): Promise<ControllerProxiesDelay> => {
   const appConfig = await getAppConfig()
   const { delayTestUrl, delayTestTimeout } = appConfig
   const instance = await getAxios()
-  const path = provider
-    ? `/providers/proxies/${encodeURIComponent(provider)}/${encodeURIComponent(proxy)}/healthcheck`
-    : `/proxies/${encodeURIComponent(proxy)}/delay`
-  return await instance.get(path, {
+  return await instance.get(`/proxies/${encodeURIComponent(proxy)}/delay`, {
     params: {
       url: url || delayTestUrl || 'https://www.gstatic.com/generate_204',
       timeout: delayTestTimeout || 5000
@@ -309,19 +297,17 @@ export const mihomoRulesDisable = async (rules: Record<string, boolean>): Promis
 export const mihomoUpgrade = async (channel: string): Promise<void> => {
   if (process.platform === 'win32') await patchMihomoConfig({ 'log-level': 'info' })
   const instance = await getAxios()
-  return await instance.post(`/upgrade?channel=${encodeURIComponent(channel)}`, undefined, {
-    timeout: 90000
-  })
+  return await instance.post(`/upgrade?channel=${encodeURIComponent(channel)}`)
 }
 
 export const mihomoUpgradeGeo = async (): Promise<void> => {
   const instance = await getAxios()
-  return await instance.post('/upgrade/geo', undefined, { timeout: 90000 })
+  return await instance.post('/upgrade/geo')
 }
 
 export const mihomoUpgradeUI = async (): Promise<void> => {
   const instance = await getAxios()
-  return await instance.post('/upgrade/ui', undefined, { timeout: 90000 })
+  return await instance.post('/upgrade/ui')
 }
 
 export const startMihomoTraffic = async (): Promise<void> => {
@@ -364,9 +350,6 @@ const mihomoTraffic = async (): Promise<void> => {
         )
       }
       floatingWindow?.webContents.send('mihomoTraffic', json)
-      if (customTrayWindow && !customTrayWindow.isDestroyed() && customTrayWindow.isVisible()) {
-        customTrayWindow.webContents.send('mihomoTraffic', json)
-      }
     } catch {
       // ignore
     }
@@ -469,6 +452,20 @@ export const restartMihomoLogs = async (): Promise<void> => {
   await startMihomoLogs()
 }
 
+function getMihomoLogHandlers(): Set<(log: ControllerLog) => void> {
+  if (!mihomoLogHandlers) {
+    mihomoLogHandlers = new Set()
+  }
+  return mihomoLogHandlers
+}
+
+export function subscribeMihomoLogs(handler: (log: ControllerLog) => void): () => void {
+  getMihomoLogHandlers().add(handler)
+  return () => {
+    mihomoLogHandlers?.delete(handler)
+  }
+}
+
 const mihomoLogs = async (): Promise<void> => {
   const { realtimeLogLevel } = await getAppConfig()
   const { 'log-level': logLevel = 'info' } = await getControledMihomoConfig()
@@ -481,7 +478,15 @@ const mihomoLogs = async (): Promise<void> => {
     const data = e.data as string
     logsRetry = 10
     try {
-      publishMihomoLog(JSON.parse(data) as ControllerLog)
+      const log = JSON.parse(data) as ControllerLog
+      publishMihomoLog(log)
+      for (const handler of getMihomoLogHandlers()) {
+        try {
+          handler(log)
+        } catch {
+          // ignore listener errors
+        }
+      }
     } catch {
       // ignore
     }
@@ -540,7 +545,9 @@ const mihomoConnections = async (): Promise<void> => {
     const data = e.data as string
     connectionsRetry = 10
     try {
-      mainWindow?.webContents.send('mihomoConnections', JSON.parse(data) as ControllerConnections)
+      const connections = JSON.parse(data) as ControllerConnections
+      recordTrafficConnections(connections)
+      mainWindow?.webContents.send('mihomoConnections', connections)
     } catch {
       // ignore
     }

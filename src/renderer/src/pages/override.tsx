@@ -11,7 +11,14 @@ import BasePage from '@renderer/components/base/base-page'
 import { getFilePath, readTextFile } from '@renderer/utils/ipc'
 import { useEffect, useRef, useState } from 'react'
 import { MdContentPaste } from 'react-icons/md'
-import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core'
 import { SortableContext } from '@dnd-kit/sortable'
 import { useOverrideConfig } from '@renderer/hooks/use-override-config'
 import OverrideItem from '@renderer/components/override/override-item'
@@ -19,7 +26,6 @@ import EditInfoModal from '@renderer/components/override/edit-info-modal'
 import { FaPlus } from 'react-icons/fa6'
 import { HiOutlineDocumentText } from 'react-icons/hi'
 import { RiArchiveLine } from 'react-icons/ri'
-import { useCardDndSensors } from '@renderer/hooks/use-card-dnd-sensors'
 import { notify } from '@renderer/utils/notification'
 
 const emptyItems: OverrideItem[] = []
@@ -41,7 +47,13 @@ const Override: React.FC = () => {
   const [url, setUrl] = useState('')
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingItem, setEditingItem] = useState<OverrideItem | null>(null)
-  const sensors = useCardDndSensors()
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 2
+      }
+    })
+  )
   const isProcessingDrop = useRef(false)
   const handleImport = async (): Promise<void> => {
     setImporting(true)
@@ -67,10 +79,8 @@ const Override: React.FC = () => {
         const newOrder = sortedItems.slice()
         const activeIndex = newOrder.findIndex((item) => item.id === active.id)
         const overIndex = newOrder.findIndex((item) => item.id === over.id)
-        if (activeIndex === -1 || overIndex === -1) return
-        const [activeItem] = newOrder.splice(activeIndex, 1)
-        if (!activeItem) return
-        newOrder.splice(overIndex, 0, activeItem)
+        newOrder.splice(activeIndex, 1)
+        newOrder.splice(overIndex, 0, itemsArray[activeIndex])
         setSortedItems(newOrder)
         await setOverrideConfig({ items: newOrder })
       }
@@ -86,15 +96,6 @@ const Override: React.FC = () => {
     pageRef.current?.addEventListener('dragleave', (e) => {
       e.preventDefault()
       e.stopPropagation()
-      const rect = pageRef.current?.getBoundingClientRect()
-      if (
-        rect &&
-        e.clientX >= rect.left &&
-        e.clientX <= rect.right &&
-        e.clientY >= rect.top &&
-        e.clientY <= rect.bottom
-      )
-        return
       setFileOver(false)
     })
     pageRef.current?.addEventListener('drop', async (event) => {
@@ -102,9 +103,8 @@ const Override: React.FC = () => {
       event.stopPropagation()
       if (isProcessingDrop.current) return
       isProcessingDrop.current = true
-      const dataTransfer = event.dataTransfer
-      const file = dataTransfer?.files[0]
-      if (file) {
+      if (event.dataTransfer?.files) {
+        const file = event.dataTransfer.files[0]
         if (
           file.name.endsWith('.js') ||
           file.name.endsWith('.yml') ||
@@ -129,28 +129,6 @@ const Override: React.FC = () => {
         } else {
           notify('不支持的文件类型', { variant: 'danger' })
         }
-      } else {
-        const droppedUrl =
-          dataTransfer
-            ?.getData('text/uri-list')
-            .split(/\r?\n/)
-            .find((value) => value && !value.startsWith('#')) ||
-          dataTransfer?.getData('text/plain').trim()
-        try {
-          const urlObj = new URL(droppedUrl || '')
-          if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') throw new Error()
-          setEditingItem({
-            id: '',
-            name: '',
-            type: 'remote',
-            url: droppedUrl,
-            ext: urlObj.pathname.endsWith('.js') ? 'js' : 'yaml',
-            updated: Date.now()
-          })
-          setShowEditModal(true)
-        } catch {
-          notify('未检测到有效的覆写链接', { variant: 'danger' })
-        }
       }
       isProcessingDrop.current = false
       setFileOver(false)
@@ -170,12 +148,12 @@ const Override: React.FC = () => {
     <BasePage
       ref={pageRef}
       title="覆写"
-      contentClassName="no-scrollbar"
       header={
         <>
           <Button
             size="sm"
             variant="light"
+            title="使用文档"
             isIconOnly
             className="app-nodrag"
             onPress={() => {
@@ -186,6 +164,7 @@ const Override: React.FC = () => {
           </Button>
           <Button
             className="app-nodrag"
+            title="常用覆写仓库"
             isIconOnly
             variant="light"
             size="sm"
@@ -198,8 +177,8 @@ const Override: React.FC = () => {
         </>
       }
     >
-      <div className="sticky top-0 z-40">
-        <div className="flex p-2">
+      <div className="sticky top-0 z-40 px-2 pt-2 bg-transparent">
+        <div className="flex p-2 rounded-xl border border-default-200/70 bg-content1/90 shadow-sm backdrop-blur-sm">
           <Input
             size="sm"
             value={url}
@@ -288,7 +267,7 @@ const Override: React.FC = () => {
             </DropdownMenu>
           </Dropdown>
         </div>
-        <Divider />
+        <Divider className="mt-2" />
       </div>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <div

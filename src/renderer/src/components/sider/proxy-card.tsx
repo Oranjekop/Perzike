@@ -5,6 +5,7 @@ import { LuGroup } from 'react-icons/lu'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useGroups } from '@renderer/hooks/use-groups'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
+import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
 import React from 'react'
 
 interface Props {
@@ -13,12 +14,21 @@ interface Props {
 
 const ProxyCard: React.FC<Props> = (props) => {
   const { appConfig } = useAppConfig()
+  const { controledMihomoConfig } = useControledMihomoConfig()
   const { iconOnly } = props
-  const { proxyCardStatus = 'col-span-2', disableAnimation = false } = appConfig || {}
+  const { proxyCardStatus = 'col-span-2', disableAnimation = false, showGlobalByMode = false } =
+    appConfig || {}
+  const { mode = 'rule' } = controledMihomoConfig || {}
   const location = useLocation()
   const navigate = useNavigate()
   const match = location.pathname.includes('/proxies')
   const { groups = [] } = useGroups()
+  const visibleGroupCount = React.useMemo(() => {
+    if (!showGlobalByMode) return groups.length
+    if (mode === 'global') return groups.filter((group) => group.name === 'GLOBAL').length
+    if (mode === 'rule') return groups.filter((group) => group.name !== 'GLOBAL').length
+    return groups.length
+  }, [groups, mode, showGlobalByMode])
   const {
     attributes,
     listeners,
@@ -65,7 +75,7 @@ const ProxyCard: React.FC<Props> = (props) => {
         ref={setNodeRef}
         {...attributes}
         {...listeners}
-        className={`${match ? 'bg-primary' : 'hover:bg-primary/30'} ${isDragging ? `${disableAnimation ? '' : 'scale-[0.95]'} tap-highlight-transparent` : ''}`}
+        className={`${match ? 'bg-primary' : 'hover:bg-content2'} transition-colors ${isDragging ? `${disableAnimation ? '' : 'scale-[0.95]'} tap-highlight-transparent` : ''}`}
       >
         <CardBody className="pb-1 pt-0 px-0 overflow-y-visible">
           <div className="flex justify-between">
@@ -95,7 +105,7 @@ const ProxyCard: React.FC<Props> = (props) => {
               variant="bordered"
               className="mr-2 mt-2"
             >
-              {groups.length}
+              {visibleGroupCount}
             </Chip>
           </div>
         </CardBody>

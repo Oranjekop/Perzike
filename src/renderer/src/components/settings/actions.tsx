@@ -10,7 +10,7 @@ import {
   cancelUpdate
 } from '@renderer/utils/ipc'
 import { useState, useEffect } from 'react'
-import UpdaterDrawer from '../updater/updater-drawer'
+import UpdaterModal from '../updater/updater-modal'
 import { version } from '@renderer/utils/init'
 import { IoIosHelpCircle } from 'react-icons/io'
 import { startTour } from '@renderer/utils/driver'
@@ -18,21 +18,11 @@ import { useNavigate } from 'react-router-dom'
 import ConfirmModal from '../base/base-confirm'
 import { notify } from '@renderer/utils/notification'
 
-async function handleCreateHeapSnapshot(): Promise<void> {
-  try {
-    const snapshotPath = await createHeapSnapshot()
-    notify(`堆快照已创建\n${snapshotPath}`, { variant: 'success' })
-  } catch (e) {
-    notify(`创建堆快照失败\n${e}`, { variant: 'danger' })
-  }
-}
-
 const Actions: React.FC = () => {
   const navigate = useNavigate()
   const [newVersion, setNewVersion] = useState('')
   const [changelog, setChangelog] = useState('')
   const [openUpdate, setOpenUpdate] = useState(false)
-  const [updateDrawerReopenSignal, setUpdateDrawerReopenSignal] = useState(0)
   const [checkingUpdate, setCheckingUpdate] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [updateStatus, setUpdateStatus] = useState<{
@@ -52,10 +42,10 @@ const Actions: React.FC = () => {
       setUpdateStatus(status)
     }
 
-    const unsubscribe = window.electron.ipcRenderer.on('update-status', handleUpdateStatus)
+    window.electron.ipcRenderer.on('update-status', handleUpdateStatus)
 
     return (): void => {
-      unsubscribe()
+      window.electron.ipcRenderer.removeAllListeners('update-status')
     }
   }, [])
 
@@ -68,20 +58,14 @@ const Actions: React.FC = () => {
     }
   }
 
-  const openUpdateDrawer = (): void => {
-    setOpenUpdate(true)
-    setUpdateDrawerReopenSignal((signal) => signal + 1)
-  }
-
   return (
     <>
       {openUpdate && (
-        <UpdaterDrawer
+        <UpdaterModal
           onClose={() => setOpenUpdate(false)}
           version={newVersion}
           changelog={changelog}
           updateStatus={updateStatus}
-          reopenSignal={updateDrawerReopenSignal}
           onCancel={handleCancelUpdate}
         />
       )}
@@ -101,14 +85,15 @@ const Actions: React.FC = () => {
         />
       )}
       <SettingCard>
-        <SettingItem compatKey="legacy" title="打开引导页面" divider>
-          <Button size="sm" onPress={() => startTour(navigate)}>
+        <SettingItem title="打开引导页面" divider>
+          <Button size="sm" color="primary" onPress={() => startTour(navigate)}>
             打开引导页面
           </Button>
         </SettingItem>
-        <SettingItem compatKey="legacy" title="检查更新" divider>
+        <SettingItem title="检查更新" divider>
           <Button
             size="sm"
+            color="primary"
             isLoading={checkingUpdate}
             onPress={async () => {
               try {
@@ -117,19 +102,9 @@ const Actions: React.FC = () => {
                 if (version) {
                   setNewVersion(version.version)
                   setChangelog(version.changelog)
-                  notify('发现新版本', {
-                    actionProps: {
-                      children: '查看内容',
-                      onPress: openUpdateDrawer,
-                      variant: 'secondary'
-                    },
-                    body: `${version.version} 版本就绪`,
-                    forceToast: true,
-                    timeout: 8000,
-                    variant: 'accent'
-                  })
+                  setOpenUpdate(true)
                 } else {
-                  notify('当前已是最新版本', { body: '无需更新' })
+                  notify('当前已是最新版本', { body: '无需更新', variant: 'success' })
                 }
               } catch (e) {
                 notify(e, { variant: 'danger' })
@@ -142,7 +117,6 @@ const Actions: React.FC = () => {
           </Button>
         </SettingItem>
         <SettingItem
-          compatKey="legacy"
           title="重置软件"
           actions={
             <Tooltip content="删除所有配置，将软件恢复初始状态">
@@ -153,12 +127,11 @@ const Actions: React.FC = () => {
           }
           divider
         >
-          <Button size="sm" onPress={() => setConfirmOpen(true)}>
+          <Button size="sm" color="primary" onPress={() => setConfirmOpen(true)}>
             重置软件
           </Button>
         </SettingItem>
         <SettingItem
-          compatKey="legacy"
           title="清除缓存"
           actions={
             <Tooltip content="清除软件渲染进程缓存">
@@ -169,12 +142,11 @@ const Actions: React.FC = () => {
           }
           divider
         >
-          <Button size="sm" onPress={() => localStorage.clear()}>
+          <Button size="sm" color="primary" onPress={() => localStorage.clear()}>
             清除缓存
           </Button>
         </SettingItem>
         <SettingItem
-          compatKey="legacy"
           title="创建堆快照"
           actions={
             <Tooltip content="创建主进程堆快照，用于排查内存问题">
@@ -185,12 +157,11 @@ const Actions: React.FC = () => {
           }
           divider
         >
-          <Button size="sm" onPress={handleCreateHeapSnapshot}>
+          <Button size="sm" color="primary" onPress={createHeapSnapshot}>
             创建堆快照
           </Button>
         </SettingItem>
         <SettingItem
-          compatKey="legacy"
           title="保留内核退出"
           actions={
             <Tooltip content="完全退出软件，只保留内核进程">
@@ -201,16 +172,16 @@ const Actions: React.FC = () => {
           }
           divider
         >
-          <Button size="sm" onPress={quitWithoutCore}>
+          <Button size="sm" color="primary" onPress={quitWithoutCore}>
             退出
           </Button>
         </SettingItem>
-        <SettingItem compatKey="legacy" title="退出应用" divider>
-          <Button size="sm" onPress={quitApp}>
+        <SettingItem title="退出应用" divider>
+          <Button size="sm" color="primary" onPress={quitApp}>
             退出应用
           </Button>
         </SettingItem>
-        <SettingItem compatKey="legacy" title="应用版本">
+        <SettingItem title="应用版本">
           <div>v{version}</div>
         </SettingItem>
       </SettingCard>

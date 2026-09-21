@@ -7,7 +7,6 @@ import { restartCore } from '@renderer/utils/ipc'
 import EditableList from '../base/base-list-editor'
 import { platform } from '@renderer/utils/init'
 import { notify } from '@renderer/utils/notification'
-import PubSub from 'pubsub-js'
 
 const EnvSetting: React.FC = () => {
   const { appConfig, patchAppConfig } = useAppConfig()
@@ -31,8 +30,8 @@ const EnvSetting: React.FC = () => {
   const [safePathsInput, setSafePathsInput] = useState(safePaths)
 
   return (
-    <SettingCard header="环境变量">
-      <SettingItem compatKey="legacy" title="禁用系统 CA" divider>
+    <SettingCard title="环境变量">
+      <SettingItem title="禁用系统 CA" divider>
         <Switch
           size="sm"
           isSelected={disableSystemCA}
@@ -41,7 +40,7 @@ const EnvSetting: React.FC = () => {
           }}
         />
       </SettingItem>
-      <SettingItem compatKey="legacy" title="禁用内置 CA" divider>
+      <SettingItem title="禁用内置 CA" divider>
         <Switch
           size="sm"
           isSelected={disableEmbedCA}
@@ -50,7 +49,7 @@ const EnvSetting: React.FC = () => {
           }}
         />
       </SettingItem>
-      <SettingItem compatKey="legacy" title="禁用回环检测" divider>
+      <SettingItem title="禁用回环检测" divider>
         <Switch
           size="sm"
           isSelected={disableLoopbackDetector}
@@ -60,7 +59,7 @@ const EnvSetting: React.FC = () => {
         />
       </SettingItem>
       {platform == 'linux' && (
-        <SettingItem compatKey="legacy" title="禁用 nftables" divider>
+        <SettingItem title="禁用 nftables" divider>
           <Switch
             size="sm"
             isSelected={disableNftables}
@@ -70,7 +69,7 @@ const EnvSetting: React.FC = () => {
           />
         </SettingItem>
       )}
-      <SettingItem compatKey="legacy" title="可信路径">
+      <SettingItem title="可信路径">
         {safePathsInput.join('') != safePaths.join('') && (
           <Button
             size="sm"

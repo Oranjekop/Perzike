@@ -2,30 +2,18 @@ import { Button, Card, CardBody, CardFooter, Tooltip } from '@heroui/react'
 import { FaCircleArrowDown, FaCircleArrowUp } from 'react-icons/fa6'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { calcTraffic } from '@renderer/utils/calc'
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { IoLink } from 'react-icons/io5'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
-import { readImageFileDataURL } from '@renderer/utils/ipc'
 import { platform } from '@renderer/utils/init'
-import templateTrayIcon from '../../../../../resources/iconTemplate.png'
 import TrafficChart from './traffic-chart'
 
 let currentUpload: number | undefined = undefined
 let currentDownload: number | undefined = undefined
-let currentTrayIcon = ''
 let hasShowTraffic = false
 let drawing = false
-
-const loadImage = (url: string): Promise<HTMLImageElement> => {
-  return new Promise((resolve, reject) => {
-    const image = new Image()
-    image.onload = (): void => resolve(image)
-    image.onerror = (): void => reject(new Error('Failed to load the tray icon'))
-    image.src = url
-  })
-}
 
 interface Props {
   iconOnly?: boolean
@@ -36,14 +24,11 @@ const ConnCard: React.FC<Props> = (props) => {
   const { appConfig } = useAppConfig()
   const {
     showTraffic = false,
-    customTrayIcon = '',
     connectionCardStatus = 'col-span-2',
     disableAnimation = false
   } = appConfig || {}
   const showTrafficRef = useRef(showTraffic)
   showTrafficRef.current = showTraffic
-  const customTrayIconRef = useRef(customTrayIcon)
-  customTrayIconRef.current = customTrayIcon
 
   const location = useLocation()
   const navigate = useNavigate()
@@ -93,7 +78,7 @@ const ConnCard: React.FC<Props> = (props) => {
         if (drawing) return
         drawing = true
         try {
-          await drawTrayTrafficIcon(info.up, info.down, customTrayIconRef.current)
+          await drawSvg(info.up, info.down)
           hasShowTraffic = true
         } catch {
           // ignore
@@ -102,10 +87,7 @@ const ConnCard: React.FC<Props> = (props) => {
         }
       } else {
         if (!hasShowTraffic) return
-        currentUpload = undefined
-        currentDownload = undefined
-        currentTrayIcon = ''
-        window.electron.ipcRenderer.send('trayIconUpdate')
+        window.electron.ipcRenderer.send('trayIconUpdate', trayIconBase64)
         hasShowTraffic = false
       }
     }
@@ -151,58 +133,56 @@ const ConnCard: React.FC<Props> = (props) => {
       className={`${connectionCardStatus} conn-card`}
     >
       {connectionCardStatus === 'col-span-2' ? (
-        <>
-          <Card
-            fullWidth
-            ref={setNodeRef}
-            {...attributes}
-            {...listeners}
-            className={`${match ? 'bg-primary' : 'hover:bg-primary/30'} ${isDragging ? `${disableAnimation ? '' : 'scale-[0.95]'} tap-highlight-transparent` : ''} relative overflow-hidden`}
-          >
-            <CardBody className="pb-1 pt-0 px-0 overflow-y-visible">
-              <div className="flex justify-between">
-                <Button
-                  isIconOnly
-                  className="bg-transparent pointer-events-none"
-                  variant="flat"
+        <Card
+          fullWidth
+          ref={setNodeRef}
+          {...attributes}
+          {...listeners}
+          className={`${match ? 'bg-primary' : 'hover:bg-content2'} transition-colors ${isDragging ? `${disableAnimation ? '' : 'scale-[0.95]'} tap-highlight-transparent` : ''} relative overflow-hidden`}
+        >
+          <CardBody className="pb-1 pt-0 px-0 overflow-y-visible">
+            <div className="flex justify-between">
+              <Button
+                isIconOnly
+                className="bg-transparent pointer-events-none"
+                variant="flat"
+                color="default"
+              >
+                <IoLink
                   color="default"
-                >
-                  <IoLink
-                    color="default"
-                    className={`${match ? 'text-primary-foreground' : 'text-foreground'} text-[24px]`}
-                  />
-                </Button>
-                <div
-                  className={`p-2 w-full ${match ? 'text-primary-foreground' : 'text-foreground'} `}
-                >
-                  <div className="flex justify-between">
-                    <div className="w-full text-right mr-2">{calcTraffic(upload)}/s</div>
-                    <FaCircleArrowUp className="h-6 leading-6" />
-                  </div>
-                  <div className="flex justify-between">
-                    <div className="w-full text-right mr-2">{calcTraffic(download)}/s</div>
-                    <FaCircleArrowDown className="h-6 leading-6" />
-                  </div>
+                  className={`${match ? 'text-primary-foreground' : 'text-foreground'} text-[24px]`}
+                />
+              </Button>
+              <div
+                className={`p-2 w-full ${match ? 'text-primary-foreground' : 'text-foreground'} `}
+              >
+                <div className="flex justify-between">
+                  <div className="w-full text-right mr-2">{calcTraffic(upload)}/s</div>
+                  <FaCircleArrowUp className="h-6 leading-6" />
+                </div>
+                <div className="flex justify-between">
+                  <div className="w-full text-right mr-2">{calcTraffic(download)}/s</div>
+                  <FaCircleArrowDown className="h-6 leading-6" />
                 </div>
               </div>
-            </CardBody>
-            <CardFooter className="pt-1 relative z-10">
-              <div
-                className={`flex justify-between items-center w-full text-md font-bold ${match ? 'text-primary-foreground' : 'text-foreground'}`}
-              >
-                <h3>连接</h3>
-              </div>
-            </CardFooter>
-            <TrafficChart data={trafficData} isActive={match} />
-          </Card>
-        </>
+            </div>
+          </CardBody>
+          <CardFooter className="pt-1 relative z-10">
+            <div
+              className={`flex justify-between items-center w-full text-md font-bold ${match ? 'text-primary-foreground' : 'text-foreground'}`}
+            >
+              <h3>连接</h3>
+            </div>
+          </CardFooter>
+          <TrafficChart data={trafficData} isActive={match} />
+        </Card>
       ) : (
         <Card
           fullWidth
           ref={setNodeRef}
           {...attributes}
           {...listeners}
-          className={`${match ? 'bg-primary' : 'hover:bg-primary/30'} ${isDragging ? `${disableAnimation ? '' : 'scale-[0.95]'} tap-highlight-transparent` : ''}`}
+          className={`${match ? 'bg-primary' : 'hover:bg-content2'} transition-colors ${isDragging ? `${disableAnimation ? '' : 'scale-[0.95]'} tap-highlight-transparent` : ''}`}
         >
           <CardBody className="pb-1 pt-0 px-0 overflow-y-visible">
             <div className="flex justify-between">
@@ -236,44 +216,34 @@ export default React.memo(ConnCard, (prevProps, nextProps) => {
   return prevProps.iconOnly === nextProps.iconOnly
 })
 
-const drawTrayTrafficIcon = async (
-  upload: number,
-  download: number,
-  customTrayIcon: string
-): Promise<void> => {
-  const trayIconKey = customTrayIcon || 'default'
-  if (upload === currentUpload && download === currentDownload && trayIconKey === currentTrayIcon) {
-    return
-  }
-
-  const uploadText = `${calcTraffic(upload)}/s`
-  const downloadText = `${calcTraffic(download)}/s`
-  const trayIcon = await loadImage(
-    customTrayIcon && !customTrayIcon.startsWith('data:image/')
-      ? await readImageFileDataURL(customTrayIcon)
-      : customTrayIcon || templateTrayIcon
-  )
-
-  const canvas = document.createElement('canvas')
-  canvas.width = 172
-  canvas.height = 36
-  const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('Failed to create the tray icon canvas')
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
-  ctx.font = 'bold 18px "PingFang SC", Arial'
-  ctx.fillStyle = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'white' : 'black'
-  ctx.textBaseline = 'alphabetic'
-  ctx.textAlign = 'left'
-  ctx.fillText('↑', 0, 15)
-  ctx.fillText('↓', 0, 34)
-  ctx.textAlign = 'right'
-  ctx.fillText(uploadText, 116, 15)
-  ctx.fillText(downloadText, 116, 34)
-  ctx.drawImage(trayIcon, 128, 0, 36, 36)
-
-  window.electron.ipcRenderer.send('trayIconUpdate', canvas.toDataURL('image/png'))
+const drawSvg = async (upload: number, download: number): Promise<void> => {
+  if (upload === currentUpload && download === currentDownload) return
   currentUpload = upload
   currentDownload = download
-  currentTrayIcon = trayIconKey
+  const svg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 36"><image height="36" width="36" href="${trayIconBase64}"/><text x="140" y="15" font-size="18" font-family="PingFang SC" font-weight="bold" text-anchor="end">${calcTraffic(upload)}/s</text><text x="140" y="34" font-size="18" font-family="PingFang SC" font-weight="bold" text-anchor="end">${calcTraffic(download)}/s</text></svg>`
+  const image = await loadImage(svg)
+  window.electron.ipcRenderer.send('trayIconUpdate', image)
 }
+
+const loadImage = (url: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = (): void => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      canvas.width = 156
+      canvas.height = 36
+      ctx?.drawImage(img, 0, 0)
+      const png = canvas.toDataURL('image/png')
+      resolve(png)
+    }
+    img.onerror = (): void => {
+      reject()
+    }
+    img.src = url
+  })
+}
+
+const trayIconBase64 = `data:image/svg+xml;utf8,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="15" y="9" width="10" height="46" rx="5" fill="black"/><path d="M25 9h14.5C48.06 9 55 15.94 55 24.5S48.06 40 39.5 40H25V9Z" fill="black"/><rect x="29" y="15" width="11" height="12" rx="5.5" fill="white"/></svg>'
+)}`

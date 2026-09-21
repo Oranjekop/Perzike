@@ -11,10 +11,7 @@ import {
   profilePath,
   profilesDir,
   resourcesFilesDir,
-  subStoreBackendPath,
-  subStoreDir,
-  subStoreFrontendDir,
-  themesDir
+  subStoreDir
 } from './dirs'
 import {
   defaultConfig,
@@ -43,14 +40,12 @@ import { app } from 'electron'
 import { startSSIDCheck } from '../sys/ssid'
 import { startNetworkDetection } from '../core/manager'
 import { initKeyManager } from '../service/manager'
-import { appendAppLog } from './log'
 
 async function initDirs(): Promise<void> {
   if (!existsSync(dataDir())) {
     await mkdir(dataDir())
   }
   const dirs = [
-    themesDir(),
     profilesDir(),
     overrideDir(),
     mihomoWorkDir(),
@@ -94,15 +89,7 @@ async function initConfig(): Promise<void> {
 }
 
 async function initFiles(): Promise<void> {
-  const copy = async (file: string, customTargetPath?: string): Promise<void> => {
-    if (customTargetPath) {
-      const sourcePath = path.join(resourcesFilesDir(), file)
-      if (!existsSync(customTargetPath) && existsSync(sourcePath)) {
-        await cp(sourcePath, customTargetPath, { recursive: true })
-      }
-      return
-    }
-
+  const copy = async (file: string): Promise<void> => {
     const targetPath = path.join(mihomoWorkDir(), file)
     const testTargetPath = path.join(mihomoTestDir(), file)
     const sourcePath = path.join(resourcesFilesDir(), file)
@@ -119,38 +106,47 @@ async function initFiles(): Promise<void> {
     copy('geoip.dat'),
     copy('geosite.dat'),
     copy('ASN.mmdb'),
-    copy('BundleMRS.7z'),
-    copy('sub-store.bundle.js', subStoreBackendPath()),
-    copy('sub-store-frontend', subStoreFrontendDir())
+    copy('sub-store.bundle.js'),
+    copy('sub-store-frontend')
   ])
 }
 
 async function cleanup(): Promise<void> {
-  const [files, logs, { maxLogDays = 7 }] = await Promise.all([
-    readdir(dataDir()),
-    readdir(logDir()),
-    getAppConfig()
-  ])
-  const expiredBefore = Date.now() - maxLogDays * 24 * 60 * 60 * 1000
-  const updateCacheFiles = files.filter(
-    (file) => file.endsWith('.exe') || file.endsWith('.pkg') || file.endsWith('.7z')
-  )
-  const expiredLogs = logs.filter((log) => {
+  // update cache
+  const files = await readdir(dataDir())
+  for (const file of files) {
+    if (file.endsWith('.exe') || file.endsWith('.pkg') || file.endsWith('.7z')) {
+      try {
+        await rm(path.join(dataDir(), file))
+      } catch {
+        // ignore
+      }
+    }
+  }
+  // logs
+  const { maxLogDays = 7 } = await getAppConfig()
+  const logs = await readdir(logDir())
+  for (const log of logs) {
     const dateStr = log.match(/(\d{4}-\d{1,2}-\d{1,2})(?=\.log$)/)?.[1]
-    if (!dateStr) return false
+    if (!dateStr) continue
 
-    const timestamp = new Date(dateStr).getTime()
-    return !Number.isNaN(timestamp) && timestamp < expiredBefore
-  })
+    const date = new Date(dateStr)
+    if (Number.isNaN(date.getTime())) continue
 
-  await Promise.all([
-    ...updateCacheFiles.map((file) => rm(path.join(dataDir(), file)).catch(() => {})),
-    ...expiredLogs.map((log) => rm(path.join(logDir(), log)).catch(() => {}))
-  ])
+    const diff = Date.now() - date.getTime()
+    if (diff > maxLogDays * 24 * 60 * 60 * 1000) {
+      try {
+        await rm(path.join(logDir(), log))
+      } catch {
+        // ignore
+      }
+    }
+  }
 }
 
 async function migration(): Promise<void> {
-  const [appConfig, mihomoConfig] = await Promise.all([getAppConfig(), getControledMihomoConfig()])
+  const appConfig = await getAppConfig()
+  const mihomoConfig = await getControledMihomoConfig()
 
   const mihomoConfigPatch: Partial<MihomoConfig> = {}
 
@@ -190,6 +186,14 @@ async function migration(): Promise<void> {
     }
   }
 
+  if (appConfig.core === 'system') {
+    appConfigPatch.core = 'mihomo'
+  }
+
+  if (appConfig.coreStartupMode === 'post-up') {
+    appConfigPatch.coreStartupMode = 'log'
+  }
+
   if (Object.keys(appConfigPatch).length > 0) {
     await patchAppConfig(appConfigPatch)
   }
@@ -200,44 +204,16 @@ function initDeeplink(): void {
     if (process.argv.length >= 2) {
       app.setAsDefaultProtocolClient('clash', process.execPath, [path.resolve(process.argv[1])])
       app.setAsDefaultProtocolClient('mihomo', process.execPath, [path.resolve(process.argv[1])])
-      app.setAsDefaultProtocolClient('sparkle', process.execPath, [path.resolve(process.argv[1])])
+      app.setAsDefaultProtocolClient('perzike', process.execPath, [path.resolve(process.argv[1])])
     }
   } else {
     app.setAsDefaultProtocolClient('clash')
     app.setAsDefaultProtocolClient('mihomo')
-    app.setAsDefaultProtocolClient('sparkle')
+    app.setAsDefaultProtocolClient('perzike')
   }
 }
 
-function runBackgroundInitTask(name: string, task: Promise<void>): void {
-  task.catch((error) => {
-    appendAppLog(`[App]: background init task ${name} failed, ${error}\n`).catch(() => {})
-  })
-}
-
-function startBackgroundInit(appConfig: AppConfig): void {
-  const { sysProxy, onlyActiveDevice = false, networkDetection = false } = appConfig
-
-  runBackgroundInitTask('substore frontend', startSubStoreFrontendServer())
-  runBackgroundInitTask('substore backend', startSubStoreBackendServer())
-  runBackgroundInitTask('ssid check', startSSIDCheck())
-
-  if (networkDetection) {
-    runBackgroundInitTask('network detection', startNetworkDetection())
-  }
-
-  runBackgroundInitTask(
-    'sysproxy restore',
-    (async (): Promise<void> => {
-      if (sysProxy.enable) {
-        await startPacServer()
-      }
-      await triggerSysProxy(sysProxy.enable, onlyActiveDevice)
-    })()
-  )
-}
-
-export async function init(): Promise<AppConfig> {
+export async function init(): Promise<void> {
   await initDirs()
   await Promise.all([initConfig(), initFiles()])
   await migration()
@@ -250,7 +226,32 @@ export async function init(): Promise<AppConfig> {
     })
   ])
 
+  const { sysProxy, onlyActiveDevice = false, networkDetection = false } = appConfig
+
+  const initTasks: Promise<void>[] = [
+    startSubStoreFrontendServer(),
+    startSubStoreBackendServer(),
+    startSSIDCheck()
+  ]
+
+  if (networkDetection) {
+    initTasks.push(startNetworkDetection())
+  }
+
+  initTasks.push(
+    (async (): Promise<void> => {
+      try {
+        if (sysProxy.enable) {
+          await startPacServer()
+        }
+        await triggerSysProxy(sysProxy.enable, onlyActiveDevice)
+      } catch {
+        // ignore
+      }
+    })()
+  )
+
+  await Promise.all(initTasks)
+
   initDeeplink()
-  startBackgroundInit(appConfig)
-  return appConfig
 }

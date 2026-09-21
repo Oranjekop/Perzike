@@ -1,6 +1,5 @@
 import React, { createContext, useContext, ReactNode, useEffect } from 'react'
 import useSWR from 'swr'
-import { notify } from '@renderer/utils/notification'
 import {
   getProfileConfig,
   setProfileConfig as set,
@@ -9,6 +8,7 @@ import {
   updateProfileItem as update,
   changeCurrentProfile as change
 } from '@renderer/utils/ipc'
+import { notify } from '@renderer/utils/notification'
 
 interface ProfileConfigContextType {
   profileConfig: ProfileConfig | undefined

@@ -3,76 +3,56 @@ import { parseYaml } from '../utils/yaml'
 import { app, shell } from 'electron'
 import { getAppConfig, getControledMihomoConfig } from '../config'
 import { dataDir, exeDir, exePath, isPortable, resourcesFilesDir } from '../utils/dirs'
-import { copyFile, rm, writeFile, readFile, statfs } from 'fs/promises'
+import { copyFile, rm, writeFile, readFile } from 'fs/promises'
 import path from 'path'
 import { existsSync } from 'fs'
-import { exec, spawn } from 'child_process'
+import { exec, execFile, spawn } from 'child_process'
 import { promisify } from 'util'
 import { createHash } from 'crypto'
-import os from 'os'
 import { setNotQuitDialog, mainWindow } from '..'
-import { triggerSysProxy } from '../sys/sysproxy'
+import { disableSysProxy } from '../sys/sysproxy'
 import { serviceStatus, stopService } from '../service/manager'
-import {
-  clearAppUpdateServiceFallbackPause,
-  pauseServiceFallbackForAppUpdate
-} from '../service/fallback'
 import { appendAppLog } from '../utils/log'
-import { systemCoreOnlyBuild } from '../../shared/build-flags'
 
 let downloadCancelToken: CancelTokenSource | null = null
-const WINDOWS_INSTALLER_MIN_TEMP_SPACE_BYTES = 1024 * 1024 * 1024
-const UPDATE_MANIFEST_URLS: Record<AppUpdateChannel, string> = {
-  stable: 'https://github.com/xishang0128/sparkle/releases/latest/download/latest.yml',
-  rolling: 'https://github.com/xishang0128/sparkle/releases/download/rolling/latest.yml'
+
+interface GithubReleaseAsset {
+  name: string
+  digest?: string
+  browser_download_url: string
 }
 
-function getGitHubAuthHeaders(token?: string): Record<string, string> {
-  const normalizedToken = token?.trim()
-  return normalizedToken ? { Authorization: `Bearer ${normalizedToken}` } : {}
+interface GithubRelease {
+  tag_name: string
+  draft: boolean
+  prerelease: boolean
+  assets: GithubReleaseAsset[]
 }
 
-function resolveReleaseTag(version: string, tag?: string): string {
-  if (tag) return tag
-  if (version.includes('-rolling-')) return 'rolling'
-  return version
+function quotePowerShellString(value: string): string {
+  return `'${value.replace(/'/g, "''")}'`
 }
 
-async function ensureFreeSpace(dir: string, requiredBytes: number, message: string): Promise<void> {
-  const stats = await statfs(dir)
-  const freeBytes = Number(BigInt(stats.bavail) * BigInt(stats.bsize))
-  if (freeBytes < requiredBytes) {
-    const freeMb = Math.floor(freeBytes / 1024 / 1024)
-    const requiredMb = Math.ceil(requiredBytes / 1024 / 1024)
-    throw new Error(`${message}。需要：${requiredMb} MB，当前可用：${freeMb} MB`)
-  }
+function quoteWindowsArgument(value: string): string {
+  if (value === '') return '""'
+  if (!/[ \t"]/.test(value)) return value
+
+  return `"${value.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/g, '$1$1')}"`
 }
 
-export async function checkUpdate(): Promise<AppVersion | undefined> {
-  const { 'mixed-port': mixedPort = 7890 } = await getControledMihomoConfig()
-  const { updateChannel = 'stable', githubToken } = await getAppConfig()
-  const url = UPDATE_MANIFEST_URLS[updateChannel]
-  const res = await axios.get(url, {
-    headers: {
-      'Content-Type': 'application/octet-stream',
-      ...getGitHubAuthHeaders(githubToken)
-    },
-    ...(mixedPort != 0 && {
-      proxy: {
-        protocol: 'http',
-        host: '127.0.0.1',
-        port: mixedPort
-      }
-    }),
-    responseType: 'text'
-  })
-  const latest = parseYaml<AppVersion>(res.data)
-  const currentVersion = app.getVersion()
-  if (latest.version !== currentVersion) {
-    return latest
-  } else {
-    return undefined
-  }
+async function launchWindowsInstaller(installerPath: string, args: string[]): Promise<void> {
+  const execFilePromise = promisify(execFile)
+  const argumentList = args.map(quoteWindowsArgument).join(' ')
+  const command = [
+    "$ErrorActionPreference = 'Stop'",
+    `Start-Process -FilePath ${quotePowerShellString(installerPath)} -ArgumentList ${quotePowerShellString(argumentList)} -Verb RunAs -WindowStyle Hidden`
+  ].join('; ')
+
+  await execFilePromise(
+    'powershell.exe',
+    ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', command],
+    { timeout: 120000 }
+  )
 }
 
 async function stopServiceForPortableUpdate(): Promise<void> {
@@ -89,56 +69,14 @@ async function stopServiceForPortableUpdate(): Promise<void> {
   await stopService()
 }
 
-async function ensureWindowsInstallerTempSpace(): Promise<void> {
-  if (process.platform !== 'win32') {
-    return
-  }
-
-  const tempDir = os.tmpdir()
-  await ensureFreeSpace(tempDir, WINDOWS_INSTALLER_MIN_TEMP_SPACE_BYTES, '临时目录空间不足')
-}
-
-export async function downloadAndInstallUpdate(version: string, tag?: string): Promise<void> {
-  let appUpdateInstalling = false
-  let sysProxyPaused = false
-  const pauseSysProxy = async (): Promise<void> => {
-    sysProxyPaused = true
-    await triggerSysProxy(false, false)
-  }
-  const resumeSysProxy = async (): Promise<void> => {
-    if (!sysProxyPaused) return
-    sysProxyPaused = false
-    try {
-      const { sysProxy, onlyActiveDevice = false } = await getAppConfig()
-      if (sysProxy.enable) await triggerSysProxy(true, onlyActiveDevice)
-    } catch (error) {
-      await appendAppLog(`[Updater]: restore sysproxy failed, ${error}\n`).catch(() => {})
-    }
-  }
-  const { 'mixed-port': mixedPort = 7890 } = await getControledMihomoConfig()
-  const { githubToken } = await getAppConfig()
-  const releaseTag = resolveReleaseTag(version, tag)
-  const baseUrl = `https://github.com/xishang0128/sparkle/releases/download/${releaseTag}/`
-  const fileMap: Record<string, string> = {
-    'win32-x64': `sparkle-windows-${version}-x64-setup.exe`,
-    'win32-arm64': `sparkle-windows-${version}-arm64-setup.exe`,
-    'darwin-x64': `sparkle-macos-${version}-x64.pkg`,
-    'darwin-arm64': `sparkle-macos-${version}-arm64.pkg`
-  }
-  let file = fileMap[`${process.platform}-${process.arch}`]
-  if (isPortable()) {
-    file = file.replace('-setup.exe', '-portable.7z')
-  }
-  if (!file) {
-    throw new Error('不支持自动更新，请手动下载更新')
-  }
-  downloadCancelToken = axios.CancelToken.source()
-
-  const apiUrl = `https://api.github.com/repos/xishang0128/sparkle/releases/tags/${releaseTag}`
-  const apiRequestConfig: AxiosRequestConfig = {
+function createAxiosConfig(
+  mixedPort: number,
+  cancelToken?: CancelTokenSource['token']
+): AxiosRequestConfig {
+  return {
     headers: {
-      Accept: 'application/vnd.github.v3+json',
-      ...getGitHubAuthHeaders(githubToken)
+      Accept: 'application/vnd.github+json',
+      'User-Agent': 'Perzike-Updater'
     },
     ...(mixedPort != 0 && {
       proxy: {
@@ -147,8 +85,117 @@ export async function downloadAndInstallUpdate(version: string, tag?: string): P
         port: mixedPort
       }
     }),
-    cancelToken: downloadCancelToken.token
+    ...(cancelToken && { cancelToken })
   }
+}
+
+async function fetchReleaseByTag(
+  tag: string,
+  mixedPort: number
+): Promise<GithubRelease | undefined> {
+  try {
+    const res = await axios.get<GithubRelease>(
+      `https://api.github.com/repos/Oranjekop/Perzike/releases/tags/${tag}`,
+      createAxiosConfig(mixedPort)
+    )
+    return res.data
+  } catch (e) {
+    if (axios.isAxiosError(e) && e.response?.status === 404) {
+      return undefined
+    }
+    throw e
+  }
+}
+
+async function fetchReleases(mixedPort: number): Promise<GithubRelease[]> {
+  const res = await axios.get<GithubRelease[]>(
+    'https://api.github.com/repos/Oranjekop/Perzike/releases?per_page=20',
+    createAxiosConfig(mixedPort)
+  )
+  return res.data
+}
+
+function getLatestYmlAsset(release: GithubRelease): GithubReleaseAsset | undefined {
+  return release.assets.find((asset) => asset.name === 'latest.yml')
+}
+
+async function resolveReleaseForChannel(
+  updateChannel: AppConfig['updateChannel'],
+  mixedPort: number
+): Promise<GithubRelease | undefined> {
+  if (updateChannel === 'beta') {
+    const betaRelease = await fetchReleaseByTag('pre-release', mixedPort)
+    if (betaRelease && !betaRelease.draft) {
+      return betaRelease
+    }
+  }
+
+  const releases = await fetchReleases(mixedPort)
+  return releases.find((release) => {
+    if (release.draft) return false
+    if (updateChannel === 'stable' && release.prerelease) return false
+    if (updateChannel === 'beta' && !release.prerelease) return false
+    return Boolean(getLatestYmlAsset(release))
+  })
+}
+
+async function resolveReleaseForVersion(
+  version: string,
+  mixedPort: number
+): Promise<GithubRelease | undefined> {
+  if (version.includes('beta')) {
+    return await resolveReleaseForChannel('beta', mixedPort)
+  }
+
+  const releases = await fetchReleases(mixedPort)
+  return releases.find((release) => {
+    if (release.draft || release.prerelease) return false
+    return release.tag_name === version || release.tag_name === `v${version}`
+  })
+}
+
+export async function checkUpdate(): Promise<AppVersion | undefined> {
+  const { 'mixed-port': mixedPort = 7890 } = await getControledMihomoConfig()
+  const { updateChannel = 'stable' } = await getAppConfig()
+  const release = await resolveReleaseForChannel(updateChannel, mixedPort)
+  if (!release) {
+    return undefined
+  }
+
+  const latestYmlAsset = getLatestYmlAsset(release)
+  if (!latestYmlAsset) {
+    return undefined
+  }
+
+  const res = await axios.get(latestYmlAsset.browser_download_url, {
+    ...createAxiosConfig(mixedPort),
+    responseType: 'text'
+  })
+  const latest = parseYaml<AppVersion>(res.data)
+  const currentVersion = app.getVersion()
+  if (latest.version !== currentVersion) {
+    return latest
+  } else {
+    return undefined
+  }
+}
+
+export async function downloadAndInstallUpdate(version: string): Promise<void> {
+  const { 'mixed-port': mixedPort = 7890 } = await getControledMihomoConfig()
+  const fileMap = {
+    'win32-x64': `perzike-windows-${version}-x64-setup.exe`,
+    'win32-arm64': `perzike-windows-${version}-arm64-setup.exe`,
+    'darwin-x64': `perzike-macos-${version}-x64.pkg`,
+    'darwin-arm64': `perzike-macos-${version}-arm64.pkg`
+  }
+  let file = fileMap[`${process.platform}-${process.arch}`]
+  if (!file) {
+    throw new Error('不支持自动更新，请手动下载更新')
+  }
+  if (isPortable()) {
+    file = file.replace('-setup.exe', '-portable.7z')
+  }
+  downloadCancelToken = axios.CancelToken.source()
 
   try {
     mainWindow?.webContents.send('update-status', {
@@ -156,9 +203,12 @@ export async function downloadAndInstallUpdate(version: string, tag?: string): P
       progress: 0
     })
 
-    const releaseRes = await axios.get(apiUrl, apiRequestConfig)
-    const assets: Array<{ name: string; digest?: string; size?: number }> =
-      releaseRes.data.assets || []
+    const release = await resolveReleaseForVersion(version, mixedPort)
+    if (!release) {
+      throw new Error(`未找到版本 ${version} 对应的发布信息`)
+    }
+
+    const assets = release.assets || []
     const matchedAsset = assets.find((a) => a.name === file)
     if (!matchedAsset || !matchedAsset.digest) {
       throw new Error(`无法从 GitHub Release 中找到 "${file}" 对应的 SHA-256 信息`)
@@ -166,23 +216,12 @@ export async function downloadAndInstallUpdate(version: string, tag?: string): P
     const expectedHash = matchedAsset.digest.split(':')[1].toLowerCase()
 
     if (!existsSync(path.join(dataDir(), file))) {
-      if (matchedAsset.size) {
-        await ensureFreeSpace(dataDir(), matchedAsset.size, '更新包保存目录空间不足')
-      }
-      const res = await axios.get(`${baseUrl}${file}`, {
+      const res = await axios.get(matchedAsset.browser_download_url, {
         responseType: 'arraybuffer',
-        ...(mixedPort != 0 && {
-          proxy: {
-            protocol: 'http',
-            host: '127.0.0.1',
-            port: mixedPort
-          }
-        }),
+        ...createAxiosConfig(mixedPort, downloadCancelToken.token),
         headers: {
-          'Content-Type': 'application/octet-stream',
-          ...getGitHubAuthHeaders(githubToken)
+          'Content-Type': 'application/octet-stream'
         },
-        cancelToken: downloadCancelToken.token,
         onDownloadProgress: (progressEvent) => {
           const percentCompleted = Math.round(
             (progressEvent.loaded * 100) / (progressEvent.total || 1)
@@ -210,19 +249,13 @@ export async function downloadAndInstallUpdate(version: string, tag?: string): P
       progress: 100
     })
 
+    await disableSysProxy(false).catch(() => undefined)
     if (file.endsWith('.exe')) {
-      await ensureWindowsInstallerTempSpace()
-      await pauseSysProxy()
-      await pauseServiceFallbackForAppUpdate()
-      spawn(path.join(dataDir(), file), ['/S', '--updated', '--force-run'], {
-        detached: true,
-        stdio: 'ignore'
-      }).unref()
-      appUpdateInstalling = true
+      await launchWindowsInstaller(path.join(dataDir(), file), ['/S', '--force-run'])
+      setNotQuitDialog()
+      app.quit()
     }
-    if (!systemCoreOnlyBuild && file.endsWith('.7z')) {
-      await pauseSysProxy()
-      await pauseServiceFallbackForAppUpdate()
+    if (file.endsWith('.7z')) {
       await stopServiceForPortableUpdate()
       await copyFile(path.join(resourcesFilesDir(), '7za.exe'), path.join(dataDir(), '7za.exe'))
       spawn(
@@ -236,33 +269,23 @@ export async function downloadAndInstallUpdate(version: string, tag?: string): P
           detached: true
         }
       ).unref()
-      appUpdateInstalling = true
       setNotQuitDialog()
       app.quit()
     }
     if (file.endsWith('.pkg')) {
       try {
-        await pauseSysProxy()
-        await pauseServiceFallbackForAppUpdate()
         const execPromise = promisify(exec)
         const shell = `installer -pkg ${path.join(dataDir(), file).replace(' ', '\\\\ ')} -target /`
         const command = `do shell script "${shell}" with administrator privileges`
         await execPromise(`osascript -e '${command}'`)
-        appUpdateInstalling = true
         app.relaunch()
         setNotQuitDialog()
         app.quit()
       } catch {
-        await clearAppUpdateServiceFallbackPause()
-        await resumeSysProxy()
         shell.openPath(path.join(dataDir(), file))
       }
     }
   } catch (e) {
-    if (!appUpdateInstalling) {
-      await clearAppUpdateServiceFallbackPause()
-      await resumeSysProxy()
-    }
     await rm(path.join(dataDir(), file), { force: true })
     if (axios.isCancel(e)) {
       mainWindow?.webContents.send('update-status', {

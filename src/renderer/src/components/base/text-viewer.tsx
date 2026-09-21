@@ -230,7 +230,8 @@ export const TextViewer: React.FC<Props> = ({ value }) => {
     >
       <span
         ref={measureRef}
-        className="pointer-events-none absolute -left-2499.75 font-mono text-[13px] leading-5 tracking-normal"
+        className="pointer-events-none absolute font-mono text-[13px] leading-5 tracking-normal"
+        style={{ left: -9999 }}
       >
         0000000000
       </span>

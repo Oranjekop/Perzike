@@ -12,6 +12,7 @@ const titleMap = {
   resourceCardStatus: '外部资源',
   overrideCardStatus: '覆写',
   connectionCardStatus: '连接',
+  trafficCardStatus: '流量统计',
   mihomoCoreCardStatus: '内核',
   dnsCardStatus: 'DNS',
   sniffCardStatus: '域名嗅探',
@@ -29,6 +30,7 @@ const SiderConfig: React.FC = () => {
     resourceCardStatus = 'col-span-1',
     overrideCardStatus = 'col-span-1',
     connectionCardStatus = 'col-span-2',
+    trafficCardStatus = 'col-span-1',
     mihomoCoreCardStatus = 'col-span-2',
     dnsCardStatus = 'col-span-1',
     sniffCardStatus = 'col-span-1',
@@ -45,6 +47,7 @@ const SiderConfig: React.FC = () => {
     resourceCardStatus,
     overrideCardStatus,
     connectionCardStatus,
+    trafficCardStatus,
     mihomoCoreCardStatus,
     dnsCardStatus,
     sniffCardStatus,
@@ -53,15 +56,10 @@ const SiderConfig: React.FC = () => {
   }
 
   return (
-    <SettingCard header="侧边栏设置">
+    <SettingCard title="侧边栏设置">
       {Object.keys(cardStatus).map((key, index, array) => {
         return (
-          <SettingItem
-            compatKey="legacy"
-            title={titleMap[key]}
-            key={key}
-            divider={index !== array.length - 1}
-          >
+          <SettingItem title={titleMap[key]} key={key} divider={index !== array.length - 1}>
             <RadioGroup
               orientation="horizontal"
               value={cardStatus[key]}
@@ -71,6 +69,7 @@ const SiderConfig: React.FC = () => {
             >
               <Radio value="col-span-2">大</Radio>
               <Radio value="col-span-1">小</Radio>
+              <Radio value="single-row">单行</Radio>
               <Radio value="hidden">隐藏</Radio>
             </RadioGroup>
           </SettingItem>

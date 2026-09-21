@@ -14,13 +14,10 @@ import { OverrideConfigProvider } from './hooks/use-override-config'
 import { ProfileConfigProvider } from './hooks/use-profile-config'
 import { RulesProvider } from './hooks/use-rules'
 import { GroupsProvider } from './hooks/use-groups'
+import { ProxiesStateProvider } from './hooks/use-proxies-state'
 import AppNotificationProvider from './components/base/app-notification-provider'
 
 let F12Count = 0
-
-if (!window.location.hash) {
-  window.history.replaceState(null, '', '#/proxies')
-}
 
 init().then(() => {
   document.addEventListener('keydown', (e) => {
@@ -59,9 +56,11 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
                 <ProfileConfigProvider>
                   <OverrideConfigProvider>
                     <GroupsProvider>
-                      <RulesProvider>
-                        <App />
-                      </RulesProvider>
+                      <ProxiesStateProvider>
+                        <RulesProvider>
+                          <App />
+                        </RulesProvider>
+                      </ProxiesStateProvider>
                     </GroupsProvider>
                   </OverrideConfigProvider>
                 </ProfileConfigProvider>

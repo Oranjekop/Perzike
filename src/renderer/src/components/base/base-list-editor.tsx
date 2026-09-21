@@ -6,7 +6,9 @@ import type { ValidationResult } from '@renderer/utils/validate'
 interface EditableListProps {
   title?: string
   items:
-    string[] | Record<string, string | string[]> | Array<{ key: string; value: string | string[] }>
+    | string[]
+    | Record<string, string | string[]>
+    | Array<{ key: string; value: string | string[] }>
   onChange: (items: unknown) => void
   placeholder?: string
   part2Placeholder?: string
@@ -229,7 +231,7 @@ const EditableList: React.FC<EditableListProps> = ({
                 <Button
                   size="sm"
                   variant="flat"
-                  color="warning"
+                  color="danger"
                   onPress={() => handleUpdate(idx, '', '')}
                 >
                   <MdDeleteForever className="text-lg" />

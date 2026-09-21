@@ -1,5 +1,12 @@
-import { Button, Modal } from '@heroui-v3/react'
-import { Spinner } from '@heroui/react'
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Button,
+  Spinner
+} from '@heroui/react'
 import React, { useEffect, useState } from 'react'
 import { BaseEditor } from '../base/base-editor-lazy'
 import { TextViewer } from '../base/text-viewer'
@@ -10,9 +17,9 @@ import {
   setFileStr
 } from '@renderer/utils/ipc'
 import { dump, load } from 'js-yaml'
+import { useAppConfig } from '@renderer/hooks/use-app-config'
 import ConfirmModal from '../base/base-confirm'
 import { notify } from '@renderer/utils/notification'
-import { systemCoreOnlyBuild } from '../../../../shared/build-flags'
 type Language = 'yaml' | 'javascript' | 'css' | 'json' | 'text'
 const FILE_PERMISSION_ELEVATION_REQUIRED = 'FILE_PERMISSION_ELEVATION_REQUIRED'
 const TEXT_VIEWER_LINE_LIMIT = 20000
@@ -22,16 +29,19 @@ interface Props {
   path: string
   type: string
   title: string
-  providerType: string
+  privderType: string
   format?: string
-  ageSecretKey?: string
 }
 
 function getDefaultLanguage(format?: string): Language {
   return !format || format === 'YamlRule' ? 'yaml' : 'text'
 }
 
-function getViewerContent(fileContent: string, providerType: string, title: string): string {
+function getViewerContent(
+  fileContent: string,
+  privderType: string,
+  title: string
+): string {
   try {
     const parsedYaml = load(fileContent)
     if (!parsedYaml || typeof parsedYaml !== 'object') {
@@ -39,12 +49,12 @@ function getViewerContent(fileContent: string, providerType: string, title: stri
     }
 
     const yamlObj = parsedYaml as Record<string, unknown>
-    const payload = yamlObj[providerType]?.[title]?.payload
+    const payload = yamlObj[privderType]?.[title]?.payload
     if (payload) {
-      return dump(providerType === 'proxy-providers' ? { proxies: payload } : { rules: payload })
+      return dump(privderType === 'proxy-providers' ? { proxies: payload } : { rules: payload })
     }
 
-    const targetObj = yamlObj[providerType]?.[title]
+    const targetObj = yamlObj[privderType]?.[title]
     return targetObj ? dump(targetObj) : fileContent
   } catch {
     return fileContent
@@ -65,7 +75,8 @@ function hasManyLines(value: string, limit: number): boolean {
 }
 
 const Viewer: React.FC<Props> = (props) => {
-  const { type, path, title, format, providerType, onClose, ageSecretKey } = props
+  const { type, path, title, format, privderType, onClose } = props
+  const { appConfig: { disableAnimation = false } = {} } = useAppConfig()
   const [currData, setCurrData] = useState('')
   const [showPermissionConfirm, setShowPermissionConfirm] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -81,10 +92,6 @@ const Viewer: React.FC<Props> = (props) => {
       onClose()
     } catch (e) {
       if (!elevated && typeof e === 'string' && e.includes(FILE_PERMISSION_ELEVATION_REQUIRED)) {
-        if (systemCoreOnlyBuild) {
-          notify('当前文件没有写入权限，系统内核构建不支持提权保存', { variant: 'danger' })
-          return
-        }
         setShowPermissionConfirm(true)
         return
       }
@@ -110,11 +117,11 @@ const Viewer: React.FC<Props> = (props) => {
       try {
         const fileContent = await (format === 'MrsRule'
           ? getFilePreviewStr(path, format)
-          : getFileStr(type === 'Inline' ? 'config.yaml' : path, ageSecretKey))
+          : getFileStr(type === 'Inline' ? 'config.yaml' : path))
 
         if (canceled) return
         setCurrData(
-          format === 'MrsRule' ? fileContent : getViewerContent(fileContent, providerType, title)
+          format === 'MrsRule' ? fileContent : getViewerContent(fileContent, privderType, title)
         )
       } catch (e) {
         if (!canceled) {
@@ -131,11 +138,23 @@ const Viewer: React.FC<Props> = (props) => {
     return () => {
       canceled = true
     }
-  }, [ageSecretKey, format, path, providerType, title, type])
+  }, [format, path, privderType, title, type])
 
   return (
-    <Modal>
-      {!systemCoreOnlyBuild && showPermissionConfirm && (
+    <Modal
+      backdrop={disableAnimation ? 'transparent' : 'blur'}
+      disableAnimation={disableAnimation}
+      classNames={{
+        base: 'max-w-none w-full',
+        backdrop: 'top-[48px]'
+      }}
+      size="5xl"
+      hideCloseButton
+      isOpen={true}
+      onOpenChange={onClose}
+      scrollBehavior="inside"
+    >
+      {showPermissionConfirm && (
         <ConfirmModal
           onChange={setShowPermissionConfirm}
           title="保存需要提权"
@@ -157,47 +176,40 @@ const Viewer: React.FC<Props> = (props) => {
           className="w-120"
         />
       )}
-      <Modal.Backdrop
-        isOpen={true}
-        onOpenChange={onClose}
-        variant="blur"
-        className="top-12 h-[calc(100%-48px)]"
-      >
-        <Modal.Container scroll="inside">
-          <Modal.Dialog className="mt-4 h-[calc(100%-32px)] max-w-none w-[calc(100%-100px)]">
-            <Modal.Header className="app-drag pb-0">
-              <Modal.Heading>{title}</Modal.Heading>
-            </Modal.Header>
-            <Modal.Body className="h-full">
-              {isLoading ? (
-                <div className="flex h-full items-center justify-center">
-                  <Spinner size="lg" />
-                </div>
-              ) : useTextViewer ? (
-                <TextViewer value={currData} />
-              ) : (
-                <BaseEditor
-                  language={editorLanguage}
-                  value={currData}
-                  readOnly={type !== 'File'}
-                  onChange={(value) => setCurrData(value)}
-                />
-              )}
-            </Modal.Body>
-            {type === 'File' && !isLoading && (
-              <Modal.Footer className="pt-0 pb-0">
-                <Button size="sm" variant="secondary" isDisabled={isSaving} onPress={onClose}>
-                  取消
-                </Button>
-                <Button size="sm" isPending={isSaving} onPress={() => save()}>
-                  保存
-                </Button>
-              </Modal.Footer>
-            )}
-            {type !== 'File' && <Modal.CloseTrigger className="app-nodrag" />}
-          </Modal.Dialog>
-        </Modal.Container>
-      </Modal.Backdrop>
+      <ModalContent className="h-full w-[calc(100%-100px)]">
+        <ModalHeader className="flex pb-0 app-drag">{title}</ModalHeader>
+        <ModalBody className="h-full">
+          {isLoading ? (
+            <div className="flex h-full items-center justify-center">
+              <Spinner size="lg" />
+            </div>
+          ) : useTextViewer ? (
+            <TextViewer value={currData} />
+          ) : (
+            <BaseEditor
+              language={editorLanguage}
+              value={currData}
+              readOnly={type != 'File'}
+              onChange={(value) => setCurrData(value)}
+            />
+          )}
+        </ModalBody>
+        <ModalFooter className="pt-0">
+          <Button size="sm" variant="light" onPress={onClose}>
+            关闭
+          </Button>
+          {type == 'File' && !isLoading && (
+            <Button
+              size="sm"
+              color="primary"
+              isLoading={isSaving}
+              onPress={() => save()}
+            >
+              保存
+            </Button>
+          )}
+        </ModalFooter>
+      </ModalContent>
     </Modal>
   )
 }

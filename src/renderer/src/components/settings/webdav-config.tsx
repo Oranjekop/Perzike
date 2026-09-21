@@ -10,7 +10,7 @@ import { notify } from '@renderer/utils/notification'
 
 const WebdavConfig: React.FC = () => {
   const { appConfig, patchAppConfig } = useAppConfig()
-  const { webdavUrl, webdavUsername, webdavPassword, webdavDir = 'sparkle' } = appConfig || {}
+  const { webdavUrl, webdavUsername, webdavPassword, webdavDir = 'perzike' } = appConfig || {}
   const [backuping, setBackuping] = useState(false)
   const [restoring, setRestoring] = useState(false)
   const [filenames, setFilenames] = useState<string[]>([])
@@ -49,8 +49,8 @@ const WebdavConfig: React.FC = () => {
       {restoreOpen && (
         <WebdavRestoreModal filenames={filenames} onClose={() => setRestoreOpen(false)} />
       )}
-      <SettingCard header="WebDAV 备份">
-        <SettingItem compatKey="legacy" title="WebDAV 地址" divider>
+      <SettingCard title="WebDAV 备份">
+        <SettingItem title="WebDAV 地址" divider>
           <Input
             size="sm"
             className="w-[60%]"
@@ -61,7 +61,7 @@ const WebdavConfig: React.FC = () => {
             }}
           />
         </SettingItem>
-        <SettingItem compatKey="legacy" title="WebDAV 备份目录" divider>
+        <SettingItem title="WebDAV 备份目录" divider>
           <Input
             size="sm"
             className="w-[60%]"
@@ -72,7 +72,7 @@ const WebdavConfig: React.FC = () => {
             }}
           />
         </SettingItem>
-        <SettingItem compatKey="legacy" title="WebDAV 用户名" divider>
+        <SettingItem title="WebDAV 用户名" divider>
           <Input
             size="sm"
             className="w-[60%]"
@@ -83,7 +83,7 @@ const WebdavConfig: React.FC = () => {
             }}
           />
         </SettingItem>
-        <SettingItem compatKey="legacy" title="WebDAV 密码" divider>
+        <SettingItem title="WebDAV 密码" divider>
           <Input
             size="sm"
             className="w-[60%]"
@@ -95,14 +95,24 @@ const WebdavConfig: React.FC = () => {
             }}
           />
         </SettingItem>
-        <div className="flex justify0between">
-          <Button isLoading={backuping} fullWidth size="sm" className="mr-1" onPress={handleBackup}>
+        <div className="flex justify-between">
+          <Button
+            isLoading={backuping}
+            fullWidth
+            size="sm"
+            color="primary"
+            variant="flat"
+            className="mr-1"
+            onPress={handleBackup}
+          >
             备份
           </Button>
           <Button
             isLoading={restoring}
             fullWidth
             size="sm"
+            color="primary"
+            variant="flat"
             className="ml-1"
             onPress={handleRestore}
           >

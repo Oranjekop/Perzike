@@ -1,4 +1,4 @@
-import { app, ipcMain } from 'electron'
+import { app, dialog, ipcMain } from 'electron'
 import {
   mihomoChangeProxy,
   mihomoCloseConnections,
@@ -27,6 +27,7 @@ import { checkAutoRun, disableAutoRun, enableAutoRun } from '../sys/autoRun'
 import {
   getAppConfig,
   patchAppConfig,
+  updateProxyGroupState,
   getControledMihomoConfig,
   patchControledMihomoConfig,
   getProfileConfig,
@@ -61,13 +62,16 @@ import {
   subStoreFrontendPort,
   subStorePort
 } from '../resolve/server'
-import { quitWithoutCore, restartCore, startNetworkDetection, stopCore } from '../core/manager'
-import { stopNetworkDetection } from '../core/network'
 import {
-  checkCorePermission,
   manualGrantCorePermition,
-  revokeCorePermission
-} from '../core/permission'
+  quitWithoutCore,
+  restartCore,
+  startNetworkDetection,
+  stopCore,
+  stopNetworkDetection,
+  revokeCorePermission,
+  checkCorePermission
+} from '../core/manager'
 import { triggerSysProxy } from '../sys/sysproxy'
 import { checkUpdate, downloadAndInstallUpdate, cancelUpdate } from '../resolve/autoUpdater'
 import {
@@ -76,7 +80,6 @@ import {
   getFilePath,
   openFile,
   openUWPTool,
-  readImageFileDataURL,
   readTextFile,
   resetAppConfig,
   setNativeTheme,
@@ -93,8 +96,7 @@ import {
   restartService
 } from '../service/manager'
 import { patchCoreProfile } from '../service/api'
-import { coreLogPath, findSystemMihomo, logDir } from './dirs'
-import { systemCoreOnlyBuild } from '../../shared/build-flags'
+import { coreLogPath, findSystemMihomo, logDir } from '../utils/dirs'
 import {
   getRuntimeConfig,
   getRuntimeConfigStr,
@@ -102,15 +104,18 @@ import {
   getCurrentProfileStr,
   getOverrideProfileStr
 } from '../core/factory'
-import { listWebdavBackups, webdavBackup, webdavDelete, webdavRestore } from '../resolve/backup'
-import { getInterfaces } from '../sys/interface'
 import {
-  closeTrayIcon,
-  copyEnv,
-  setDockVisible,
-  showTrayIcon,
-  updateTrayIcon
-} from '../resolve/tray'
+  listLocalBackups,
+  listWebdavBackups,
+  localBackup,
+  localDelete,
+  localRestore,
+  webdavBackup,
+  webdavDelete,
+  webdavRestore
+} from '../resolve/backup'
+import { getInterfaces } from '../sys/interface'
+import { closeTrayIcon, copyEnv, setDockVisible, showTrayIcon } from '../resolve/tray'
 import { registerShortcut } from '../resolve/shortcut'
 import {
   closeMainWindow,
@@ -119,14 +124,6 @@ import {
   showMainWindow,
   triggerMainWindow
 } from '..'
-import {
-  applyTheme,
-  fetchThemes,
-  importThemes,
-  readTheme,
-  resolveThemes,
-  writeTheme
-} from '../resolve/theme'
 import { subStoreCollections, subStoreSubs } from '../core/subStoreApi'
 import path from 'path'
 import v8 from 'v8'
@@ -134,14 +131,14 @@ import { getGistUrl } from '../resolve/gistApi'
 import { getIconDataURL, getImageDataURL } from './icon'
 import { startMonitor } from '../resolve/trafficMonitor'
 import { closeFloatingWindow, showContextMenu, showFloatingWindow } from '../resolve/floatingWindow'
-import { getAppName } from '@uruhalushia/sparkle-native'
-import { showNotification } from './notification'
+import { getAppName } from './appName'
 import { getUserAgent } from './userAgent'
 import { appendAppLog, clearCachedMihomoLogs, getCachedMihomoLogs } from './log'
-import { ageIdentityToRecipient, generateAgeKeyPair } from './age'
+import { showNotification } from './notification'
+import { clearTrafficStats, getTrafficStats, getTrafficStatsDetail } from '../resolve/trafficStats'
 
 function ipcErrorWrapper<T>( // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  fn: (...args: any[]) => T | Promise<T> // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  fn: (...args: any[]) => Promise<T> // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): (...args: any[]) => Promise<T | { invokeError: unknown }> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return async (...args: any[]) => {
@@ -163,11 +160,11 @@ function ipcErrorWrapper<T>( // eslint-disable-next-line @typescript-eslint/no-e
   }
 }
 
-async function patchAppConfigWithServiceSync(patch: Partial<AppConfig>): Promise<AppConfig> {
-  const nextConfig = await patchAppConfig(await normalizeServiceModePatch(patch))
+async function patchAppConfigWithServiceSync(patch: Partial<AppConfig>): Promise<void> {
+  await patchAppConfig(patch)
 
   if (!('saveLogs' in patch || 'maxLogFileSizeMB' in patch)) {
-    return nextConfig
+    return
   }
 
   const {
@@ -176,7 +173,7 @@ async function patchAppConfigWithServiceSync(patch: Partial<AppConfig>): Promise
     maxLogFileSizeMB = 20
   } = await getAppConfig()
   if (corePermissionMode !== 'service') {
-    return nextConfig
+    return
   }
 
   void patchCoreProfile({
@@ -184,32 +181,8 @@ async function patchAppConfigWithServiceSync(patch: Partial<AppConfig>): Promise
     save_logs: saveLogs,
     max_log_file_size_mb: maxLogFileSizeMB
   }).catch((error) => {
-    appendAppLog(`[Service]: sync core log config failed, ${error}\n`).catch(() => {})
+    void appendAppLog(`[Service]: sync core log config failed, ${error}\n`)
   })
-
-  return nextConfig
-}
-
-async function normalizeServiceModePatch(patch: Partial<AppConfig>): Promise<Partial<AppConfig>> {
-  if (patch.sysProxy?.settingMode !== 'service') {
-    return patch
-  }
-
-  const status = await serviceStatus().catch(() => 'unknown' as const)
-  if (status === 'running') {
-    return patch
-  }
-
-  void showNotification({ title: '服务不可用，已切换到执行命令模式' })
-  return {
-    ...patch,
-    sysProxy: {
-      ...patch.sysProxy,
-      settingMode: 'exec',
-      guard: false,
-      guardNotify: false
-    }
-  }
 }
 
 export function registerIpcMainHandlers(): void {
@@ -236,11 +209,9 @@ export function registerIpcMainHandlers(): void {
   ipcMain.handle('mihomoUnfixedProxy', (_e, group) => ipcErrorWrapper(mihomoUnfixedProxy)(group))
   ipcMain.handle('mihomoUpgradeGeo', ipcErrorWrapper(mihomoUpgradeGeo))
   ipcMain.handle('mihomoUpgradeUI', ipcErrorWrapper(mihomoUpgradeUI))
-  if (!systemCoreOnlyBuild) {
-    ipcMain.handle('mihomoUpgrade', (_e, channel) => ipcErrorWrapper(mihomoUpgrade)(channel))
-  }
-  ipcMain.handle('mihomoProxyDelay', (_e, proxy, url, provider) =>
-    ipcErrorWrapper(mihomoProxyDelay)(proxy, url, provider)
+  ipcMain.handle('mihomoUpgrade', (_e, channel) => ipcErrorWrapper(mihomoUpgrade)(channel))
+  ipcMain.handle('mihomoProxyDelay', (_e, proxy, url) =>
+    ipcErrorWrapper(mihomoProxyDelay)(proxy, url)
   )
   ipcMain.handle('mihomoGroupDelay', (_e, group, url) =>
     ipcErrorWrapper(mihomoGroupDelay)(group, url)
@@ -257,6 +228,9 @@ export function registerIpcMainHandlers(): void {
   ipcMain.handle('patchAppConfig', (_e, config) =>
     ipcErrorWrapper(patchAppConfigWithServiceSync)(config)
   )
+  ipcMain.handle('updateProxyGroupState', (_e, profileId, state) =>
+    ipcErrorWrapper(updateProxyGroupState)(profileId, state)
+  )
   ipcMain.handle('getControledMihomoConfig', (_e, force) =>
     ipcErrorWrapper(getControledMihomoConfig)(force)
   )
@@ -268,18 +242,14 @@ export function registerIpcMainHandlers(): void {
   ipcMain.handle('getCurrentProfileItem', ipcErrorWrapper(getCurrentProfileItem))
   ipcMain.handle('getProfileItem', (_e, id) => ipcErrorWrapper(getProfileItem)(id))
   ipcMain.handle('getProfileStr', (_e, id) => ipcErrorWrapper(getProfileStr)(id))
-  ipcMain.handle('getFileStr', (_e, path, ageSecretKey) =>
-    ipcErrorWrapper(getFileStr)(path, ageSecretKey)
-  )
+  ipcMain.handle('getFileStr', (_e, path) => ipcErrorWrapper(getFileStr)(path))
   ipcMain.handle('getFilePreviewStr', (_e, path, format) =>
     ipcErrorWrapper(getFilePreviewStr)(path, format)
   )
   ipcMain.handle('setFileStr', (_e, path, str) => ipcErrorWrapper(setFileStr)(path, str))
-  if (!systemCoreOnlyBuild) {
-    ipcMain.handle('saveFileStrWithElevation', (_e, path, str) =>
-      ipcErrorWrapper(saveFileStrWithElevation)(path, str)
-    )
-  }
+  ipcMain.handle('saveFileStrWithElevation', (_e, path, str) =>
+    ipcErrorWrapper(saveFileStrWithElevation)(path, str)
+  )
   ipcMain.handle('setProfileStr', (_e, id, str) => ipcErrorWrapper(setProfileStr)(id, str))
   ipcMain.handle('updateProfileItem', (_e, item) => ipcErrorWrapper(updateProfileItem)(item))
   ipcMain.handle('changeCurrentProfile', (_e, id) => ipcErrorWrapper(changeCurrentProfile)(id))
@@ -296,21 +266,26 @@ export function registerIpcMainHandlers(): void {
   ipcMain.handle('restartCore', ipcErrorWrapper(restartCore))
   ipcMain.handle('stopCore', ipcErrorWrapper(stopCore))
   ipcMain.handle('restartMihomoConnections', ipcErrorWrapper(restartMihomoConnections))
+  ipcMain.handle('getTrafficStats', (_e, period, groupBy) =>
+    ipcErrorWrapper(async () => getTrafficStats(period, groupBy))()
+  )
+  ipcMain.handle('getTrafficStatsDetail', (_e, period, groupBy, key) =>
+    ipcErrorWrapper(async () => getTrafficStatsDetail(period, groupBy, key))()
+  )
+  ipcMain.handle('clearTrafficStats', ipcErrorWrapper(clearTrafficStats))
   ipcMain.handle('startMonitor', (_e, detached) => ipcErrorWrapper(startMonitor)(detached))
   ipcMain.handle('triggerSysProxy', (_e, enable, onlyActiveDevice, useRegistry) =>
     ipcErrorWrapper(triggerSysProxy)(enable, onlyActiveDevice, useRegistry)
   )
-  if (!systemCoreOnlyBuild) {
-    ipcMain.handle('manualGrantCorePermition', (_e, cores?: ('mihomo' | 'mihomo-alpha')[]) =>
-      ipcErrorWrapper(manualGrantCorePermition)(cores)
-    )
-    ipcMain.handle('checkCorePermission', () => ipcErrorWrapper(checkCorePermission)())
-    ipcMain.handle('revokeCorePermission', (_e, cores?: ('mihomo' | 'mihomo-alpha')[]) =>
-      ipcErrorWrapper(revokeCorePermission)(cores)
-    )
-    ipcMain.handle('checkElevateTask', () => ipcErrorWrapper(checkElevateTask)())
-    ipcMain.handle('deleteElevateTask', () => ipcErrorWrapper(deleteElevateTask)())
-  }
+  ipcMain.handle('manualGrantCorePermition', (_e, cores?: ('mihomo' | 'mihomo-alpha')[]) =>
+    ipcErrorWrapper(manualGrantCorePermition)(cores)
+  )
+  ipcMain.handle('checkCorePermission', () => ipcErrorWrapper(checkCorePermission)())
+  ipcMain.handle('revokeCorePermission', (_e, cores?: ('mihomo' | 'mihomo-alpha')[]) =>
+    ipcErrorWrapper(revokeCorePermission)(cores)
+  )
+  ipcMain.handle('checkElevateTask', () => ipcErrorWrapper(checkElevateTask)())
+  ipcMain.handle('deleteElevateTask', () => ipcErrorWrapper(deleteElevateTask)())
   ipcMain.handle('serviceStatus', () => ipcErrorWrapper(serviceStatus)())
   ipcMain.handle('testServiceConnection', () => ipcErrorWrapper(testServiceConnection)())
   ipcMain.handle('initService', () => ipcErrorWrapper(initService)())
@@ -320,18 +295,15 @@ export function registerIpcMainHandlers(): void {
   ipcMain.handle('restartService', () => ipcErrorWrapper(restartService)())
   ipcMain.handle('stopService', () => ipcErrorWrapper(stopService)())
   ipcMain.handle('findSystemMihomo', () => findSystemMihomo())
-  ipcMain.handle('getFilePath', (_e, ext, title, filterName) => getFilePath(ext, title, filterName))
+  ipcMain.handle('getFilePath', (_e, ext) => getFilePath(ext))
   ipcMain.handle('readTextFile', (_e, filePath) => ipcErrorWrapper(readTextFile)(filePath))
-  ipcMain.handle('readImageFileDataURL', (_e, filePath) =>
-    ipcErrorWrapper(readImageFileDataURL)(filePath)
-  )
   ipcMain.handle('getRuntimeConfigStr', ipcErrorWrapper(getRuntimeConfigStr))
   ipcMain.handle('getRawProfileStr', ipcErrorWrapper(getRawProfileStr))
   ipcMain.handle('getCurrentProfileStr', ipcErrorWrapper(getCurrentProfileStr))
   ipcMain.handle('getOverrideProfileStr', ipcErrorWrapper(getOverrideProfileStr))
   ipcMain.handle('getRuntimeConfig', ipcErrorWrapper(getRuntimeConfig))
-  ipcMain.handle('downloadAndInstallUpdate', (_e, version, tag) =>
-    ipcErrorWrapper(downloadAndInstallUpdate)(version, tag)
+  ipcMain.handle('downloadAndInstallUpdate', (_e, version) =>
+    ipcErrorWrapper(downloadAndInstallUpdate)(version)
   )
   ipcMain.handle('checkUpdate', ipcErrorWrapper(checkUpdate))
   ipcMain.handle('cancelUpdate', ipcErrorWrapper(cancelUpdate))
@@ -344,6 +316,40 @@ export function registerIpcMainHandlers(): void {
   ipcMain.handle('webdavRestore', (_e, filename) => ipcErrorWrapper(webdavRestore)(filename))
   ipcMain.handle('listWebdavBackups', ipcErrorWrapper(listWebdavBackups))
   ipcMain.handle('webdavDelete', (_e, filename) => ipcErrorWrapper(webdavDelete)(filename))
+  ipcMain.handle(
+    'localBackup',
+    ipcErrorWrapper(async () => {
+      const result = await dialog.showOpenDialog({
+        properties: ['openDirectory'],
+        title: '选择备份位置'
+      })
+      if (result.canceled || !result.filePaths.length) {
+        throw new Error('用户取消操作')
+      }
+      return await localBackup(result.filePaths[0])
+    })
+  )
+  ipcMain.handle('localRestore', (_e, backupDir, filename) =>
+    ipcErrorWrapper(localRestore)(path.join(backupDir, filename))
+  )
+  ipcMain.handle(
+    'listLocalBackups',
+    ipcErrorWrapper(async () => {
+      const result = await dialog.showOpenDialog({
+        properties: ['openDirectory'],
+        title: '选择备份目录'
+      })
+      if (result.canceled || !result.filePaths.length) {
+        throw new Error('用户取消操作')
+      }
+      const backupDir = result.filePaths[0]
+      const files = await listLocalBackups(backupDir)
+      return { backupDir, files }
+    })
+  )
+  ipcMain.handle('localDelete', (_e, backupDir, filename) =>
+    ipcErrorWrapper(localDelete)(backupDir, filename)
+  )
   ipcMain.handle('registerShortcut', (_e, oldShortcut, newShortcut, action) =>
     ipcErrorWrapper(registerShortcut)(oldShortcut, newShortcut, action)
   )
@@ -378,7 +384,6 @@ export function registerIpcMainHandlers(): void {
   })
   ipcMain.handle('showTrayIcon', () => ipcErrorWrapper(showTrayIcon)())
   ipcMain.handle('closeTrayIcon', () => ipcErrorWrapper(closeTrayIcon)())
-  ipcMain.handle('updateTrayIcon', () => ipcErrorWrapper(updateTrayIcon)())
   ipcMain.handle('setDockVisible', (_e, visible: boolean) => setDockVisible(visible))
   ipcMain.handle('showMainWindow', showMainWindow)
   ipcMain.handle('closeMainWindow', closeMainWindow)
@@ -391,25 +396,15 @@ export function registerIpcMainHandlers(): void {
     mainWindow?.webContents.openDevTools()
   })
   ipcMain.handle('createHeapSnapshot', () => {
-    return v8.writeHeapSnapshot(path.join(logDir(), `${Date.now()}.heapsnapshot`))
+    v8.writeHeapSnapshot(path.join(logDir(), `${Date.now()}.heapsnapshot`))
   })
   ipcMain.handle('getUserAgent', () => ipcErrorWrapper(getUserAgent)())
-  ipcMain.handle('generateAgeKeyPair', () => ipcErrorWrapper(generateAgeKeyPair)())
-  ipcMain.handle('ageIdentityToRecipient', (_e, identity) =>
-    ipcErrorWrapper(ageIdentityToRecipient)(identity)
-  )
   ipcMain.handle('getAppName', (_e, appPath) => ipcErrorWrapper(getAppName)(appPath))
   ipcMain.handle('getImageDataURL', (_e, url) => ipcErrorWrapper(getImageDataURL)(url))
   ipcMain.handle('getIconDataURL', (_e, appPath) => ipcErrorWrapper(getIconDataURL)(appPath))
-  ipcMain.handle('resolveThemes', () => ipcErrorWrapper(resolveThemes)())
-  ipcMain.handle('fetchThemes', () => ipcErrorWrapper(fetchThemes)())
-  ipcMain.handle('importThemes', (_e, file) => ipcErrorWrapper(importThemes)(file))
-  ipcMain.handle('readTheme', (_e, theme) => ipcErrorWrapper(readTheme)(theme))
-  ipcMain.handle('writeTheme', (_e, theme, css) => ipcErrorWrapper(writeTheme)(theme, css))
-  ipcMain.handle('applyTheme', (_e, theme) => ipcErrorWrapper(applyTheme)(theme))
   ipcMain.handle('copyEnv', (_e, type) => ipcErrorWrapper(copyEnv)(type))
   ipcMain.handle('alert', (_e, msg) => {
-    void showNotification({ title: 'Sparkle', body: msg, variant: 'danger' })
+    void showNotification({ title: 'Perzike', body: msg, variant: 'danger' })
   })
   ipcMain.handle('resetAppConfig', resetAppConfig)
   ipcMain.handle('relaunchApp', () => {

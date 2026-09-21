@@ -141,5 +141,4 @@ interface MihomoProfileConfig {
 interface ProxyProviderConfig {
   path?: string
   url?: string
-  'age-secret-key'?: string
 }

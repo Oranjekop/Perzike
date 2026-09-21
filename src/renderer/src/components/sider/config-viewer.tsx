@@ -1,4 +1,4 @@
-import { Label, Modal, Separator, Switch } from '@heroui-v3/react'
+import { Button, Label, Modal, Separator, Switch } from '@heroui-v3/react'
 import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { BaseEditor } from '../base/base-editor-lazy'
 import {
@@ -128,11 +128,11 @@ const ConfigViewer: React.FC<Props> = ({ onClose }) => {
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                 <Switch size="md" isSelected={isDiff} onChange={setIsDiff}>
                   <Switch.Content>
-                    <Switch.Control>
-                      <Switch.Thumb />
-                    </Switch.Control>
                     <Label>对比当前配置</Label>
                   </Switch.Content>
+                  <Switch.Control>
+                    <Switch.Thumb />
+                  </Switch.Control>
                 </Switch>
                 <Separator orientation="vertical" />
                 <Switch
@@ -142,11 +142,11 @@ const ConfigViewer: React.FC<Props> = ({ onClose }) => {
                   onChange={setSideBySide}
                 >
                   <Switch.Content>
-                    <Switch.Control>
-                      <Switch.Thumb />
-                    </Switch.Control>
                     <Label>侧边显示</Label>
                   </Switch.Content>
+                  <Switch.Control>
+                    <Switch.Thumb />
+                  </Switch.Control>
                 </Switch>
                 <Separator orientation="vertical" />
                 <Switch
@@ -158,11 +158,11 @@ const ConfigViewer: React.FC<Props> = ({ onClose }) => {
                   }}
                 >
                   <Switch.Content>
-                    <Switch.Control>
-                      <Switch.Thumb />
-                    </Switch.Control>
                     <Label>显示原始文本</Label>
                   </Switch.Content>
+                  <Switch.Control>
+                    <Switch.Thumb />
+                  </Switch.Control>
                 </Switch>
                 <Separator orientation="vertical" />
                 <Switch
@@ -174,13 +174,21 @@ const ConfigViewer: React.FC<Props> = ({ onClose }) => {
                   }}
                 >
                   <Switch.Content>
-                    <Switch.Control>
-                      <Switch.Thumb />
-                    </Switch.Control>
                     <Label>显示覆写后文本</Label>
                   </Switch.Content>
+                  <Switch.Control>
+                    <Switch.Thumb />
+                  </Switch.Control>
                 </Switch>
               </div>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="h-7 min-w-0 px-3 text-sm leading-none"
+                onPress={onClose}
+              >
+                关闭
+              </Button>
             </Modal.Footer>
             <Modal.CloseTrigger className="app-nodrag" />
           </Modal.Dialog>

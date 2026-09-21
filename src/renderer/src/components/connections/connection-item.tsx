@@ -1,5 +1,4 @@
-import { Button, Card, CardFooter, CardHeader, Chip } from '@heroui/react'
-import { Avatar } from '@heroui-v3/react'
+import { Avatar, Button, Card, CardFooter, CardHeader, Chip } from '@heroui/react'
 import { calcTraffic } from '@renderer/utils/calc'
 import dayjs from 'dayjs'
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react'
@@ -11,7 +10,6 @@ interface Props {
   displayIcon?: boolean
   iconUrl: string
   displayName?: string
-  hideProcess?: boolean
   selected: ControllerConnectionDetail | undefined
   setSelected: React.Dispatch<React.SetStateAction<ControllerConnectionDetail | undefined>>
   setIsDetailModalOpen: React.Dispatch<React.SetStateAction<boolean>>
@@ -24,7 +22,6 @@ const ConnectionItemComponent: React.FC<Props> = ({
   displayIcon,
   iconUrl,
   displayName,
-  hideProcess,
   close,
   setSelected,
   setIsDetailModalOpen
@@ -93,9 +90,12 @@ const ConnectionItemComponent: React.FC<Props> = ({
         <div className="w-full flex justify-between items-center">
           {displayIcon && (
             <div>
-              <Avatar size="lg" className="bg-transparent ml-2 w-14 h-14">
-                <Avatar.Image src={iconUrl} />
-              </Avatar>
+              <Avatar
+                size="lg"
+                radius="sm"
+                src={iconUrl}
+                className="bg-transparent ml-2 w-14 h-14"
+              />
             </div>
           )}
           <div
@@ -104,7 +104,7 @@ const ConnectionItemComponent: React.FC<Props> = ({
             <CardHeader className="pb-0 gap-1 flex items-center pr-12 relative">
               <div className="ml-2 flex-1 text-ellipsis whitespace-nowrap overflow-hidden text-left">
                 <span style={{ textAlign: 'left' }}>
-                  {hideProcess ? destination : `${processName} → ${destination}`}
+                  {processName} → {destination}
                 </span>
               </div>
               <small className="ml-2 whitespace-nowrap text-foreground-500">{timeAgo}</small>
@@ -113,7 +113,6 @@ const ConnectionItemComponent: React.FC<Props> = ({
                 variant="light"
                 isIconOnly
                 size="sm"
-                aria-label={info.isActive ? '关闭连接' : '删除记录'}
                 className="absolute right-2 transform"
                 onPress={handleClose}
               >
@@ -166,7 +165,6 @@ const ConnectionItem = memo(ConnectionItemComponent, (prevProps, nextProps) => {
     prevProps.iconUrl === nextProps.iconUrl &&
     prevProps.displayIcon === nextProps.displayIcon &&
     prevProps.displayName === nextProps.displayName &&
-    prevProps.hideProcess === nextProps.hideProcess &&
     prevProps.selected?.id === nextProps.selected?.id
   )
 })

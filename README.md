@@ -1,11 +1,11 @@
-# Sparkle
+# Perzike
 
 <h3 align="center">Another <a href="https://github.com/MetaCubeX/mihomo">Mihomo</a> GUI</h3>
 
 <p align="center">
-  <a href="https://github.com/xishang0128/sparkle/releases/latest"><img src="https://img.shields.io/github/v/release/xishang0128/sparkle?label=latest"></a>
-  <a href="https://github.com/xishang0128/sparkle/releases/tag/rolling"><img src="https://img.shields.io/badge/-rolling-orange"></a>
-  <a href="https://t.me/+y7rcYjEKIiI1NzZl"><img src="https://img.shields.io/badge/Telegram-Group-blue?logo=telegram"></a>
+  <a href="https://github.com/Oranjekop/Perzike/releases">
+    <img alt="GitHub release" src="https://img.shields.io/github/v/release/Oranjekop/Perzike?include_prereleases">
+  </a>
 </p>
 
 ## 特性
@@ -18,9 +18,13 @@
 - [x] 强大的覆写功能，任意修订配置文件
 - [x] 深度集成 Sub-Store，轻松管理订阅
 
+## 致谢
+
+Perzike fork 自 `xishang0128` 的相关项目，并在此基础上继续维护与调整。感谢原作者在客户端、本地服务、运行组件及相关生态上的长期投入与开源贡献。
+
 ## 开发
 
-本项目为自用，绝大部分 pr 可能都不会合并，你可以自行 fork 修改。
+本项目为自用，你可以自行 fork 修改。
 
 ### 环境要求
 
@@ -30,7 +34,7 @@
 
 ### 技术架构
 
-Sparkle 基于 Electron + React + TypeScript 构建
+Perzike 基于 Electron + React + TypeScript 构建
 
 #### 前端技术栈
 
@@ -51,8 +55,8 @@ Sparkle 基于 Electron + React + TypeScript 构建
 1. **克隆项目**
 
 ```bash
-git clone https://github.com/xishang0128/sparkle.git
-cd sparkle
+git clone https://github.com/Oranjekop/Perzike.git
+cd perzike
 ```
 
 2. **安装依赖**
@@ -83,7 +87,7 @@ windows 开发时可能会出现页面白屏，关闭 tun（虚拟网卡）即�
 ### 项目结构
 
 ```
-sparkle/
+perzike/
 ├── src/
 │   ├── main/               # Electron 主进程
 │   │   ├── core/           # 内核管理
@@ -160,20 +164,6 @@ pnpm build:mac
 pnpm build:linux
 ```
 
-**Linux 系统内核构建：**
-
-```bash
-export SPARKLE_SYSTEM_CORE=1
-# 可选：默认值为 /usr/bin/sparkle-service
-export SPARKLE_SYSTEM_SERVICE=/usr/bin/sparkle-service
-pnpm install
-pnpm build:linux
-```
-
-`SPARKLE_SYSTEM_CORE=1` 默认使用 `/usr/bin/mihomo`，也可指定绝对路径；服务默认使用 `/usr/bin/sparkle-service`。
-
-此模式不下载或打包外部资源，也不引用项目的 pre/postinstall（electron-builder 默认脚本除外）。资源由发行版拆分包提供；服务仅保留连接和初始化，生命周期交由 init 系统管理。
-
 **指定架构：**
 
 ```bash
@@ -229,14 +219,6 @@ node --version
 - 确保 Node.js 版本 >= 20.0.0
 - 使用 pnpm 进行依赖管理
 
-### 贡献指南
-
-1. Fork 本仓库
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送分支 (`git push origin feature/AmazingFeature`)
-5. 创建 Pull Request
-
 ### 开发注意事项
 
 - 请确保代码通过 ESLint 检查
@@ -248,13 +230,3 @@ node --version
 - 所有命令都使用 pnpm 执行
 - 修改类型定义后需要重启 TypeScript 服务
 - 预加载脚本修改后需要重启应用
-
-## Star History
-
-<a href="https://www.star-history.com/?repos=xishang0128/sparkle&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=xishang0128/sparkle&type=date&theme=dark&legend=top-left&sealed_token=8SxlRPbsElPsEs9Q_QZ1jaPSZ9Q5E8UAgzHopZ03eHbfFl-j7100-bjDDbbBm8YN5oxxkqEZ_9Mhx7Xc1wnzSyI9pduKkTQReWJaOyZnN3Q38CBRuQlYnDo4kkx7ExoYdyzZgiZo9_IAMeuRLxPozFwu-clyQSZ9oSxBvD8Ldxe8TzMJeY7x-onoQY7Y" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=xishang0128/sparkle&type=date&legend=top-left&sealed_token=8SxlRPbsElPsEs9Q_QZ1jaPSZ9Q5E8UAgzHopZ03eHbfFl-j7100-bjDDbbBm8YN5oxxkqEZ_9Mhx7Xc1wnzSyI9pduKkTQReWJaOyZnN3Q38CBRuQlYnDo4kkx7ExoYdyzZgiZo9_IAMeuRLxPozFwu-clyQSZ9oSxBvD8Ldxe8TzMJeY7x-onoQY7Y" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=xishang0128/sparkle&type=date&legend=top-left&sealed_token=8SxlRPbsElPsEs9Q_QZ1jaPSZ9Q5E8UAgzHopZ03eHbfFl-j7100-bjDDbbBm8YN5oxxkqEZ_9Mhx7Xc1wnzSyI9pduKkTQReWJaOyZnN3Q38CBRuQlYnDo4kkx7ExoYdyzZgiZo9_IAMeuRLxPozFwu-clyQSZ9oSxBvD8Ldxe8TzMJeY7x-onoQY7Y" />
- </picture>
-</a>

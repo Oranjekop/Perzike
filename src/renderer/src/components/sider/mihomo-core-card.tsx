@@ -45,19 +45,16 @@ const MihomoCoreCard: React.FC<Props> = (props) => {
     const token = PubSub.subscribe('mihomo-core-changed', () => {
       mutate()
     })
-    const unsubscribeMihomoMemory = window.electron.ipcRenderer.on(
-      'mihomoMemory',
-      (_e, info: ControllerMemory) => {
-        setMem(info.inuse)
-      }
-    )
-    const unsubscribeCoreStarted = window.electron.ipcRenderer.on('core-started', () => {
+    window.electron.ipcRenderer.on('mihomoMemory', (_e, info: ControllerMemory) => {
+      setMem(info.inuse)
+    })
+    window.electron.ipcRenderer.on('core-started', () => {
       mutate()
     })
     return (): void => {
       PubSub.unsubscribe(token)
-      unsubscribeMihomoMemory()
-      unsubscribeCoreStarted()
+      window.electron.ipcRenderer.removeAllListeners('mihomoMemory')
+      window.electron.ipcRenderer.removeAllListeners('core-started')
     }
   }, [])
 
@@ -97,7 +94,7 @@ const MihomoCoreCard: React.FC<Props> = (props) => {
           ref={setNodeRef}
           {...attributes}
           {...listeners}
-          className={`${match ? 'bg-primary' : 'hover:bg-primary/30'} ${isDragging ? `${disableAnimation ? '' : 'scale-[0.95]'} tap-highlight-transparent` : ''}`}
+          className={`${match ? 'bg-primary' : 'hover:bg-content2'} transition-colors ${isDragging ? `${disableAnimation ? '' : 'scale-[0.95]'} tap-highlight-transparent` : ''}`}
         >
           <CardBody>
             <div
@@ -122,9 +119,7 @@ const MihomoCoreCard: React.FC<Props> = (props) => {
                   try {
                     setRestarting(true)
                     await restartCore()
-                    await new Promise((resolve) => {
-                      setTimeout(resolve, 2000)
-                    })
+                    await new Promise((resolve) => setTimeout(resolve, 2000))
                     setRestarting(false)
                   } catch (e) {
                     notify(e, { variant: 'danger' })
@@ -154,7 +149,7 @@ const MihomoCoreCard: React.FC<Props> = (props) => {
           ref={setNodeRef}
           {...attributes}
           {...listeners}
-          className={`${match ? 'bg-primary' : 'hover:bg-primary/30'} ${isDragging ? `${disableAnimation ? '' : 'scale-[0.95]'} tap-highlight-transparent` : ''}`}
+          className={`${match ? 'bg-primary' : 'hover:bg-content2'} transition-colors ${isDragging ? `${disableAnimation ? '' : 'scale-[0.95]'} tap-highlight-transparent` : ''}`}
         >
           <CardBody className="pb-1 pt-0 px-0 overflow-y-visible">
             <div className="flex justify-between">

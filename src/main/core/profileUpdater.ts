@@ -38,10 +38,6 @@ export async function initProfileUpdater(): Promise<void> {
         }
       }
 
-      if (intervalPool[item.id]) {
-        clearTimeout(intervalPool[item.id])
-      }
-
       intervalPool[item.id] = setTimeout(
         async () => {
           try {
@@ -64,10 +60,6 @@ export async function initProfileUpdater(): Promise<void> {
       } catch (e) {
         // ignore
       }
-    }
-
-    if (intervalPool[currentItem.id]) {
-      clearTimeout(intervalPool[currentItem.id])
     }
 
     intervalPool[currentItem.id] = setTimeout(
@@ -118,6 +110,13 @@ export async function addProfileUpdater(item: ProfileItem): Promise<void> {
 
 export async function delProfileUpdater(id: string): Promise<void> {
   if (intervalPool[id]) {
+    clearTimeout(intervalPool[id])
+    delete intervalPool[id]
+  }
+}
+
+export function stopAllProfileUpdaters(): void {
+  for (const id of Object.keys(intervalPool)) {
     clearTimeout(intervalPool[id])
     delete intervalPool[id]
   }

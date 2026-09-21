@@ -1,15 +1,11 @@
-allowBuilds:
-  '@heroui/shared-utils': true
-  electron: true
-  electron-winstaller: true
-  '@loongdotjs/electron-winstaller': true
-  esbuild: true
-  meta-json-schema: true
+onlyBuiltDependencies:
+  - electron
 overrides:
-  typescript-eslint: ^8.59.2
+  "brace-expansion@>=2.0.0 <3": 2.1.2
+  body-parser: 2.3.0
+  path-to-regexp: 8.4.0
+  picomatch: 4.0.4
+  qs: 6.15.2
+  vite: npm:rolldown-vite@^7.3.1
 patchedDependencies:
-  monaco-worker-manager@2.0.1: patches/monaco-worker-manager@2.0.1.patch
-publicHoistPattern:
-  - '*@heroui/*'
-shamefullyHoist: true
-virtualStoreDirMaxLength: 80
+  vite-plugin-monaco-editor@1.1.0: patches/vite-plugin-monaco-editor@1.1.0.patch

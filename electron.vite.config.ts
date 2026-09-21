@@ -1,38 +1,32 @@
 import { resolve } from 'path'
-import { defineConfig } from 'electron-vite'
+import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
+// https://github.com/vdesjs/vite-plugin-monaco-editor/issues/21#issuecomment-1827562674
+import monacoEditorPluginModule from 'vite-plugin-monaco-editor'
 import tailwindcss from '@tailwindcss/vite'
-import { systemCoreDefaultPath, systemCoreOnlyBuild, systemServicePath } from './scripts/build-env'
 
-const buildDefines = {
-  __SPARKLE_SYSTEM_CORE_PATH__: JSON.stringify(systemCoreDefaultPath),
-  __SPARKLE_SYSTEM_SERVICE_PATH__: JSON.stringify(systemServicePath)
-}
-const omitExternalRendererResources = {
-  name: 'omit-external-renderer-resources',
-  enforce: 'pre' as const,
-  transform(source: string, id: string): string | undefined {
-    if (!systemCoreOnlyBuild || !id.endsWith('/src/renderer/src/assets/main.css')) return
-    return source.replace(/@font-face\s*\{[^}]*twemoji\.ttf[^}]*\}/, '')
-  }
-}
+const isObjectWithDefaultFunction = (
+  module: unknown
+): module is { default: typeof monacoEditorPluginModule } =>
+  module != null &&
+  typeof module === 'object' &&
+  'default' in module &&
+  typeof module.default === 'function'
+const monacoEditorPlugin = isObjectWithDefaultFunction(monacoEditorPluginModule)
+  ? monacoEditorPluginModule.default
+  : monacoEditorPluginModule
 
 export default defineConfig({
   main: {
-    define: buildDefines,
-    build: {
-      externalizeDeps: {
-        exclude: ['age-encryption']
-      }
-    }
+    plugins: [externalizeDepsPlugin()]
   },
   preload: {
-    build: {
-      externalizeDeps: true
-    }
+    plugins: [externalizeDepsPlugin()]
   },
   renderer: {
-    define: buildDefines,
+    server: {
+      host: '127.0.0.1'
+    },
     build: {
       rollupOptions: {
         input: {
@@ -43,10 +37,24 @@ export default defineConfig({
       }
     },
     resolve: {
+      dedupe: ['react', 'react-dom'],
       alias: {
         '@renderer': resolve('src/renderer/src')
       }
     },
-    plugins: [omitExternalRendererResources, react(), tailwindcss()]
+    plugins: [
+      react(),
+      tailwindcss(),
+      monacoEditorPlugin({
+        languageWorkers: ['editorWorkerService', 'typescript', 'css'],
+        customDistPath: (_, out) => `${out}/monacoeditorwork`,
+        customWorkers: [
+          {
+            label: 'yaml',
+            entry: 'monaco-yaml/yaml.worker'
+          }
+        ]
+      })
+    ]
   }
 })

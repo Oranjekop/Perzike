@@ -1,4 +1,4 @@
-import { md5 } from 'js-md5'
+import { MD5 } from 'crypto-js'
 
 export class HashType {
   private hashValue: string
@@ -8,7 +8,7 @@ export class HashType {
   }
 
   static makeHash(data: string): HashType {
-    const hash = md5(data)
+    const hash = MD5(data).toString()
     return new HashType(hash)
   }
 

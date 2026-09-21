@@ -1,9 +1,8 @@
-import { execFile, execSync, spawn } from 'child_process'
-import { app, dialog, nativeImage, nativeTheme, shell } from 'electron'
+import { exec, execFile, execSync, spawn } from 'child_process'
+import { app, dialog, nativeTheme, shell } from 'electron'
 import { readFile } from 'fs/promises'
 import path from 'path'
 import { promisify } from 'util'
-import { setupFirewallRules } from '@uruhalushia/sparkle-native'
 import {
   dataDir,
   exePath,
@@ -15,36 +14,18 @@ import {
   taskDir
 } from '../utils/dirs'
 import { copyFileSync, writeFileSync } from 'fs'
-import { execWithElevation } from '../utils/elevation'
+import { execWithElevation, startProcessWithElevation } from '../utils/elevation'
 
-export function getFilePath(
-  ext: string[],
-  title = '选择订阅文件',
-  filterName = `${ext} file`
-): string[] | undefined {
+export function getFilePath(ext: string[]): string[] | undefined {
   return dialog.showOpenDialogSync({
-    title,
-    filters: [{ name: filterName, extensions: ext }],
+    title: '选择订阅文件',
+    filters: [{ name: `${ext} file`, extensions: ext }],
     properties: ['openFile']
   })
 }
 
 export async function readTextFile(filePath: string): Promise<string> {
   return await readFile(filePath, 'utf8')
-}
-
-export async function readImageFileDataURL(filePath: string): Promise<string> {
-  const ext = path.extname(filePath).toLowerCase()
-  if (ext === '.ico' || ext === '.icns') {
-    const image = nativeImage.createFromPath(filePath)
-    if (image.isEmpty()) throw new Error('Failed to load image')
-    return image.toDataURL()
-  }
-  const mimeType =
-    ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : ext === '.webp' ? 'image/webp' : 'image/png'
-  const data = await readFile(filePath)
-
-  return `data:${mimeType};base64,${data.toString('base64')}`
 }
 
 export function openFile(type: 'profile' | 'override', id: string, ext?: 'yaml' | 'js'): void {
@@ -59,16 +40,38 @@ export function openFile(type: 'profile' | 'override', id: string, ext?: 'yaml' 
 export async function openUWPTool(): Promise<void> {
   const execFilePromise = promisify(execFile)
   const uwpToolPath = path.join(resourcesDir(), 'files', 'enableLoopback.exe')
-  await execFilePromise(uwpToolPath)
+
+  try {
+    await execFilePromise(uwpToolPath)
+  } catch (error) {
+    const errorCode = error && typeof error === 'object' && 'code' in error ? error.code : undefined
+    if (process.platform !== 'win32' || errorCode !== 'EACCES') {
+      throw error
+    }
+
+    await startProcessWithElevation(uwpToolPath, [])
+  }
 }
 
 export async function setupFirewall(): Promise<void> {
+  const execPromise = promisify(exec)
+  const removeCommand = `
+  $rules = @("mihomo", "mihomo-alpha", "Perzike")
+  foreach ($rule in $rules) {
+    if (Get-NetFirewallRule -DisplayName $rule -ErrorAction SilentlyContinue) {
+      Remove-NetFirewallRule -DisplayName $rule -ErrorAction SilentlyContinue
+    }
+  }
+  `
+  const createCommand = `
+  New-NetFirewallRule -DisplayName "mihomo" -Direction Inbound -Action Allow -Program "${mihomoCorePath('mihomo')}" -Enabled True -Profile Any -ErrorAction SilentlyContinue
+  New-NetFirewallRule -DisplayName "mihomo-alpha" -Direction Inbound -Action Allow -Program "${mihomoCorePath('mihomo-alpha')}" -Enabled True -Profile Any -ErrorAction SilentlyContinue
+  New-NetFirewallRule -DisplayName "Perzike" -Direction Inbound -Action Allow -Program "${exePath()}" -Enabled True -Profile Any -ErrorAction SilentlyContinue
+  `
+
   if (process.platform === 'win32') {
-    setupFirewallRules([
-      { name: 'mihomo', applicationPath: mihomoCorePath('mihomo') },
-      { name: 'mihomo-alpha', applicationPath: mihomoCorePath('mihomo-alpha') },
-      { name: 'Sparkle', applicationPath: exePath() }
-    ])
+    await execPromise(removeCommand, { shell: 'powershell' })
+    await execPromise(createCommand, { shell: 'powershell' })
   }
 }
 
@@ -106,36 +109,40 @@ const elevateTaskXml = `<?xml version="1.0" encoding="UTF-16"?>
   </Settings>
   <Actions Context="Author">
     <Exec>
-      <Command>"${path.join(taskDir(), `sparkle-run.exe`)}"</Command>
+      <Command>"${path.join(taskDir(), `perzike-run.exe`)}"</Command>
       <Arguments>"${exePath()}"</Arguments>
     </Exec>
   </Actions>
 </Task>
 `
 
-function prepareElevateTaskFile(): string {
-  const taskFilePath = path.join(taskDir(), `sparkle-run.xml`)
+function writeElevateTaskFiles(): string {
+  const taskFilePath = path.join(taskDir(), `perzike-run.xml`)
   writeFileSync(taskFilePath, Buffer.from(`\ufeff${elevateTaskXml}`, 'utf-16le'))
   copyFileSync(
-    path.join(resourcesFilesDir(), 'sparkle-run.exe'),
-    path.join(taskDir(), 'sparkle-run.exe')
+    path.join(resourcesFilesDir(), 'perzike-run.exe'),
+    path.join(taskDir(), 'perzike-run.exe')
   )
   return taskFilePath
 }
 
+function schtasksPath(): string {
+  return path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'schtasks.exe')
+}
+
 export function createElevateTaskSync(): void {
-  const taskFilePath = prepareElevateTaskFile()
+  const taskFilePath = writeElevateTaskFiles()
   execSync(
-    `%SystemRoot%\\System32\\schtasks.exe /create /tn "sparkle-run" /xml "${taskFilePath}" /f`
+    `%SystemRoot%\\System32\\schtasks.exe /create /tn "perzike-run" /xml "${taskFilePath}" /f`
   )
 }
 
 export async function createElevateTask(): Promise<void> {
-  const taskFilePath = prepareElevateTaskFile()
-  await execWithElevation('schtasks.exe', [
+  const taskFilePath = writeElevateTaskFiles()
+  await execWithElevation(schtasksPath(), [
     '/create',
     '/tn',
-    'sparkle-run',
+    'perzike-run',
     '/xml',
     taskFilePath,
     '/f'
@@ -143,16 +150,12 @@ export async function createElevateTask(): Promise<void> {
 }
 
 export async function deleteElevateTask(): Promise<void> {
-  try {
-    execSync(`%SystemRoot%\\System32\\schtasks.exe /delete /tn "sparkle-run" /f`)
-  } catch {
-    // ignore
-  }
+  await execWithElevation(schtasksPath(), ['/delete', '/tn', 'perzike-run', '/f'])
 }
 
 export async function checkElevateTask(): Promise<boolean> {
   try {
-    execSync(`%SystemRoot%\\System32\\schtasks.exe /query /tn "sparkle-run"`, { stdio: 'pipe' })
+    execSync(`%SystemRoot%\\System32\\schtasks.exe /query /tn "perzike-run"`, { stdio: 'pipe' })
     return true
   } catch {
     return false

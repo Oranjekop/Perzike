@@ -1,5 +1,5 @@
-import { BrowserWindow, Notification, clipboard, dialog, ipcMain, shell } from 'electron'
-import { getAppConfig } from '../config/app'
+import { BrowserWindow, Notification, app, dialog, ipcMain, shell } from 'electron'
+import { getAppConfigSync } from '../config/app'
 
 export type AppNotificationVariant = 'default' | 'accent' | 'success' | 'warning' | 'danger'
 type AppNotificationMode = 'system' | 'toast'
@@ -25,16 +25,11 @@ ipcMain.on('app-notification-ready', (event) => {
   flushPendingToastNotifications(window)
 })
 
-ipcMain.on('app-notification-detail', (event, title: string, body: string) => {
-  const window = BrowserWindow.fromWebContents(event.sender)
-  if (window && isMainRendererWindow(window)) showNotificationDetail(title, body)
-})
-
-export async function showNotification(payload: AppNotificationPayload): Promise<void> {
+export function showNotification(payload: AppNotificationPayload): void {
   const notification = normalizeNotificationPayload(payload)
   let notificationMode: AppNotificationMode = 'system'
   try {
-    notificationMode = (await getAppConfig()).notificationMode ?? 'system'
+    notificationMode = getAppConfigSync().notificationMode ?? 'system'
   } catch {
     // fall back to system notifications when config is not readable yet
   }
@@ -46,38 +41,46 @@ export async function showNotification(payload: AppNotificationPayload): Promise
       return
     }
 
+    if (shouldShowBlockingError(notification)) {
+      showBlockingError(notification)
+      return
+    }
+
     pendingToastNotifications.push(notification)
     return
   }
 
-  const hasErrorDetail = notification.variant === 'danger' && Boolean(notification.body)
-  const systemNotification = new Notification({
-    title: notification.title,
-    body: notification.body,
-    timeoutType: notification.persistent ? 'never' : 'default',
-    actions: hasErrorDetail ? [{ type: 'button', text: '查看详情' }] : undefined
-  })
-  if (hasErrorDetail) {
-    const showDetail = (): void => {
-      showNotificationDetail(notification.title, notification.body!)
+  if (shouldShowBlockingError(notification)) {
+    showBlockingError(notification)
+    return
+  }
+
+  try {
+    const systemNotification = new Notification({
+      title: notification.title,
+      body: notification.body,
+      timeoutType: notification.persistent ? 'never' : 'default'
+    })
+    if (notification.url) {
+      systemNotification.on('click', () => {
+        void shell.openExternal(notification.url!)
+      })
     }
-    systemNotification.on('action', showDetail)
-    systemNotification.on('click', showDetail)
-  } else if (notification.url) {
-    systemNotification.on('click', () => {
-      void shell.openExternal(notification.url!)
-    })
+    if (notification.id) {
+      systemNotifications.get(notification.id)?.close()
+      systemNotifications.set(notification.id, systemNotification)
+      systemNotification.on('close', () => {
+        if (systemNotifications.get(notification.id!) === systemNotification) {
+          systemNotifications.delete(notification.id!)
+        }
+      })
+    }
+    systemNotification.show()
+  } catch {
+    if (notification.variant === 'danger') {
+      showBlockingError(notification)
+    }
   }
-  if (notification.id) {
-    systemNotifications.get(notification.id)?.close()
-    systemNotifications.set(notification.id, systemNotification)
-    systemNotification.on('close', () => {
-      if (systemNotifications.get(notification.id!) === systemNotification) {
-        systemNotifications.delete(notification.id!)
-      }
-    })
-  }
-  systemNotification.show()
 }
 
 export function dismissNotification(id: string): void {
@@ -126,19 +129,22 @@ function isMainRendererWindow(window: BrowserWindow): boolean {
   return !url.includes('floating.html') && !url.includes('traymenu.html')
 }
 
-function showNotificationDetail(title: string, body: string): void {
-  void dialog
-    .showMessageBox({
-      type: 'error',
-      title: '错误详情',
-      message: title,
-      detail: body,
-      buttons: ['关闭', '复制'],
-      noLink: true
-    })
-    .then(({ response }) => {
-      if (response === 1) clipboard.writeText(body)
-    })
+function shouldShowBlockingError(notification: AppNotificationPayload): boolean {
+  if (notification.variant !== 'danger') {
+    return false
+  }
+
+  if (!app.isReady()) {
+    return true
+  }
+
+  return !BrowserWindow.getAllWindows().some(
+    (window) => !window.isDestroyed() && isMainRendererWindow(window)
+  )
+}
+
+function showBlockingError(notification: AppNotificationPayload): void {
+  dialog.showErrorBox(notification.title, notification.body ?? notification.title)
 }
 
 function normalizeNotificationPayload(payload: AppNotificationPayload): AppNotificationPayload {

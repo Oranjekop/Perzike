@@ -10,10 +10,10 @@ import {
   stopSubStoreBackendServer,
   downloadSubStore
 } from '@renderer/utils/ipc'
+import { notify } from '@renderer/utils/notification'
 import React, { useEffect, useState } from 'react'
 import { HiExternalLink } from 'react-icons/hi'
 import { IoMdCloudDownload } from 'react-icons/io'
-import { notify } from '@renderer/utils/notification'
 
 const SubStore: React.FC = () => {
   const { appConfig } = useAppConfig()
@@ -38,6 +38,7 @@ const SubStore: React.FC = () => {
         header={
           <div className="flex gap-2">
             <Button
+              title="检查更新"
               isIconOnly
               size="sm"
               className="app-nodrag"
@@ -45,21 +46,22 @@ const SubStore: React.FC = () => {
               isLoading={isUpdating}
               onPress={async () => {
                 try {
-                  notify('Sub-Store 更新中...')
+                  notify('Sub-Store 更新中...', { id: 'substore-update' })
                   setIsUpdating(true)
                   await downloadSubStore()
                   await stopSubStoreBackendServer()
                   await startSubStoreBackendServer()
-                  await new Promise((resolve) => {
-                    setTimeout(resolve, 1000)
-                  })
+                  await new Promise((resolve) => setTimeout(resolve, 1000))
                   setFrontendPort(0)
                   await stopSubStoreFrontendServer()
                   await startSubStoreFrontendServer()
                   await getPort()
-                  notify('Sub-Store 更新完成', { variant: 'success' })
+                  notify('Sub-Store 更新完成', { id: 'substore-update', variant: 'success' })
                 } catch (e) {
-                  notify(`Sub-Store 更新失败：${e}`, { variant: 'danger' })
+                  notify(`Sub-Store 更新失败：${e}`, {
+                    id: 'substore-update',
+                    variant: 'danger'
+                  })
                 } finally {
                   setIsUpdating(false)
                 }
@@ -68,6 +70,7 @@ const SubStore: React.FC = () => {
               <IoMdCloudDownload className="text-lg" />
             </Button>
             <Button
+              title="在浏览器中打开"
               isIconOnly
               size="sm"
               className="app-nodrag"

@@ -1,6 +1,5 @@
 import React, { createContext, useContext, ReactNode, useEffect } from 'react'
 import useSWR from 'swr'
-import { notify } from '@renderer/utils/notification'
 import {
   getOverrideConfig,
   setOverrideConfig as set,
@@ -8,6 +7,7 @@ import {
   removeOverrideItem as remove,
   updateOverrideItem as update
 } from '@renderer/utils/ipc'
+import { notify } from '@renderer/utils/notification'
 
 interface OverrideConfigContextType {
   overrideConfig: OverrideConfig | undefined

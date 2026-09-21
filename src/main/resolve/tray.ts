@@ -6,9 +6,8 @@ import {
   patchAppConfig,
   patchControledMihomoConfig
 } from '../config'
-import icoIcon from '../../../resources/icon.ico?asset'
-import pngIcon from '../../../resources/icon.png?asset'
-import templateIcon from '../../../resources/iconTemplate.png?asset'
+import icoIcon from '../../../build/icon.ico?asset'
+import pngIcon from '../../../build/icon.png?asset'
 import {
   mihomoChangeProxy,
   mihomoCloseConnections,
@@ -32,19 +31,30 @@ import { dataDir, logDir, mihomoCoreDir, mihomoWorkDir } from '../utils/dirs'
 import { triggerSysProxy } from '../sys/sysproxy'
 import { quitWithoutCore, restartCore } from '../core/manager'
 import { floatingWindow, triggerFloatingWindow } from './floatingWindow'
-import { is } from '@electron-toolkit/utils'
-import { extname, join } from 'path'
-import { applyTheme } from './theme'
-import { existsSync } from 'fs'
+import { is } from '../utils/electron-utils'
+import { join } from 'path'
 
 export let tray: Tray | null = null
-export let customTrayWindow: BrowserWindow | null = null
-let trayMenu: Menu | null = null
-let trayIconUpdateListenerRegistered = false
-let updateTrayMenuListenerRegistered = false
-type TrayImage = Electron.NativeImage | string
-const customTrayIconSize = 16
-const customTrayIconScaleFactors = [1, 1.25, 1.5, 2, 2.5, 3]
+let customTrayWindow: BrowserWindow | null = null
+
+function getTrayIcon(): Electron.NativeImage {
+  if (process.platform === 'darwin') {
+    const iconPath = app.isPackaged
+      ? join(process.resourcesPath, 'runtime-icons', 'icon.png')
+      : pngIcon
+    const icon = nativeImage.createFromPath(iconPath).resize({ height: 16 })
+    icon.setTemplateImage(true)
+    return icon
+  }
+
+  const iconName = process.platform === 'win32' ? 'icon.ico' : 'icon.png'
+  const iconPath = app.isPackaged
+    ? join(process.resourcesPath, 'runtime-icons', iconName)
+    : process.platform === 'win32'
+      ? icoIcon
+      : pngIcon
+  return nativeImage.createFromPath(iconPath)
+}
 
 function formatDelayText(delay: number): string {
   if (delay === 0) {
@@ -53,73 +63,6 @@ function formatDelayText(delay: number): string {
     return `${delay} ms`
   }
   return ''
-}
-
-function createDarwinTrayIcon(): Electron.NativeImage {
-  const icon = nativeImage.createFromPath(templateIcon).resize({ height: 16 })
-  icon.setTemplateImage(true)
-  return icon
-}
-
-function resizeTrayImageForScale(
-  icon: Electron.NativeImage,
-  scaleFactor: number
-): Electron.NativeImage {
-  const targetHeight = Math.round(customTrayIconSize * scaleFactor)
-
-  return icon.resize({ height: targetHeight, quality: 'best' })
-}
-
-function createMultiScaleTrayImage(icon: Electron.NativeImage): Electron.NativeImage {
-  const trayImage = nativeImage.createEmpty()
-
-  for (const scaleFactor of customTrayIconScaleFactors) {
-    const resizedIcon = resizeTrayImageForScale(icon, scaleFactor)
-    if (resizedIcon.isEmpty()) continue
-
-    trayImage.addRepresentation({
-      scaleFactor,
-      buffer: resizedIcon.toPNG()
-    })
-  }
-
-  if (!trayImage.isEmpty()) return trayImage
-
-  return resizeTrayImageForScale(icon, 1)
-}
-
-function createCustomTrayImage(customTrayIcon: string): TrayImage | null {
-  if (!customTrayIcon) return null
-
-  if (customTrayIcon.startsWith('data:image/')) {
-    const icon = nativeImage.createFromDataURL(customTrayIcon)
-    if (icon.isEmpty()) return null
-
-    return createMultiScaleTrayImage(icon)
-  }
-
-  if (!existsSync(customTrayIcon)) return null
-
-  const icon = nativeImage.createFromPath(customTrayIcon)
-  if (icon.isEmpty()) return null
-
-  const iconExt = extname(customTrayIcon).toLowerCase()
-  if (process.platform === 'win32' && iconExt === '.ico') {
-    return customTrayIcon
-  }
-  if (process.platform === 'linux') {
-    return customTrayIcon
-  }
-
-  return createMultiScaleTrayImage(icon)
-}
-
-function createTrafficTrayImage(png: string, templateImage = true): Electron.NativeImage | null {
-  const image = nativeImage.createFromDataURL(png).resize({ height: customTrayIconSize })
-  if (image.isEmpty()) return null
-
-  image.setTemplateImage(templateImage)
-  return image
 }
 
 function positionCustomTrayWindow(win: BrowserWindow): void {
@@ -145,7 +88,7 @@ function hideCustomTray(): void {
 }
 
 async function showCustomTray(): Promise<void> {
-  const { useCustomTrayMenu = false, customTheme = 'default.css' } = await getAppConfig()
+  const { useCustomTrayMenu = false } = await getAppConfig()
   if (!useCustomTrayMenu) {
     await updateTrayMenu()
     return
@@ -179,9 +122,6 @@ async function showCustomTray(): Promise<void> {
     customTrayWindow.on('close', () => {
       customTrayWindow = null
     })
-    customTrayWindow.on('ready-to-show', () => {
-      applyTheme(customTheme)
-    })
 
     if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
       await customTrayWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/traymenu.html`)
@@ -191,6 +131,8 @@ async function showCustomTray(): Promise<void> {
   }
 
   positionCustomTrayWindow(customTrayWindow)
+  customTrayWindow.webContents.send('appConfigUpdated')
+  customTrayWindow.webContents.send('groupsUpdated')
   customTrayWindow.show()
   customTrayWindow.focus()
 }
@@ -212,6 +154,7 @@ export const buildContextMenu = async (): Promise<Menu> => {
     envType = process.platform === 'win32' ? ['powershell'] : ['bash'],
     autoCloseConnection,
     proxyInTray = true,
+    showGlobalByMode = false,
     trayProxyDelayLayout = 'new-line',
     // useCustomTrayMenu = false,
     triggerSysProxyShortcut = '',
@@ -228,7 +171,14 @@ export const buildContextMenu = async (): Promise<Menu> => {
   if (proxyInTray && process.platform !== 'linux') {
     try {
       const groups = await mihomoGroups()
-      groupsMenu = groups.map((group) => {
+      const visibleGroups = !showGlobalByMode
+        ? groups
+        : mode === 'global'
+          ? groups.filter((group) => group.name === 'GLOBAL')
+          : mode === 'rule'
+            ? groups.filter((group) => group.name !== 'GLOBAL')
+            : groups
+      groupsMenu = visibleGroups.map((group) => {
         const currentProxy = group.all.find((proxy) => proxy.name === group.now)
         const delay = currentProxy?.history.length
           ? currentProxy.history[currentProxy.history.length - 1].delay
@@ -516,42 +466,33 @@ export const buildContextMenu = async (): Promise<Menu> => {
 
 export async function createTray(): Promise<void> {
   const { useDockIcon = true } = await getAppConfig()
-  if (tray) {
+  let trayIcon: Electron.NativeImage
+  try {
+    trayIcon = getTrayIcon()
+  } catch (error) {
+    console.error('Failed to load the tray icon:', error)
     return
   }
-  if (process.platform === 'linux') {
-    tray = new Tray(pngIcon)
-    trayMenu = await buildContextMenu()
-    tray.setContextMenu(trayMenu)
+  if (trayIcon.isEmpty()) {
+    console.error('Failed to create the tray icon: the icon resource is empty')
+  } else {
+    tray = new Tray(trayIcon)
+    if (process.platform === 'linux') {
+      const menu = await buildContextMenu()
+      tray.setContextMenu(menu)
+    }
   }
-  if (process.platform === 'darwin') {
-    tray = new Tray(createDarwinTrayIcon())
-  }
-  if (process.platform === 'win32') {
-    tray = new Tray(icoIcon)
-  }
-  tray?.setToolTip('Sparkle')
+  tray?.setToolTip('Perzike')
   tray?.setIgnoreDoubleClickEvents(true)
-  await updateTrayIcon()
   if (process.platform === 'darwin') {
-    if (!useDockIcon && app.dock) {
+    if (tray && !useDockIcon && app.dock) {
       app.dock.hide()
     }
-    if (!trayIconUpdateListenerRegistered) {
-      ipcMain.on('trayIconUpdate', async (_, png?: string) => {
-        const { customTrayIcon = '' } = await getAppConfig()
-        const customIcon = createCustomTrayImage(customTrayIcon)
-        if (png) {
-          const image = createTrafficTrayImage(png, !customIcon)
-          if (image) {
-            tray?.setImage(image)
-            return
-          }
-        }
-        tray?.setImage(customIcon || createDarwinTrayIcon())
-      })
-      trayIconUpdateListenerRegistered = true
-    }
+    ipcMain.on('trayIconUpdate', async (_, png: string) => {
+      const image = nativeImage.createFromDataURL(png).resize({ height: 16 })
+      image.setTemplateImage(true)
+      tray?.setImage(image)
+    })
     tray?.addListener('right-click', async () => {
       await triggerMainWindow()
     })
@@ -571,39 +512,14 @@ export async function createTray(): Promise<void> {
     tray?.addListener('click', async () => {
       await triggerMainWindow()
     })
-    if (!updateTrayMenuListenerRegistered) {
-      ipcMain.on('updateTrayMenu', async () => {
-        await updateTrayMenu()
-      })
-      updateTrayMenuListenerRegistered = true
-    }
+    ipcMain.on('updateTrayMenu', async () => {
+      await updateTrayMenu()
+    })
   }
-}
-
-export async function updateTrayIcon(): Promise<void> {
-  if (!tray) return
-
-  const { customTrayIcon = '' } = await getAppConfig()
-  const customIcon = createCustomTrayImage(customTrayIcon)
-  if (customIcon) {
-    tray.setImage(customIcon)
-    return
-  }
-
-  if (process.platform === 'darwin') {
-    tray.setImage(createDarwinTrayIcon())
-    return
-  }
-  if (process.platform === 'win32') {
-    tray.setImage(icoIcon)
-    return
-  }
-  tray.setImage(pngIcon)
 }
 
 async function updateTrayMenu(): Promise<void> {
   const menu = await buildContextMenu()
-  trayMenu = menu
   tray?.popUpContextMenu(menu) // 弹出菜单
   if (process.platform === 'linux') {
     tray?.setContextMenu(menu)
@@ -665,7 +581,6 @@ export async function closeTrayIcon(): Promise<void> {
     tray.destroy()
   }
   tray = null
-  trayMenu = null
   if (customTrayWindow) {
     customTrayWindow.destroy()
   }

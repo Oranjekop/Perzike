@@ -2,9 +2,8 @@ import { getControledMihomoConfig } from './controledMihomo'
 import { mihomoProfileWorkDir, mihomoWorkDir, profileConfigPath, profilePath } from '../utils/dirs'
 import { addProfileUpdater, delProfileUpdater } from '../core/profileUpdater'
 import { readFile, writeFile, rm, mkdir } from 'fs/promises'
-import { fileToStr } from '@uruhalushia/sparkle-native'
 import { restartCore } from '../core/manager'
-import { getAppConfig } from './app'
+import { deleteProxyGroupState, getAppConfig } from './app'
 import { existsSync } from 'fs'
 import axios, { AxiosResponse } from 'axios'
 import https from 'https'
@@ -19,8 +18,6 @@ import { dirname, isAbsolute, join, relative, resolve } from 'path'
 import { deepMerge } from '../utils/merge'
 import { getUserAgent } from '../utils/userAgent'
 import { execWithElevation } from '../utils/elevation'
-import { decryptAgeText, encryptAgeText, isAgeEncryptedText } from '../utils/age'
-import { isHttpUrl } from '../utils/url'
 
 let profileConfig: ProfileConfig // profile.yaml
 const FILE_PERMISSION_ELEVATION_REQUIRED = 'FILE_PERMISSION_ELEVATION_REQUIRED'
@@ -70,28 +67,9 @@ export async function updateProfileItem(item: ProfileItem): Promise<void> {
   if (index === -1) {
     throw new Error('Profile not found')
   }
-
-  const oldItem = config.items[index]
-  const shouldRewriteProfile =
-    oldItem.ageRecipient !== item.ageRecipient || oldItem.ageIdentity !== item.ageIdentity
-  let profileContent: string | undefined
-
-  if (shouldRewriteProfile && existsSync(profilePath(item.id))) {
-    const rawProfile = await readFile(profilePath(item.id), 'utf-8')
-    try {
-      profileContent = await decryptProfileContent(rawProfile, oldItem)
-    } catch {
-      profileContent = await decryptProfileContent(rawProfile, item)
-    }
-  }
-
   config.items[index] = item
   if (!item.autoUpdate) await delProfileUpdater(item.id)
   await setProfileConfig(config)
-
-  if (profileContent !== undefined) {
-    await writeProfileContent(item.id, profileContent, item, false)
-  }
 }
 
 export async function addProfileItem(item: Partial<ProfileItem>): Promise<void> {
@@ -132,6 +110,7 @@ export async function removeProfileItem(id: string): Promise<void> {
   if (existsSync(mihomoProfileWorkDir(id))) {
     await rm(mihomoProfileWorkDir(id), { recursive: true })
   }
+  await deleteProxyGroupState(id)
   await delProfileUpdater(id)
 }
 
@@ -155,8 +134,6 @@ export async function createProfile(item: Partial<ProfileItem>): Promise<Profile
     interval: item.interval || 0,
     override: item.override || [],
     useProxy: item.useProxy || false,
-    ageRecipient: item.ageRecipient?.trim() || undefined,
-    ageIdentity: item.ageIdentity?.trim() || undefined,
     updated: new Date().getTime()
   } as ProfileItem
   switch (newItem.type) {
@@ -259,7 +236,7 @@ export async function createProfile(item: Partial<ProfileItem>): Promise<Profile
         }
       }
 
-      const data = await decryptProfileContent(String(res.data), newItem)
+      const data = res.data
       const headers = res.headers
       const contentDispositionKey = Object.keys(headers).find((k) =>
         k.toLowerCase().endsWith('content-disposition')
@@ -271,10 +248,7 @@ export async function createProfile(item: Partial<ProfileItem>): Promise<Profile
         k.toLowerCase().endsWith('profile-web-page-url')
       )
       if (homeKey) {
-        const home = headers[homeKey]
-        if (isHttpUrl(home)) {
-          newItem.home = home
-        }
+        newItem.home = headers[homeKey]
       }
       const intervalKey = Object.keys(headers).find((k) =>
         k.toLowerCase().endsWith('profile-update-interval')
@@ -298,12 +272,12 @@ export async function createProfile(item: Partial<ProfileItem>): Promise<Profile
           throw new Error('订阅格式错误，无法解析为有效的配置文件\n' + (error as Error).message)
         }
       }
-      await setProfileStr(id, data, newItem)
+      await setProfileStr(id, data)
       break
     }
     case 'local': {
-      const data = await decryptProfileContent(item.file || '', newItem)
-      await setProfileStr(id, data, newItem)
+      const data = item.file || ''
+      await setProfileStr(id, data)
       break
     }
   }
@@ -312,8 +286,7 @@ export async function createProfile(item: Partial<ProfileItem>): Promise<Profile
 
 export async function getProfileStr(id: string | undefined): Promise<string> {
   if (existsSync(profilePath(id || 'default'))) {
-    const data = await readFile(profilePath(id || 'default'), 'utf-8')
-    return await decryptProfileContent(data, await getProfileItem(id))
+    return await readFile(profilePath(id || 'default'), 'utf-8')
   } else {
     return stringifyYaml(defaultProfile)
   }
@@ -326,44 +299,14 @@ export async function getProfileParseStr(id: string | undefined): Promise<string
   } else {
     data = stringifyYaml(defaultProfile)
   }
-  data = await decryptProfileContent(data, await getProfileItem(id))
   const profile = deepMerge(parseYaml<object>(data), {})
   return stringifyYaml(profile)
 }
 
-export async function setProfileStr(
-  id: string,
-  content: string,
-  item?: ProfileItem
-): Promise<void> {
-  await writeProfileContent(id, content, item, true)
-}
-
-async function decryptProfileContent(
-  content: string,
-  item: ProfileItem | undefined
-): Promise<string> {
-  if (!isAgeEncryptedText(content)) return content
-  if (!item?.ageIdentity) {
-    throw new Error(`${item?.name || '配置'} 已使用 age 加密，请先填写 age 私钥`)
-  }
-  return await decryptAgeText(content, item.ageIdentity)
-}
-
-async function writeProfileContent(
-  id: string,
-  content: string,
-  item: ProfileItem | undefined,
-  shouldRestartCurrent: boolean
-): Promise<void> {
+export async function setProfileStr(id: string, content: string): Promise<void> {
   const { current } = await getProfileConfig()
-  const profileItem = item || (await getProfileItem(id))
-  const data = profileItem?.ageRecipient
-    ? await encryptAgeText(content, profileItem.ageRecipient)
-    : content
-
-  await writeFile(profilePath(id), data, 'utf-8')
-  if (shouldRestartCurrent && current === id) await restartCore()
+  await writeFile(profilePath(id), content, 'utf-8')
+  if (current === id) await restartCore()
 }
 
 export async function getProfile(id: string | undefined): Promise<MihomoConfig> {
@@ -465,10 +408,7 @@ async function repairEditableFilePermissions(
     return
   }
 
-  await execWithElevation('sh', [
-    '-c',
-    buildPermissionRepairCommand(target, uid, gid, repairParent)
-  ])
+  await execWithElevation('sh', ['-c', buildPermissionRepairCommand(target, uid, gid, repairParent)])
 }
 
 async function attemptWriteFile(target: string, content: string): Promise<void> {
@@ -501,46 +441,18 @@ async function writeEditableFile(
   }
 }
 
-export async function getFileStr(path: string, ageSecretKey?: string): Promise<string> {
+export async function getFileStr(path: string): Promise<string> {
   const { diffWorkDir = false } = await getAppConfig()
   const { current } = await getProfileConfig()
-  const content = await readFile(resolveEditableFilePath(path, current, diffWorkDir), 'utf-8')
-  if (!isAgeEncryptedText(content)) {
-    return content
-  }
-
-  if (!ageSecretKey) {
-    throw new Error('当前内容已使用 age 加密，请先配置 age 私钥')
-  }
-
-  return await decryptAgeText(content, ageSecretKey)
+  return await readFile(resolveEditableFilePath(path, current, diffWorkDir), 'utf-8')
 }
 
-export async function getFilePreviewStr(path: string, format?: string): Promise<string> {
+export async function getFilePreviewStr(path: string, _format?: string): Promise<string> {
   const { diffWorkDir = false } = await getAppConfig()
   const { current } = await getProfileConfig()
   const target = resolveEditableFilePath(path, current, diffWorkDir)
-  if (format !== 'MrsRule') {
-    return await readFile(target, 'utf-8')
-  }
 
-  return await convertMrsRuleToText(target)
-}
-
-async function convertMrsRuleToText(path: string): Promise<string> {
-  const result = fileToStr(path, {
-    outputTarget: 'mihomo',
-    outputFormat: 'text',
-    outputBehavior: 'auto'
-  })
-  let text = ''
-  for (const output of Object.values(result.outputs)) {
-    text += text ? `\n${output}` : output
-  }
-  if (!text) {
-    return ''
-  }
-  return text
+  return await readFile(target, 'utf-8')
 }
 
 export async function setFileStr(path: string, content: string): Promise<void> {

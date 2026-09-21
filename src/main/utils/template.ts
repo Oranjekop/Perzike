@@ -1,19 +1,13 @@
 import os from 'os'
-import { systemCoreDefaultPath, systemCoreOnlyBuild } from '../../shared/build-flags'
 
 export const defaultConfig: AppConfig = {
-  core: systemCoreOnlyBuild ? 'system' : 'mihomo',
-  ...(systemCoreOnlyBuild ? { systemCorePath: systemCoreDefaultPath } : {}),
-  ...(systemCoreOnlyBuild ? { corePermissionMode: 'elevated' as const } : {}),
+  core: 'mihomo',
   updateChannel: 'stable',
   notificationMode: 'system',
-  showUpdateButtonAfterNotification: true,
   silentStart: false,
   appTheme: 'system',
   useWindowFrame: false,
-  enableWindowDrag: false,
   proxyInTray: true,
-  customTrayIcon: '',
   trayProxyDelayLayout: 'new-line',
   useCustomTrayMenu: false,
   saveLogs: true,
@@ -23,17 +17,15 @@ export const defaultConfig: AppConfig = {
   proxyCols: 'auto',
   connectionDirection: 'asc',
   connectionOrderBy: 'time',
-  connectionGroupByProcess: false,
-  connectionGroupSort: 'name',
-  connectionGroupDirection: 'asc',
   connectionInterval: 500,
-  gistSyncEnabled: false,
-  gistEncrypted: false,
   useSubStore: true,
   proxyDisplayOrder: 'default',
+  proxyGroupDisplayMode: 'list',
   autoCheckUpdate: false,
   autoCloseConnection: true,
   closeMode: 'all',
+  showGlobalByMode: false,
+  showHiddenProxyGroups: false,
   controlDns: true,
   controlSniff: true,
   hosts: [],
@@ -53,7 +45,7 @@ export const defaultConfig: AppConfig = {
     'substore'
   ],
   siderWidth: 250,
-  sysProxy: { enable: false, mode: 'manual', guard: false, guardNotify: false },
+  sysProxy: { enable: false, mode: 'manual' },
   disableLoopbackDetector: false,
   disableEmbedCA: false,
   disableSystemCA: false,
@@ -62,14 +54,9 @@ export const defaultConfig: AppConfig = {
   disableGPU: process.platform === 'win32' && parseInt(os.release().split('.')[2], 10) <= 20000,
   proxyDisplayLayout: 'double',
   groupDisplayLayout: 'double',
-  showGroupSelectedProxy: false,
   autoLightweightMode: 'core',
-  coreStartupMode: 'post-up',
-  serviceRunMode: 'auto',
-  delayTestConcurrency: 50,
-  delayTestUseGroupApi: false,
-  delayTestUrlScope: 'group',
-  showProxyDetailTooltip: false
+  coreStartupMode: 'log',
+  delayTestUrlScope: 'group'
 }
 
 export const defaultControledMihomoConfig: Partial<MihomoConfig> = {
@@ -81,7 +68,7 @@ export const defaultControledMihomoConfig: Partial<MihomoConfig> = {
     'allow-private-network': false
   },
   secret: '',
-  ipv6: true,
+  ipv6: false,
   mode: 'rule',
   'mixed-port': 7890,
   'socks-port': 0,
@@ -115,15 +102,15 @@ export const defaultControledMihomoConfig: Partial<MihomoConfig> = {
   },
   dns: {
     enable: true,
-    ipv6: true,
+    ipv6: false,
     'respect-rules': false,
     'enhanced-mode': 'fake-ip',
     'fake-ip-range': '198.18.0.1/16',
-    'fake-ip-filter': ['*', '+.lan', '+.local', 'time.*.com', 'ntp.*.com', '+.market.xiaomi.com'],
+    'fake-ip-filter': ['*', '+.lan', '+.local', 'time.*.com', 'ntp.*.com', '+.market.xiaomi.com', 'geosite:connectivity-check', 'geosite:cn'],
     'use-hosts': false,
     'use-system-hosts': false,
-    'default-nameserver': ['tls://223.5.5.5'],
-    nameserver: ['https://doh.pub/dns-query', 'https://dns.alidns.com/dns-query'],
+    'default-nameserver': ['223.5.5.5', '119.29.29.29'],
+    nameserver: ['https://223.5.5.5/dns-query', 'https://1.12.12.12/dns-query'],
     'nameserver-policy': {},
     'proxy-server-nameserver': [],
     'proxy-server-nameserver-policy': {},
@@ -167,7 +154,7 @@ export const defaultControledMihomoConfig: Partial<MihomoConfig> = {
   'geo-update-interval': 24,
   'geodata-mode': false,
   'geox-url': {
-    geoip: 'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.dat',
+    geoip: 'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip-lite.dat',
     geosite: 'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat',
     mmdb: 'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.metadb',
     asn: 'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/GeoLite2-ASN.mmdb'

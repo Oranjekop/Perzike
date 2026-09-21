@@ -6,7 +6,7 @@ import { notify } from '@renderer/utils/notification'
 interface AppConfigContextType {
   appConfig: AppConfig | undefined
   mutateAppConfig: () => void
-  patchAppConfig: (value: Partial<AppConfig>) => Promise<AppConfig | undefined>
+  patchAppConfig: (value: Partial<AppConfig>) => Promise<void>
 }
 
 const AppConfigContext = createContext<AppConfigContextType | undefined>(undefined)
@@ -14,14 +14,11 @@ const AppConfigContext = createContext<AppConfigContextType | undefined>(undefin
 export const AppConfigProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { data: appConfig, mutate: mutateAppConfig } = useSWR('getConfig', () => getAppConfig())
 
-  const patchAppConfig = async (value: Partial<AppConfig>): Promise<AppConfig | undefined> => {
+  const patchAppConfig = async (value: Partial<AppConfig>): Promise<void> => {
     try {
-      const nextConfig = await patch(value)
-      mutateAppConfig(nextConfig, false)
-      return nextConfig
+      await patch(value)
     } catch (e) {
       notify(e, { variant: 'danger' })
-      return undefined
     } finally {
       mutateAppConfig()
     }

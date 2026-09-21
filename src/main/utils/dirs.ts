@@ -1,15 +1,10 @@
-import { is } from '@electron-toolkit/utils'
-import { existsSync, mkdirSync, readdirSync } from 'fs'
+import { is } from './electron-utils'
+import { accessSync, constants, existsSync, mkdirSync, readdirSync } from 'fs'
 import { app } from 'electron'
 import path from 'path'
 import { execSync } from 'child_process'
 import { getAppConfigSync } from '../config/app'
 import { checkCorePermissionPathSync } from '../core/permission-check'
-import {
-  systemCoreDefaultPath,
-  systemCoreOnlyBuild,
-  systemServicePath
-} from '../../shared/build-flags'
 
 export const homeDir = app.getPath('home')
 
@@ -37,16 +32,8 @@ export function subStoreDir(): string {
   return path.join(dataDir(), 'substore')
 }
 
-export function subStoreFrontendDir(): string {
-  return path.join(subStoreDir(), 'sub-store-frontend')
-}
-
-export function subStoreBackendPath(): string {
-  return path.join(subStoreDir(), 'sub-store.bundle.js')
-}
-
-export function subStoreTempDir(): string {
-  return path.join(subStoreDir(), 'temp')
+export function localBackupDir(): string {
+  return path.join(dataDir(), 'backup')
 }
 
 export function exeDir(): string {
@@ -73,42 +60,59 @@ export function resourcesFilesDir(): string {
   return path.join(resourcesDir(), 'files')
 }
 
-export function themesDir(): string {
-  return path.join(dataDir(), 'themes')
-}
-
 export function mihomoIpcPath(): string {
   if (process.platform === 'win32') {
-    return '\\\\.\\pipe\\Sparkle\\mihomo'
+    return '\\\\.\\pipe\\Perzike\\mihomo'
   }
   const { core = 'mihomo' } = getAppConfigSync()
   if (core === 'system') {
-    return '/tmp/sparkle-mihomo-external.sock'
+    return '/tmp/perzike-mihomo-external.sock'
   }
   if (!checkCorePermissionPathSync(mihomoCorePath(core))) {
-    return '/tmp/sparkle-mihomo-api-noperm.sock'
+    return '/tmp/perzike-mihomo-api-noperm.sock'
   }
-  return '/tmp/sparkle-mihomo-api.sock'
+  return '/tmp/perzike-mihomo-api.sock'
 }
 
 export function serviceIpcPath(): string {
   if (process.platform === 'win32') {
-    return '\\\\.\\pipe\\sparkle\\service'
+    return '\\\\.\\pipe\\perzike\\service'
   }
-  return '/tmp/sparkle-service.sock'
+  return '/tmp/perzike-service.sock'
 }
 
 export function mihomoCoreDir(): string {
-  if (systemCoreOnlyBuild) {
-    return path.dirname(systemCorePath())
-  }
   return path.join(resourcesDir(), 'sidecar')
 }
 
 export function mihomoCorePath(core: string): string {
   if (core === 'mihomo' || core === 'mihomo-alpha') {
     const isWin = process.platform === 'win32'
-    return path.join(mihomoCoreDir(), `${core}${isWin ? '.exe' : ''}`)
+    const coreName = `${core}${isWin ? '.exe' : ''}`
+    const currentPath = path.join(mihomoCoreDir(), coreName)
+
+    if (canExecute(currentPath)) {
+      return currentPath
+    }
+
+    if (is.dev) {
+      const devFallbackPaths = [
+        path.join(__dirname, '../../dist/win-unpacked/resources/sidecar', coreName),
+        path.join(
+          process.env.ProgramFiles || 'C:\\Program Files',
+          'Perzike/resources/sidecar',
+          coreName
+        )
+      ]
+
+      for (const fallbackPath of devFallbackPaths) {
+        if (canExecute(fallbackPath)) {
+          return fallbackPath
+        }
+      }
+    }
+
+    return currentPath
   }
   if (core === 'system') {
     const sysPath = systemCorePath()
@@ -121,15 +125,41 @@ export function mihomoCorePath(core: string): string {
   throw new Error('内核路径错误')
 }
 
+function canExecute(filePath: string): boolean {
+  try {
+    accessSync(filePath, constants.X_OK)
+    return true
+  } catch {
+    return false
+  }
+}
+
 function systemCorePath(): string {
   const { systemCorePath = '' } = getAppConfigSync()
-  return systemCorePath || systemCoreDefaultPath
+  return systemCorePath
 }
 
 export function servicePath(): string {
-  if (systemCoreOnlyBuild) return systemServicePath
   const isWin = process.platform === 'win32'
-  return path.join(resourcesFilesDir(), `sparkle-service${isWin ? '.exe' : ''}`)
+  const serviceName = `perzike-service${isWin ? '.exe' : ''}`
+  const currentPath = path.join(resourcesFilesDir(), serviceName)
+
+  if (existsSync(currentPath)) {
+    return currentPath
+  }
+
+  if (is.dev) {
+    const packagedPath = path.join(
+      __dirname,
+      '../../dist/win-unpacked/resources/files',
+      serviceName
+    )
+    if (existsSync(packagedPath)) {
+      return packagedPath
+    }
+  }
+
+  return currentPath
 }
 
 export function serviceAuthStorePath(): string {
@@ -232,10 +262,6 @@ export function findSystemMihomo(): string[] {
   const foundPaths: string[] = []
   const searchNames = ['mihomo', 'clash']
 
-  if (systemCoreDefaultPath && existsSync(systemCoreDefaultPath)) {
-    foundPaths.push(systemCoreDefaultPath)
-  }
-
   for (const name of searchNames) {
     try {
       const command = isWin ? 'where' : 'which'
@@ -261,7 +287,6 @@ export function findSystemMihomo(): string[] {
       '/bin',
       '/usr/bin',
       '/usr/local/bin',
-      '/opt/homebrew/bin',
       path.join(homeDir, '.local/bin'),
       path.join(homeDir, 'bin')
     ]

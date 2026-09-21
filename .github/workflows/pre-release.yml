@@ -1,0 +1,226 @@
+name: Pre-release
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: pre-release
+  cancel-in-progress: true
+
+jobs:
+  prepare_prerelease:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.release_meta.outputs.should_build }}
+      package_version: ${{ steps.release_meta.outputs.package_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+          fetch-tags: 'true'
+
+      - name: Resolve Pre-release Meta
+        id: release_meta
+        shell: bash
+        run: |
+          sleep 30
+          git fetch --force --tags origin
+
+          COMMIT_TAG=$(git tag --points-at "$GITHUB_SHA" | grep -v '^pre-release$' | head -n 1 || true)
+          if [[ -n "$COMMIT_TAG" ]]; then
+            echo "Commit $GITHUB_SHA already has tag $COMMIT_TAG; skipping pre-release."
+            echo "should_build=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          BASE_VERSION=$(node -p "require('./package.json').version.split('-')[0]")
+          if [[ ! "$BASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid package version: $BASE_VERSION"
+            exit 1
+          fi
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
+          NEXT_PATCH=$((10#$PATCH + 1))
+          SHORT_SHA="${GITHUB_SHA::7}"
+          PACKAGE_VERSION="${MAJOR}.${MINOR}.${NEXT_PATCH}-beta-${SHORT_SHA}"
+
+          echo "should_build=true" >> "$GITHUB_OUTPUT"
+          echo "package_version=$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Update Version
+        if: steps.release_meta.outputs.should_build == 'true'
+        run: |
+          jq --arg version "${{ steps.release_meta.outputs.package_version }}" '.version = $version' package.json > tmp.json && mv tmp.json package.json
+
+      - name: Generate Release Notes
+        if: steps.release_meta.outputs.should_build == 'true'
+        env:
+          RELEASE_TAG: pre-release
+          RELEASE_VERSION: ${{ steps.release_meta.outputs.package_version }}
+          RELEASE_NOTES_FILE: release-notes.md
+        run: node scripts/release-notes.mjs
+
+      - name: Prepare Draft Pre-release
+        if: steps.release_meta.outputs.should_build == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGE_VERSION: ${{ steps.release_meta.outputs.package_version }}
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -fa pre-release -m "pre-release" "$GITHUB_SHA"
+          git push origin +refs/tags/pre-release
+
+          if gh release view pre-release > /dev/null 2>&1; then
+            gh release edit pre-release --draft --prerelease --title "Pre-release $PACKAGE_VERSION" --notes-file release-notes.md
+          else
+            gh release create pre-release --draft --prerelease --verify-tag --title "Pre-release $PACKAGE_VERSION" --notes-file release-notes.md
+          fi
+
+          RELEASE_ID=$(gh release view pre-release --json databaseId --jq '.databaseId')
+          gh api "repos/${{ github.repository }}/releases/$RELEASE_ID/assets?per_page=100" \
+            --paginate --jq '.[].id' | while read -r asset_id; do
+              gh api --method DELETE "repos/${{ github.repository }}/releases/assets/$asset_id"
+            done
+
+  build:
+    needs: [prepare_prerelease]
+    if: needs.prepare_prerelease.outputs.should_build == 'true'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            arch: x64
+            format: 7z
+          - os: windows-latest
+            arch: x64
+            format: nsis
+          - os: windows-latest
+            arch: arm64
+            format: 7z
+          - os: windows-latest
+            arch: arm64
+            format: nsis
+          - os: macos-latest
+            arch: x64
+          - os: macos-latest
+            arch: arm64
+
+    name: Build ${{ matrix.os }}-${{ matrix.arch }}${{ matrix.format && '-' || '' }}${{ matrix.format || '' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+          fetch-tags: 'true'
+
+      - name: Setup pnpm
+        run: npm install -g pnpm
+
+      - name: Update Version
+        shell: bash
+        run: |
+          jq --arg version "${{ needs.prepare_prerelease.outputs.package_version }}" '.version = $version' package.json > tmp.json && mv tmp.json package.json
+
+      - name: Install Dependencies and Prepare
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          npm_config_arch: ${{ matrix.arch }}
+          npm_config_target_arch: ${{ matrix.arch }}
+        shell: bash
+        run: |
+          SKIP_PREPARE=1 pnpm install
+          pnpm prepare --${{ matrix.arch }}
+
+      - name: Build
+        env:
+          SKIP_MONITOR_PREPARE: '1'
+          npm_config_arch: ${{ matrix.arch }}
+          npm_config_target_arch: ${{ matrix.arch }}
+        shell: bash
+        run: |
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            pnpm build:win ${{ matrix.format }} --${{ matrix.arch }}
+          else
+            pnpm build:mac --${{ matrix.arch }}
+          fi
+
+      - name: Add Portable Flag
+        if: matrix.os == 'windows-latest' && matrix.format == '7z'
+        shell: pwsh
+        run: |
+          New-Item -Path "PORTABLE" -ItemType File
+          Get-ChildItem dist/*portable.7z | ForEach-Object {
+            7z a $_.FullName PORTABLE
+          }
+
+      - name: Upload Pre-release Assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          shopt -s nullglob
+          ASSETS=()
+
+          for asset in dist/perzike*; do
+            if [[ -f "$asset" && "$asset" != *.blockmap && "$asset" != "dist/perzike.app.plist" ]]; then
+              ASSETS+=("$asset")
+            fi
+          done
+
+          if (( ${#ASSETS[@]} == 0 )); then
+            echo "No pre-release assets found"
+            exit 1
+          fi
+
+          gh release upload pre-release "${ASSETS[@]}" --clobber
+
+  release:
+    needs: [prepare_prerelease, build]
+    if: needs.prepare_prerelease.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+          fetch-tags: 'true'
+
+      - name: Update Version
+        run: |
+          jq --arg version "${{ needs.prepare_prerelease.outputs.package_version }}" '.version = $version' package.json > tmp.json && mv tmp.json package.json
+
+      - name: Generate Release Notes
+        env:
+          RELEASE_TAG: pre-release
+          RELEASE_VERSION: ${{ needs.prepare_prerelease.outputs.package_version }}
+          RELEASE_NOTES_FILE: release-notes.md
+        run: node scripts/release-notes.mjs
+
+      - name: Generate Update Metadata
+        run: |
+          npm install -g pnpm
+          SKIP_PREPARE=1 pnpm install
+          RELEASE_TAG=pre-release RELEASE_NOTES_FILE=release-notes.md SKIP_CHANGELOG=1 pnpm updater
+
+      - name: Upload Update Metadata
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: gh release upload pre-release latest.yml --clobber
+
+      - name: Publish Pre-release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGE_VERSION: ${{ needs.prepare_prerelease.outputs.package_version }}
+        shell: bash
+        run: gh release edit pre-release --draft=false --prerelease --title "Pre-release $PACKAGE_VERSION" --notes-file release-notes.md

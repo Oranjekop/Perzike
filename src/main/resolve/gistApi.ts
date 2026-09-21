@@ -1,40 +1,11 @@
 import axios from 'axios'
 import { getAppConfig, getControledMihomoConfig } from '../config'
 import { getRuntimeConfigStr } from '../core/factory'
-import { encryptAgeText } from '../utils/age'
 
 interface GistInfo {
   id: string
   description: string
   html_url: string
-}
-
-const GIST_DESCRIPTION = 'Auto Synced Sparkle Runtime Config'
-const GIST_FILE_NAME = 'sparkle.yaml'
-const GIST_ENCRYPTED_FILE_NAME = 'sparkle.yaml.age'
-
-function getGistFileName(encrypted: boolean): string {
-  return encrypted ? GIST_ENCRYPTED_FILE_NAME : GIST_FILE_NAME
-}
-
-function getStaleGistFileName(encrypted: boolean): string {
-  return encrypted ? GIST_FILE_NAME : GIST_ENCRYPTED_FILE_NAME
-}
-
-async function getGistUploadContent(): Promise<{
-  content: string
-  encrypted: boolean
-  fileName: string
-}> {
-  const { gistEncrypted = false, gistAgeRecipient = '' } = await getAppConfig()
-  const config = await getRuntimeConfigStr()
-  const content = gistEncrypted ? await encryptAgeText(config, gistAgeRecipient) : config
-
-  return {
-    content,
-    encrypted: gistEncrypted,
-    fileName: getGistFileName(gistEncrypted)
-  }
 }
 
 async function listGists(token: string): Promise<GistInfo[]> {
@@ -57,14 +28,14 @@ async function listGists(token: string): Promise<GistInfo[]> {
   return res.data as GistInfo[]
 }
 
-async function createGist(token: string, fileName: string, content: string): Promise<void> {
+async function createGist(token: string, content: string): Promise<void> {
   const { 'mixed-port': port = 7890 } = await getControledMihomoConfig()
   return await axios.post(
     'https://api.github.com/gists',
     {
-      description: GIST_DESCRIPTION,
+      description: 'Auto Synced Perzike Runtime Config',
       public: false,
-      files: { [fileName]: { content } }
+      files: { 'perzike.yaml': { content } }
     },
     {
       headers: {
@@ -83,22 +54,13 @@ async function createGist(token: string, fileName: string, content: string): Pro
   )
 }
 
-async function updateGist(
-  token: string,
-  id: string,
-  fileName: string,
-  content: string,
-  encrypted: boolean
-): Promise<void> {
+async function updateGist(token: string, id: string, content: string): Promise<void> {
   const { 'mixed-port': port = 7890 } = await getControledMihomoConfig()
   return await axios.patch(
     `https://api.github.com/gists/${id}`,
     {
-      description: GIST_DESCRIPTION,
-      files: {
-        [fileName]: { content },
-        [getStaleGistFileName(encrypted)]: null
-      }
+      description: 'Auto Synced Perzike Runtime Config',
+      files: { 'perzike.yaml': { content } }
     },
     {
       headers: {
@@ -118,32 +80,30 @@ async function updateGist(
 }
 
 export async function getGistUrl(): Promise<string> {
-  const { githubToken, gistSyncEnabled = Boolean(githubToken) } = await getAppConfig()
-  if (!gistSyncEnabled) return ''
+  const { githubToken } = await getAppConfig()
   if (!githubToken) return ''
   const gists = await listGists(githubToken)
-  const gist = gists.find((gist) => gist.description === GIST_DESCRIPTION)
+  const gist = gists.find((gist) => gist.description === 'Auto Synced Perzike Runtime Config')
   if (gist) {
     return gist.html_url
   } else {
     await uploadRuntimeConfig()
     const gists = await listGists(githubToken)
-    const gist = gists.find((gist) => gist.description === GIST_DESCRIPTION)
+    const gist = gists.find((gist) => gist.description === 'Auto Synced Perzike Runtime Config')
     if (!gist) throw new Error('Gist not found')
     return gist.html_url
   }
 }
 
 export async function uploadRuntimeConfig(): Promise<void> {
-  const { githubToken, gistSyncEnabled = Boolean(githubToken) } = await getAppConfig()
-  if (!gistSyncEnabled) return
+  const { githubToken } = await getAppConfig()
   if (!githubToken) return
   const gists = await listGists(githubToken)
-  const gist = gists.find((gist) => gist.description === GIST_DESCRIPTION)
-  const { content, encrypted, fileName } = await getGistUploadContent()
+  const gist = gists.find((gist) => gist.description === 'Auto Synced Perzike Runtime Config')
+  const config = await getRuntimeConfigStr()
   if (gist) {
-    await updateGist(githubToken, gist.id, fileName, content, encrypted)
+    await updateGist(githubToken, gist.id, config)
   } else {
-    await createGist(githubToken, fileName, content)
+    await createGist(githubToken, config)
   }
 }

@@ -1,7 +1,5 @@
 import { ChildProcess, spawn } from 'child_process'
-import { createInterface } from 'readline'
 import { dataDir, coreLogPath, mihomoCorePath } from '../utils/dirs'
-import { systemCoreOnlyBuild } from '../../shared/build-flags'
 import { generateProfile, getRuntimeConfig } from './factory'
 import {
   getAppConfig,
@@ -16,9 +14,14 @@ import {
   startMihomoConnections,
   startMihomoLogs,
   startMihomoMemory,
+  stopMihomoConnections,
+  stopMihomoTraffic,
+  stopMihomoLogs,
+  stopMihomoMemory,
   patchMihomoConfig,
+  mihomoConfig,
   mihomoGroups,
-  getAxios
+  subscribeMihomoLogs
 } from './mihomoApi'
 import { readFile, rm, writeFile } from 'fs/promises'
 import { mainWindow } from '..'
@@ -27,27 +30,41 @@ import os from 'os'
 import { existsSync } from 'fs'
 import { uploadRuntimeConfig } from '../resolve/gistApi'
 import { startMonitor } from '../resolve/trafficMonitor'
+import { floatingWindow } from '../resolve/floatingWindow'
+import { getAxios } from './mihomoApi'
 import {
   getCoreStatus,
   startCore as startServiceCore,
   stopCore as stopServiceCore,
-  isServiceConnectionError,
-  isServiceUnavailableError,
+  startServiceCoreEventStream,
+  stopServiceCoreEventStream,
+  subscribeServiceCoreEvents,
+  subscribeServiceCoreEventStream,
+  type ServiceCoreEvent,
   type ServiceCoreLaunchProfile
 } from '../service/api'
-import { serviceStatus } from '../service/manager'
-import { clearAppUpdateServiceFallbackPause, getServiceFallbackPolicy } from '../service/fallback'
+import { repairBundledCoreAccess, startService as startPerzikeService } from '../service/manager'
 import { appendAppLog, createLogWritable, setMihomoLogSource } from '../utils/log'
+import {
+  isRunningAsAdmin,
+  startProcessWithElevation,
+  stopProcessWithElevation
+} from '../utils/elevation'
+import { createCoreHookWaiter, createCoreStartupHook } from './startupHook'
+import { stopChildProcess } from './process-control'
+import {
+  recoverDNS,
+  setPublicDNS,
+  startNetworkDetection as startNetworkDetectionWithCore,
+  stopNetworkDetection as stopNetworkDetectionController
+} from './network'
+import { checkProfile } from './profile-check'
 import {
   dismissNotification,
   showNotification,
   type AppNotificationPayload,
   type AppNotificationVariant
 } from '../utils/notification'
-import { createCoreHookWaiter, createCoreStartupHook } from './startupHook'
-import { stopChildProcess } from './process-control'
-import { recoverDNS, setPublicDNS, startNetworkDetectionController } from './network'
-import { checkProfile } from './profile-check'
 import {
   createCoreEnvironment,
   createCoreSpawnArgs,
@@ -57,27 +74,41 @@ import {
   isTunPermissionError,
   isUpdaterFinishedLog
 } from './startup-chain'
-import { createServiceCoreRuntime } from './service-core-runtime'
+export {
+  checkCorePermission,
+  checkCorePermissionSync,
+  manualGrantCorePermition,
+  revokeCorePermission
+} from './permission'
+export { getDefaultDevice } from './network'
 
 const ctlParam = process.platform === 'win32' ? '-ext-ctl-pipe' : '-ext-ctl-unix'
 
+let child: ChildProcess
+let retry = 10
+let elevatedCorePid: number | null = null
+let activeCorePermissionMode: NonNullable<AppConfig['corePermissionMode']> | null = null
+let serviceCoreStreamsRestartTimer: NodeJS.Timeout | null = null
+let unsubscribeServiceCoreEvents: (() => void) | null = null
+let unsubscribeServiceCoreEventStream: (() => void) | null = null
+let unsubscribeMihomoLogNotifications: (() => void) | null = null
+let serviceCoreStreamsActive = false
+let serviceCoreStreamsStarting: Promise<void> | null = null
+let lastServiceCoreEventKey = ''
+let serviceCoreStartupActive = false
+let serviceCoreReconnectResumePromise: Promise<void> | null = null
+let restartCoreTask: Promise<void> | null = null
+let restartCoreRequested = false
+const serviceConnectionRetryTimeout = 10000
 const serviceConnectionRetryInterval = 500
 const tailscaleAuthNotificationKeyPrefix = 'tailscale-auth:'
 const directCoreLogLineLimit = 16 * 1024
 
-const directCoreState = {
-  child: undefined as ChildProcess | undefined,
-  retry: 10,
-  logLineBuffer: ''
+type ServiceCoreConnectionProbe = {
+  reachable: boolean
+  running: boolean
+  error: unknown
 }
-
-const serviceCoreRuntime = createServiceCoreRuntime({
-  notifyCoreLog,
-  resetDirectCoreRetry: () => {
-    directCoreState.retry = 10
-  },
-  startCore: (detached) => startCore(detached)
-})
 
 type CoreLogNotification = AppNotificationPayload & {
   key: string
@@ -101,6 +132,7 @@ interface CoreLogNotificationRule {
 
 const notifiedCoreLogKeys = new Set<string>()
 const tailscaleAuthNotificationKeysByName = new Map<string, Set<string>>()
+let directCoreLogLineBuffer = ''
 const coreLogNotificationRules: CoreLogNotificationRule[] = [
   {
     match: (source) => {
@@ -193,48 +225,30 @@ function findTailscaleAuthUrlEnd(url: string): number {
   return -1
 }
 
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms)
-  })
-}
-
-type ServiceCoreConnectionProbe = {
-  reachable: boolean
-  running: boolean
-  error: unknown
-}
-
 async function startMihomoApiStreams(): Promise<void> {
+  ensureMihomoLogNotifications()
   await startMihomoTraffic()
   await startMihomoConnections()
   await startMihomoLogs()
   await startMihomoMemory()
-  directCoreState.retry = 10
+  retry = 10
 }
 
 async function completeCoreInitialization(logLevel?: LogLevel): Promise<void> {
   const tasks: Promise<unknown>[] = [
-    delay(100).then(() => {
+    new Promise<void>((resolve) => setTimeout(resolve, 100)).then(() => {
       mainWindow?.webContents.send('groupsUpdated')
       mainWindow?.webContents.send('rulesUpdated')
     }),
-    (async () => {
-      try {
-        await uploadRuntimeConfig()
-      } catch (error) {
-        await appendAppLog(`[Manager]: upload runtime config failed, ${error}\n`)
-        void showNotification({
-          title: '同步 Gist 配置失败',
-          body: `${error}`,
-          variant: 'danger'
-        })
-      }
-    })()
+    uploadRuntimeConfig()
   ]
 
   if (logLevel) {
-    tasks.push(delay(100).then(() => patchMihomoConfig({ 'log-level': logLevel })))
+    tasks.push(
+      new Promise<void>((resolve) => setTimeout(resolve, 100)).then(() =>
+        patchMihomoConfig({ 'log-level': logLevel })
+      )
+    )
   }
 
   await Promise.all(tasks)
@@ -250,9 +264,41 @@ async function waitForMihomoReady(): Promise<void> {
       await mihomoGroups()
       break
     } catch (error) {
-      await delay(retryInterval)
+      await new Promise((resolve) => setTimeout(resolve, retryInterval))
     }
   }
+}
+
+function ensureMihomoLogNotifications(): void {
+  if (unsubscribeMihomoLogNotifications) {
+    return
+  }
+
+  unsubscribeMihomoLogNotifications = subscribeMihomoLogs((log) => {
+    notifyCoreLog({ text: log.payload })
+  })
+}
+
+async function waitForDirectCoreReadyByPolling(logLevel?: LogLevel): Promise<Promise<void>[]> {
+  const maxRetries = 60
+  const retryInterval = 250
+  let lastError: unknown = null
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      await mihomoConfig()
+      await waitForMihomoReady()
+      await startMihomoApiStreams()
+      return [completeCoreInitialization(logLevel)]
+    } catch (error) {
+      lastError = error
+      await new Promise((resolve) => setTimeout(resolve, retryInterval))
+    }
+  }
+
+  throw new Error(
+    `等待提权内核控制器启动超时：${lastError instanceof Error ? lastError.message : String(lastError)}`
+  )
 }
 
 async function waitForServiceCoreConnection(
@@ -261,43 +307,17 @@ async function waitForServiceCoreConnection(
   await appendAppLog(
     `[Manager]: Service connection failed, waiting before fallback, ${initialError}\n`
   )
-
-  const fallbackPolicy = getServiceFallbackPolicy()
-  const { pausedForAppUpdate, connectionRetryTimeout } = fallbackPolicy
-
-  if (!isServiceConnectionError(initialError) && !pausedForAppUpdate) {
-    return { reachable: false, running: false, error: initialError }
-  }
-
-  const status = await getServiceStatusAfterConnectionError()
-  if (status && status !== 'running') {
-    if (!pausedForAppUpdate) {
-      await appendAppLog(`[Manager]: Service status is ${status}, fallback immediately\n`)
-      return { reachable: false, running: false, error: initialError }
-    }
-    await appendAppLog(`[Manager]: Service status is ${status} during app update, keep waiting\n`)
-  }
-
   const startedAt = Date.now()
   let lastError = initialError
 
-  while (Date.now() - startedAt < connectionRetryTimeout) {
-    await delay(serviceConnectionRetryInterval)
+  while (Date.now() - startedAt < serviceConnectionRetryTimeout) {
+    await new Promise((resolve) => setTimeout(resolve, serviceConnectionRetryInterval))
 
     try {
       await getCoreStatus()
-      if (pausedForAppUpdate) {
-        await clearAppUpdateServiceFallbackPause()
-      }
       return { reachable: true, running: true, error: lastError }
     } catch (error) {
       lastError = error
-      if (isServiceUnavailableError(error) && !isServiceConnectionError(error)) {
-        if (!pausedForAppUpdate) {
-          return { reachable: false, running: false, error }
-        }
-        continue
-      }
       if (!isServiceConnectionError(error)) {
         return { reachable: true, running: false, error }
       }
@@ -305,34 +325,17 @@ async function waitForServiceCoreConnection(
   }
 
   await appendAppLog(
-    `[Manager]: Service still unavailable after ${connectionRetryTimeout}ms, ${lastError}\n`
+    `[Manager]: Service still unavailable after ${serviceConnectionRetryTimeout}ms, ${lastError}\n`
   )
   return { reachable: false, running: false, error: lastError }
 }
 
-async function getServiceStatusAfterConnectionError(): Promise<
-  Awaited<ReturnType<typeof serviceStatus>> | undefined
-> {
-  try {
-    return await serviceStatus()
-  } catch (error) {
-    await appendAppLog(`[Manager]: query service status failed before fallback, ${error}\n`)
-    return undefined
-  }
-}
-
 export async function startCore(detached = false): Promise<Promise<void>[]> {
-  const [appConfig, controlledMihomoConfig, profileConfig] = await Promise.all([
-    getAppConfig(),
-    getControledMihomoConfig(),
-    getProfileConfig()
-  ])
   const {
     core = 'mihomo',
     corePermissionMode = 'elevated',
-    serviceRunMode = 'auto',
-    coreStartupMode = 'post-up',
-    autoSetDNSMode = 'none',
+    coreStartupMode = 'log',
+    autoSetDNSMode = 'exec',
     diffWorkDir = false,
     mihomoCpuPriority = 'PRIORITY_NORMAL',
     saveLogs = true,
@@ -342,16 +345,27 @@ export async function startCore(detached = false): Promise<Promise<void>[]> {
     disableSystemCA = false,
     disableNftables = false,
     safePaths = []
-  } = appConfig
+  } = await getAppConfig()
+  const controlledMihomoConfig = await getControledMihomoConfig()
   const { 'log-level': logLevel, tun } = controlledMihomoConfig
-  const { current } = profileConfig
+  const { current } = await getProfileConfig()
   const useServiceCore = corePermissionMode === 'service' && !detached
+  const launchCorePermissionMode = useServiceCore ? 'service' : 'elevated'
+  const effectiveCoreStartupMode = process.platform === 'win32' ? 'log' : coreStartupMode
+
+  if (process.platform === 'win32' && (core === 'mihomo' || core === 'mihomo-alpha')) {
+    try {
+      await repairBundledCoreAccess()
+    } catch (error) {
+      await appendAppLog(`[Manager]: repair bundled core access failed, ${error}\n`)
+    }
+  }
 
   let corePath: string
   try {
     corePath = mihomoCorePath(core)
   } catch (error) {
-    if (core === 'system' && !systemCoreOnlyBuild) {
+    if (core === 'system') {
       await patchAppConfig({ core: 'mihomo' })
       return startCore(detached)
     }
@@ -359,19 +373,18 @@ export async function startCore(detached = false): Promise<Promise<void>[]> {
   }
 
   await generateProfile()
-  if (useServiceCore || detached) {
-    await checkProfile()
-  }
+  await checkProfile()
   let serviceCoreRunning = false
   if (useServiceCore) {
     try {
+      await startPerzikeService()
       await getCoreStatus()
       serviceCoreRunning = true
     } catch (error) {
-      if (isServiceUnavailableError(error)) {
+      if (isServiceConnectionError(error)) {
         const probe = await waitForServiceCoreConnection(error)
         if (!probe.reachable) {
-          return serviceCoreRuntime.fallbackToElevatedCore(detached, probe.error)
+          return fallbackToElevatedCore(detached, probe.error)
         }
         serviceCoreRunning = probe.running
       }
@@ -379,6 +392,9 @@ export async function startCore(detached = false): Promise<Promise<void>[]> {
   }
   if (!serviceCoreRunning) {
     await stopCore()
+  }
+  if (!useServiceCore && process.platform === 'win32') {
+    await stopInactiveServiceCore()
   }
   setMihomoLogSource('out')
   if (tun?.enable && autoSetDNSMode !== 'none') {
@@ -398,7 +414,7 @@ export async function startCore(detached = false): Promise<Promise<void>[]> {
 
   let initialized = false
   const coreHook =
-    !useServiceCore && !detached && coreStartupMode === 'post-up'
+    !useServiceCore && !detached && effectiveCoreStartupMode === 'post-up'
       ? await createCoreStartupHook()
       : undefined
   const hookWaiter = coreHook ? createCoreHookWaiter(coreHook) : undefined
@@ -421,7 +437,6 @@ export async function startCore(detached = false): Promise<Promise<void>[]> {
     const serviceProfile: ServiceCoreLaunchProfile = {
       core_path: corePath,
       args: spawnArgs,
-      mode: serviceRunMode,
       safe_paths: safePaths,
       env,
       mihomo_cpu_priority: mihomoCpuPriority,
@@ -431,76 +446,63 @@ export async function startCore(detached = false): Promise<Promise<void>[]> {
     }
 
     await appendAppLog(`[Manager]: Core permission mode: service\n`)
-    serviceCoreRuntime.resumeAutoResume()
-    serviceCoreRuntime.ensureEventHandler()
-    serviceCoreRuntime.beginStartup()
+    ensureServiceCoreEventHandler()
+    serviceCoreStartupActive = true
     try {
-      await serviceCoreRuntime.startEventStream()
+      await startServiceCoreEventStream()
       if (!serviceCoreRunning) {
         await startServiceCore(serviceProfile)
       }
-      serviceCoreRuntime.setManaged(true)
     } catch (error) {
-      if (isServiceUnavailableError(error)) {
+      if (isServiceConnectionError(error)) {
         const probe = await waitForServiceCoreConnection(error)
         if (!probe.reachable) {
-          return serviceCoreRuntime.fallbackToElevatedCore(detached, probe.error)
+          return fallbackToElevatedCore(detached, probe.error)
         }
-        await serviceCoreRuntime.startEventStream()
+        await startServiceCoreEventStream()
         if (!probe.running) {
           await startServiceCore(serviceProfile)
         }
-        serviceCoreRuntime.setManaged(true)
       } else {
         throw error
       }
     } finally {
-      serviceCoreRuntime.endStartup()
+      serviceCoreStartupActive = false
     }
-    await serviceCoreRuntime.ensureStreamsStarted()
+    await ensureServiceCoreStreamsStarted()
+    activeCorePermissionMode = launchCorePermissionMode
     initialized = true
     return [completeCoreInitialization(logLevel)]
   }
 
   const providerTracker = createProviderInitializationTracker(await getRuntimeConfig())
+  const shouldStartElevatedCoreProcess =
+    process.platform === 'win32' && !detached && !(await isRunningAsAdmin())
+
+  if (shouldStartElevatedCoreProcess) {
+    await appendAppLog(`[Manager]: Core permission mode: elevated core process\n`)
+    elevatedCorePid = await startProcessWithElevation(corePath, spawnArgs)
+    activeCorePermissionMode = launchCorePermissionMode
+    await writeFile(path.join(dataDir(), 'core.pid'), elevatedCorePid.toString())
+    return waitForDirectCoreReadyByPolling(logLevel)
+  }
+
   const stdout = createLogWritable('core', 'info')
   const stderr = createLogWritable('core', 'error')
-  directCoreState.logLineBuffer = ''
+  directCoreLogLineBuffer = ''
 
-  const child = spawn(corePath, spawnArgs, {
+  child = spawn(corePath, spawnArgs, {
     detached: detached,
     stdio: detached ? 'ignore' : undefined,
     env: env
   })
-  directCoreState.child = child
-  let startupOutput = ''
-  let configurationRejected = false
-  let spawnError: Error | undefined
-  const captureStartupOutput = (data: Buffer): void => {
-    if (initialized) return
-    startupOutput += data.toString()
-    configurationRejected ||= startupOutput.includes('Parse config error:')
-    startupOutput = startupOutput.slice(-16384)
-  }
-  child.stdout?.on('data', captureStartupOutput)
-  child.stderr?.on('data', captureStartupOutput)
-  child.once('error', (error) => {
-    spawnError = error
-  })
-  const startupFailure = (reason: unknown): Error => {
-    const details = startupOutput.trim()
-    return new Error(
-      `内核启动失败：${spawnError?.message || String(reason)}${details ? `\n${details}` : ''}`
-    )
-  }
+  activeCorePermissionMode = launchCorePermissionMode
   hookWaiter?.attachProcess(child)
   if (child.pid) {
     try {
       os.setPriority(child.pid, os.constants.priority[mihomoCpuPriority])
     } catch (error) {
-      const log = appendAppLog(`[Manager]: set core priority failed, ${error}\n`)
-      if (detached) await log
-      else void log.catch(() => {})
+      await appendAppLog(`[Manager]: set core priority failed, ${error}\n`)
     }
   }
   if (detached) {
@@ -512,9 +514,9 @@ export async function startCore(detached = false): Promise<Promise<void>[]> {
   child.on('close', async (code, signal) => {
     flushDirectCoreLogNotifications()
     await appendAppLog(`[Manager]: Core closed, code: ${code}, signal: ${signal}\n`)
-    if (!configurationRejected && directCoreState.retry) {
+    if (retry) {
       await appendAppLog(`[Manager]: Try Restart Core\n`)
-      directCoreState.retry--
+      retry--
       await restartCore()
     } else {
       await stopCore()
@@ -546,45 +548,54 @@ export async function startCore(detached = false): Promise<Promise<void>[]> {
 
   const waitForCoreReadyByLog = (): Promise<Promise<void>[]> => {
     let controllerReady = false
-    let providersReady = false
-    let completing = false
 
     return new Promise((resolve, reject) => {
-      if (!child.stdout) {
-        reject(startupFailure('Core stdout is unavailable'))
-        return
-      }
-      const lines = createInterface({ input: child.stdout })
       child.once('close', (code, signal) => {
-        lines.close()
-        reject(startupFailure(`code: ${code}, signal: ${signal}`))
+        reject(new Error(`内核启动失败，code: ${code}, signal: ${signal}`))
       })
 
-      lines.on('line', (line) => {
-        const handleLine = async (): Promise<void> => {
-          await handleCoreOutput(line, reject)
-          if (initialized) return
+      child.stdout?.on('data', async (data) => {
+        const str = data.toString()
+        await handleCoreOutput(str, reject)
 
-          providerTracker.track(line)
-          providersReady ||= providerTracker.isReady(line)
-          controllerReady ||= isControllerReadyLog(line)
+        if (!controllerReady && isControllerReadyLog(str)) {
+          controllerReady = true
+          resolve([
+            new Promise((resolve, reject) => {
+              const handleProviderInitialization = async (logLine: string): Promise<void> => {
+                providerTracker.track(logLine)
 
-          if (isTunPermissionError(line)) {
-            patchControledMihomoConfig({ tun: { enable: false } })
-            mainWindow?.webContents.send('controledMihomoConfigUpdated')
-            ipcMain.emit('updateTrayMenu')
-            reject('虚拟网卡启动失败，前往内核设置页尝试手动授予内核权限')
-            return
-          }
+                if (isTunPermissionError(logLine)) {
+                  patchControledMihomoConfig({ tun: { enable: false } })
+                  mainWindow?.webContents.send('controledMihomoConfigUpdated')
+                  ipcMain.emit('updateTrayMenu')
+                  reject('虚拟网卡启动失败，前往内核设置页尝试手动授予内核权限')
+                }
 
-          if (!controllerReady || !providersReady || completing) return
-          completing = true
+                if (providerTracker.isReady(logLine)) {
+                  await waitForMihomoReady()
+                  initialized = true
+                  completeCoreInitialization(logLevel)
+                    .then(() => resolve())
+                    .catch(reject)
+                }
+              }
+
+              child.stdout?.on('data', (data) => {
+                if (!initialized) {
+                  handleProviderInitialization(data.toString()).catch(reject)
+                }
+              })
+
+              child.once('close', (code, signal) => {
+                if (!initialized) {
+                  reject(new Error(`内核启动失败，code: ${code}, signal: ${signal}`))
+                }
+              })
+            })
+          ])
           await startMihomoApiStreams()
-          await waitForMihomoReady()
-          initialized = true
-          resolve([completeCoreInitialization(logLevel)])
         }
-        handleLine().catch(reject)
       })
     })
   }
@@ -603,15 +614,15 @@ export async function startCore(detached = false): Promise<Promise<void>[]> {
           await startMihomoApiStreams()
           resolve([completeCoreInitialization(logLevel)])
         })
-        .catch((error) => reject(startupFailure(error)))
+        .catch(reject)
     })
   }
 
-  return coreStartupMode === 'post-up' ? waitForCoreReadyByHook() : waitForCoreReadyByLog()
+  return effectiveCoreStartupMode === 'post-up' ? waitForCoreReadyByHook() : waitForCoreReadyByLog()
 }
 
 export async function stopCore(force = false): Promise<void> {
-  serviceCoreRuntime.pauseAutoResume()
+  clearTailscaleAuthNotifications()
 
   try {
     if (!force) {
@@ -621,25 +632,32 @@ export async function stopCore(force = false): Promise<void> {
     await appendAppLog(`[Manager]: recover dns failed, ${error}\n`)
   }
 
-  serviceCoreRuntime.clearStreams()
+  stopMihomoTraffic()
+  stopMihomoConnections()
+  stopMihomoLogs()
+  stopMihomoMemory()
+  serviceCoreStreamsActive = false
+  if (serviceCoreStreamsRestartTimer) {
+    clearTimeout(serviceCoreStreamsRestartTimer)
+    serviceCoreStreamsRestartTimer = null
+  }
 
   const { corePermissionMode = 'elevated' } = await getAppConfig()
-  const shouldStopServiceCore = serviceCoreRuntime.isManaged() || corePermissionMode === 'service'
-  if (shouldStopServiceCore) {
+  const stopCorePermissionMode = activeCorePermissionMode ?? corePermissionMode
+  if (stopCorePermissionMode === 'service') {
     try {
       await stopServiceCore()
     } catch (error) {
       await appendAppLog(`[Manager]: stop service core failed, ${error}\n`)
     } finally {
-      serviceCoreRuntime.setManaged(false)
-      serviceCoreRuntime.stopEventHandlers()
+      stopServiceCoreEventStream()
+      releaseServiceCoreEventHandler()
     }
   }
 
-  const child = directCoreState.child
-  if (child) {
-    directCoreState.child = undefined
+  if (child && !child.killed) {
     await stopChildProcess(child)
+    child = undefined as unknown as ChildProcess
   }
 
   await getAxios(true).catch(() => {})
@@ -649,20 +667,135 @@ export async function stopCore(force = false): Promise<void> {
     const pid = parseInt(pidString.trim())
     if (!isNaN(pid)) {
       try {
-        process.kill(pid, 0)
-        process.kill(pid, 'SIGINT')
-        await delay(1000)
+        if (process.platform === 'win32' && pid === elevatedCorePid) {
+          await stopProcessWithElevation(pid)
+        } else {
+          process.kill(pid, 0)
+          process.kill(pid, 'SIGINT')
+          await new Promise((resolve) => setTimeout(resolve, 1000))
+        }
         try {
           process.kill(pid, 0)
-          process.kill(pid, 'SIGKILL')
+          if (process.platform === 'win32') {
+            await stopProcessWithElevation(pid)
+          } else {
+            process.kill(pid, 'SIGKILL')
+          }
         } catch {
           // ignore
         }
-      } catch {
-        // ignore
+      } catch (error) {
+        if (process.platform === 'win32') {
+          try {
+            await stopProcessWithElevation(pid)
+          } catch (elevatedStopError) {
+            await appendAppLog(
+              `[Manager]: stop elevated core pid ${pid} failed, ${elevatedStopError}; original error: ${error}\n`
+            )
+          }
+        }
       }
     }
     await rm(path.join(dataDir(), 'core.pid')).catch(() => {})
+  }
+  elevatedCorePid = null
+  activeCorePermissionMode = null
+}
+
+async function stopInactiveServiceCore(): Promise<void> {
+  try {
+    await stopServiceCore()
+  } catch (error) {
+    if (!isServiceConnectionError(error)) {
+      await appendAppLog(`[Manager]: stop inactive service core failed, ${error}\n`)
+    }
+  } finally {
+    stopServiceCoreEventStream()
+    releaseServiceCoreEventHandler()
+  }
+}
+
+function ensureServiceCoreEventHandler(): void {
+  if (!unsubscribeServiceCoreEvents) {
+    unsubscribeServiceCoreEvents = subscribeServiceCoreEvents((event) =>
+      handleServiceCoreEvent(event)
+    )
+  }
+  if (!unsubscribeServiceCoreEventStream) {
+    unsubscribeServiceCoreEventStream = subscribeServiceCoreEventStream((state) =>
+      handleServiceCoreEventStreamState(state)
+    )
+  }
+}
+
+function releaseServiceCoreEventHandler(): void {
+  if (unsubscribeServiceCoreEvents) {
+    unsubscribeServiceCoreEvents()
+    unsubscribeServiceCoreEvents = null
+  }
+  if (unsubscribeServiceCoreEventStream) {
+    unsubscribeServiceCoreEventStream()
+    unsubscribeServiceCoreEventStream = null
+  }
+}
+
+async function handleServiceCoreEvent(event: ServiceCoreEvent): Promise<void> {
+  if (event.type === 'log') {
+    notifyCoreLog(event)
+    if (event.message) {
+      notifyCoreLog({ text: event.message })
+    }
+    return
+  }
+
+  if (isDuplicateServiceCoreEvent(event)) {
+    return
+  }
+
+  await appendAppLog(
+    `[Manager]: Service core event: ${event.type}${event.pid ? `, pid: ${event.pid}` : ''}${event.error ? `, error: ${event.error}` : ''}\n`
+  )
+
+  mainWindow?.webContents.send('core-status-changed', event)
+
+  switch (event.type) {
+    case 'started':
+      await getAxios(true).catch(() => {})
+      mainWindow?.webContents.send('core-started', event)
+      mainWindow?.webContents.send('groupsUpdated')
+      mainWindow?.webContents.send('rulesUpdated')
+      ipcMain.emit('updateTrayMenu')
+      void ensureServiceCoreStreamsStarted().catch((error) => {
+        appendAppLog(`[Manager]: start service core streams failed, ${error}\n`).catch(() => {})
+      })
+      break
+    case 'takeover':
+    case 'ready':
+      await getAxios(true).catch(() => {})
+      mainWindow?.webContents.send('core-started', event)
+      mainWindow?.webContents.send('groupsUpdated')
+      mainWindow?.webContents.send('rulesUpdated')
+      ipcMain.emit('updateTrayMenu')
+      scheduleServiceCoreStreamsRestart()
+      break
+    case 'exited':
+    case 'failed':
+    case 'restart_failed':
+      stopMihomoTraffic()
+      stopMihomoConnections()
+      stopMihomoLogs()
+      stopMihomoMemory()
+      serviceCoreStreamsActive = false
+      setMihomoLogSource('out')
+      mainWindow?.webContents.send('core-stopped', event)
+      if (event.type === 'restart_failed') {
+        mainWindow?.webContents.reload()
+      }
+      break
+    case 'stopped':
+      serviceCoreStreamsActive = false
+      mainWindow?.webContents.send('core-stopped', event)
+      break
   }
 }
 
@@ -684,22 +817,29 @@ function notifyCoreLog(source: CoreLogNotificationSource): void {
       keys.add(notification.key)
       tailscaleAuthNotificationKeysByName.set(notification.name, keys)
     }
-    const { key: _key, name: _name, ...payload } = notification
-    void showNotification(payload)
+
+    showNotification({
+      id: notification.id,
+      title: notification.title,
+      body: notification.body,
+      persistent: notification.persistent,
+      url: notification.url,
+      variant: notification.variant
+    })
   }
 }
 
 function handleDirectCoreLogData(data: Buffer | string): void {
   const text = data.toString().replaceAll('\r\n', '\n')
-  const combined = directCoreState.logLineBuffer + text
+  const combined = directCoreLogLineBuffer + text
   const lines = combined.split('\n')
 
   if (combined.endsWith('\n')) {
-    directCoreState.logLineBuffer = ''
+    directCoreLogLineBuffer = ''
   } else {
-    directCoreState.logLineBuffer = lines.pop() ?? ''
-    if (directCoreState.logLineBuffer.length > directCoreLogLineLimit) {
-      directCoreState.logLineBuffer = directCoreState.logLineBuffer.slice(-directCoreLogLineLimit)
+    directCoreLogLineBuffer = lines.pop() ?? ''
+    if (directCoreLogLineBuffer.length > directCoreLogLineLimit) {
+      directCoreLogLineBuffer = directCoreLogLineBuffer.slice(-directCoreLogLineLimit)
     }
   }
 
@@ -709,10 +849,10 @@ function handleDirectCoreLogData(data: Buffer | string): void {
 }
 
 function flushDirectCoreLogNotifications(): void {
-  if (!directCoreState.logLineBuffer) return
+  if (!directCoreLogLineBuffer) return
 
-  notifyCoreLog({ text: directCoreState.logLineBuffer })
-  directCoreState.logLineBuffer = ''
+  notifyCoreLog({ text: directCoreLogLineBuffer })
+  directCoreLogLineBuffer = ''
 }
 
 function clearTailscaleAuthNotifications(name?: string): void {
@@ -738,7 +878,143 @@ function clearTailscaleAuthNotifications(name?: string): void {
   }
 }
 
-export async function restartCore(): Promise<void> {
+async function handleServiceCoreEventStreamState(
+  state: 'connected' | 'disconnected'
+): Promise<void> {
+  await appendAppLog(`[Manager]: Service core event stream ${state}\n`)
+  if (state !== 'connected') {
+    return
+  }
+  if (serviceCoreStartupActive || serviceCoreReconnectResumePromise) {
+    return
+  }
+
+  serviceCoreReconnectResumePromise = resumeServiceCoreAfterReconnect()
+  try {
+    await serviceCoreReconnectResumePromise
+  } finally {
+    serviceCoreReconnectResumePromise = null
+  }
+}
+
+async function resumeServiceCoreAfterReconnect(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 500))
+  if (serviceCoreStartupActive) {
+    return
+  }
+
+  const { corePermissionMode = 'elevated' } = await getAppConfig()
+  if (corePermissionMode !== 'service') {
+    return
+  }
+
+  try {
+    await getCoreStatus()
+    return
+  } catch (error) {
+    if (isServiceConnectionError(error)) {
+      return
+    }
+  }
+
+  await appendAppLog(`[Manager]: Service reconnected without running core, starting core\n`)
+  const promises = await startCore()
+  await Promise.all(promises)
+  mainWindow?.webContents.send('core-started')
+}
+
+function isDuplicateServiceCoreEvent(event: ServiceCoreEvent): boolean {
+  const key =
+    event.seq !== undefined
+      ? `seq:${event.seq}`
+      : [event.type, event.time, event.pid ?? '', event.old_pid ?? '', event.error ?? ''].join('|')
+  if (key === lastServiceCoreEventKey) {
+    return true
+  }
+  lastServiceCoreEventKey = key
+  return false
+}
+
+function scheduleServiceCoreStreamsRestart(): void {
+  if (serviceCoreStreamsRestartTimer) {
+    clearTimeout(serviceCoreStreamsRestartTimer)
+  }
+
+  serviceCoreStreamsRestartTimer = setTimeout(() => {
+    serviceCoreStreamsRestartTimer = null
+    restartServiceCoreStreams().catch((error) => {
+      appendAppLog(`[Manager]: restart service core streams failed, ${error}\n`).catch(() => {})
+    })
+  }, 300)
+}
+
+async function restartServiceCoreStreams(): Promise<void> {
+  stopMihomoTraffic()
+  stopMihomoConnections()
+  stopMihomoLogs()
+  stopMihomoMemory()
+  serviceCoreStreamsActive = false
+  await ensureServiceCoreStreamsStarted()
+}
+
+async function ensureServiceCoreStreamsStarted(): Promise<void> {
+  if (serviceCoreStreamsRestartTimer) {
+    clearTimeout(serviceCoreStreamsRestartTimer)
+    serviceCoreStreamsRestartTimer = null
+  }
+  if (serviceCoreStreamsActive) {
+    return
+  }
+  if (serviceCoreStreamsStarting) {
+    return serviceCoreStreamsStarting
+  }
+
+  serviceCoreStreamsStarting = (async () => {
+    await getAxios(true).catch(() => {})
+    await startMihomoTraffic()
+    await startMihomoConnections()
+    await startMihomoLogs()
+    await startMihomoMemory()
+    setMihomoLogSource('ws')
+    retry = 10
+    serviceCoreStreamsActive = true
+  })()
+
+  try {
+    await serviceCoreStreamsStarting
+  } finally {
+    serviceCoreStreamsStarting = null
+  }
+}
+
+async function fallbackToElevatedCore(
+  detached: boolean,
+  reason: unknown
+): Promise<Promise<void>[]> {
+  await appendAppLog(`[Manager]: Service unavailable, fallback to elevated core, ${reason}\n`)
+  stopServiceCoreEventStream()
+  releaseServiceCoreEventHandler()
+  await patchAppConfig({ corePermissionMode: 'elevated' })
+  mainWindow?.webContents.send('appConfigUpdated')
+  floatingWindow?.webContents.send('appConfigUpdated')
+  return startCore(detached)
+}
+
+function isServiceConnectionError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error)
+  return [
+    'ECONNREFUSED',
+    'ECONNRESET',
+    'ENOENT',
+    'EPIPE',
+    'ETIMEDOUT',
+    'socket hang up',
+    'connect ',
+    'no such file'
+  ].some((fragment) => message.toLowerCase().includes(fragment.toLowerCase()))
+}
+
+async function restartCoreOnce(): Promise<void> {
   try {
     clearTailscaleAuthNotifications()
     await stopCore()
@@ -746,6 +1022,27 @@ export async function restartCore(): Promise<void> {
     await Promise.all(promises)
   } catch (e) {
     void showNotification({ title: '内核启动出错', body: `${e}`, variant: 'danger' })
+  }
+}
+
+export async function restartCore(): Promise<void> {
+  if (restartCoreTask) {
+    restartCoreRequested = true
+    return restartCoreTask
+  }
+
+  restartCoreTask = (async () => {
+    do {
+      restartCoreRequested = false
+      await restartCoreOnce()
+    } while (restartCoreRequested)
+  })()
+
+  try {
+    await restartCoreTask
+  } finally {
+    restartCoreTask = null
+    restartCoreRequested = false
   }
 }
 
@@ -757,8 +1054,8 @@ export async function keepCoreAlive(): Promise<void> {
     }
 
     await startCore(true)
-    if (directCoreState.child?.pid) {
-      await writeFile(path.join(dataDir(), 'core.pid'), directCoreState.child.pid.toString())
+    if (child && child.pid) {
+      await writeFile(path.join(dataDir(), 'core.pid'), child.pid.toString())
     }
   } catch (e) {
     void showNotification({ title: '内核启动出错', body: `${e}`, variant: 'danger' })
@@ -772,8 +1069,9 @@ export async function quitWithoutCore(): Promise<void> {
 }
 
 export async function startNetworkDetection(): Promise<void> {
-  await startNetworkDetectionController({
-    shouldStartCore: (networkDownHandled) => networkDownHandled && !directCoreState.child,
+  await startNetworkDetectionWithCore({
+    shouldStartCore: (networkDownHandled) =>
+      (networkDownHandled && !child) || Boolean(child?.killed),
     startCore: async () => {
       const promises = await startCore()
       await Promise.all(promises)
@@ -781,3 +1079,5 @@ export async function startNetworkDetection(): Promise<void> {
     stopCore
   })
 }
+
+export const stopNetworkDetection = stopNetworkDetectionController

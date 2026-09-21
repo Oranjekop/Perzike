@@ -40,9 +40,8 @@ const LogSetting: React.FC = () => {
   }
 
   return (
-    <SettingCard header="日志设置">
+    <SettingCard title="日志设置">
       <SettingItem
-        compatKey="legacy"
         title="保存日志"
         actions={
           <Tooltip content="关闭后将停止写入本地日志文件，实时日志页面仍可继续查看当前会话日志">
@@ -61,7 +60,7 @@ const LogSetting: React.FC = () => {
           }}
         />
       </SettingItem>
-      <SettingItem compatKey="legacy" title="日志保留天数" divider>
+      <SettingItem title="日志保留天数" divider>
         <div className="flex">
           {saveLogs && maxLogDaysInput !== maxLogDays && (
             <Button
@@ -90,7 +89,6 @@ const LogSetting: React.FC = () => {
         </div>
       </SettingItem>
       <SettingItem
-        compatKey="legacy"
         title="单文件日志上限"
         actions={
           <Tooltip content="仅影响本地日志文件，超过大小上限后会自动删除最早的日志行">
@@ -129,7 +127,6 @@ const LogSetting: React.FC = () => {
         </div>
       </SettingItem>
       <SettingItem
-        compatKey="legacy"
         title="实时日志缓存数"
         actions={
           <Tooltip content="仅影响应用内实时日志页面保留的条数，不影响本地日志文件">
@@ -166,9 +163,8 @@ const LogSetting: React.FC = () => {
           />
         </div>
       </SettingItem>
-      <SettingItem compatKey="legacy" title="日志等级">
+      <SettingItem title="日志等级">
         <Select
-          aria-label="日志等级"
           classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}
           className="w-25"
           size="sm"

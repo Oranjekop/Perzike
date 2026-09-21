@@ -4,15 +4,9 @@ import WebSocket from 'ws'
 import { KeyManager } from './key'
 import { serviceIpcPath } from '../utils/dirs'
 import { appendAppLog } from '../utils/log'
-import { shouldSkipServiceUnavailableFallback } from './fallback'
 
 let serviceAxios: AxiosInstance | null = null
 let keyManager: KeyManager | null = null
-let serviceUnavailableFallbackHandler: ((reason: unknown) => Promise<void>) | null = null
-let serviceUnavailableFallbackTimer: NodeJS.Timeout | null = null
-let serviceUnavailableFallbackPromise: Promise<void> | null = null
-const serviceUnavailableFallbackDelay = 2000
-const serviceUnavailableStatuses = [401, 403, 409, 503]
 
 export class ServiceAPIError extends Error {
   status?: number
@@ -114,7 +108,7 @@ function buildCanonicalRequest(
   const query = canonicalizeQuery(resolvedUrl)
 
   return [
-    'SPARKLE-AUTH-V2',
+    'PERZIKE-AUTH-V2',
     timestamp,
     nonce,
     keyId,
@@ -153,128 +147,6 @@ function attachServiceAuth(instance: AxiosInstance): void {
   instance.interceptors.request.use((config) => signServiceRequest(instance, config))
 }
 
-export function setServiceUnavailableFallbackHandler(
-  handler: (reason: unknown) => Promise<void>
-): void {
-  serviceUnavailableFallbackHandler = handler
-}
-
-export function isServiceConnectionError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error)
-  return [
-    'ECONNREFUSED',
-    'ECONNRESET',
-    'ENOENT',
-    'EPIPE',
-    'ETIMEDOUT',
-    'socket hang up',
-    'connect ',
-    'no such file'
-  ].some((fragment) => message.toLowerCase().includes(fragment.toLowerCase()))
-}
-
-function getServiceErrorStatus(error: unknown): number | undefined {
-  if (error instanceof ServiceAPIError) {
-    return error.status
-  }
-
-  const status = (error as { response?: { status?: unknown } })?.response?.status
-  return typeof status === 'number' ? status : undefined
-}
-
-export function isServiceUnavailableError(error: unknown): boolean {
-  const status = getServiceErrorStatus(error)
-  return (
-    isServiceConnectionError(error) ||
-    (status !== undefined && serviceUnavailableStatuses.includes(status))
-  )
-}
-
-function scheduleServiceUnavailableFallback(reason: unknown): void {
-  if (shouldSkipServiceUnavailableFallback()) return
-  if (serviceUnavailableFallbackTimer || serviceUnavailableFallbackPromise) return
-
-  serviceUnavailableFallbackTimer = setTimeout(() => {
-    serviceUnavailableFallbackTimer = null
-    serviceUnavailableFallbackPromise = runServiceUnavailableFallback(reason).finally(() => {
-      serviceUnavailableFallbackPromise = null
-    })
-  }, serviceUnavailableFallbackDelay)
-}
-
-async function runServiceUnavailableFallback(reason: unknown): Promise<void> {
-  if (shouldSkipServiceUnavailableFallback()) return
-  if (await isServiceUsable()) return
-
-  if (!serviceUnavailableFallbackHandler) {
-    await appendAppLog(`[Service]: service unavailable fallback handler is not registered\n`)
-    return
-  }
-
-  await serviceUnavailableFallbackHandler(reason).catch((error) =>
-    appendAppLog(`[Service]: service unavailable fallback failed, ${error}\n`)
-  )
-}
-
-async function isServiceUsable(): Promise<boolean> {
-  try {
-    await axios.get('/test', {
-      baseURL: 'http://localhost',
-      socketPath: serviceIpcPath(),
-      headers: keyManager?.isInitialized() ? getServiceAuthHeaders('GET', '/test') : undefined,
-      timeout: 1000,
-      validateStatus: (status) => status >= 200 && status < 300
-    })
-    return true
-  } catch {
-    return false
-  }
-}
-
-function getResponseErrorMessage(responseData: unknown, fallback: string): string {
-  if (responseData && typeof responseData === 'object') {
-    const data = responseData as Record<string, unknown>
-    return String(data.message || data.error || fallback)
-  }
-
-  return fallback
-}
-
-function createServiceAPIError(error: unknown): unknown {
-  const serviceError = error as {
-    response?: { data?: unknown; status?: number }
-    message?: string
-  }
-
-  if (serviceError.response?.data) {
-    const message = getResponseErrorMessage(
-      serviceError.response.data,
-      serviceError.message || '请求失败'
-    )
-
-    return new ServiceAPIError(message, {
-      status: serviceError.response.status,
-      responseData: serviceError.response.data
-    })
-  }
-
-  if (error instanceof Error) {
-    return new ServiceAPIError(error.message)
-  }
-
-  return error
-}
-
-function handleServiceAxiosError(error: unknown): Promise<never> {
-  const serviceError = createServiceAPIError(error)
-
-  if (isServiceUnavailableError(error) || isServiceUnavailableError(serviceError)) {
-    scheduleServiceUnavailableFallback(serviceError)
-  }
-
-  return Promise.reject(serviceError)
-}
-
 export const initServiceAPI = (km: KeyManager): void => {
   keyManager = km
 
@@ -289,7 +161,25 @@ export const initServiceAPI = (km: KeyManager): void => {
 
   attachServiceAuth(serviceAxios)
 
-  serviceAxios.interceptors.response.use((response) => response.data, handleServiceAxiosError)
+  serviceAxios.interceptors.response.use(
+    (response) => response.data,
+    (error) => {
+      if (error.response?.data) {
+        const message =
+          error.response.data?.message || error.response.data?.error || error.message || '请求失败'
+        return Promise.reject(
+          new ServiceAPIError(String(message), {
+            status: error.response.status,
+            responseData: error.response.data
+          })
+        )
+      }
+      if (error instanceof Error) {
+        return Promise.reject(new ServiceAPIError(error.message))
+      }
+      return Promise.reject(error)
+    }
+  )
 }
 
 export const createSignedServiceAxios = (baseURL = 'http://localhost'): AxiosInstance => {
@@ -304,7 +194,25 @@ export const createSignedServiceAxios = (baseURL = 'http://localhost'): AxiosIns
 
   attachServiceAuth(instance)
 
-  instance.interceptors.response.use((response) => response.data, handleServiceAxiosError)
+  instance.interceptors.response.use(
+    (response) => response.data,
+    (error) => {
+      if (error.response?.data) {
+        const message =
+          error.response.data?.message || error.response.data?.error || error.message || '请求失败'
+        return Promise.reject(
+          new ServiceAPIError(String(message), {
+            status: error.response.status,
+            responseData: error.response.data
+          })
+        )
+      }
+      if (error instanceof Error) {
+        return Promise.reject(new ServiceAPIError(error.message))
+      }
+      return Promise.reject(error)
+    }
+  )
 
   return instance
 }
@@ -324,7 +232,7 @@ export const getServiceAuthHeaders = (
   const keyId = keyManager.getKeyID()
   const urlObj = new URL(pathWithQuery, 'http://localhost')
   const canonical = [
-    'SPARKLE-AUTH-V2',
+    'PERZIKE-AUTH-V2',
     timestamp,
     nonce,
     keyId,
@@ -377,7 +285,6 @@ export const getCoreStatus = async (): Promise<Record<string, unknown>> => {
 export interface ServiceCoreLaunchProfile {
   core_path?: string
   args?: string[]
-  mode?: 'auto' | 'sandbox' | 'direct'
   safe_paths?: string[]
   env?: Record<string, string | undefined>
   mihomo_cpu_priority?: Priority
@@ -411,25 +318,6 @@ export interface ServiceCoreEvent {
   data?: Record<string, string>
 }
 
-export type ServiceSysproxyEventType =
-  | 'guard_started'
-  | 'guard_stopped'
-  | 'guard_changed'
-  | 'guard_restored'
-  | 'guard_restore_failed'
-  | 'guard_check_failed'
-  | 'guard_watch_failed'
-
-export interface ServiceSysproxyEvent {
-  seq?: number
-  type: ServiceSysproxyEventType
-  time: string
-  guard: boolean
-  mode?: string
-  message?: string
-  error?: string
-}
-
 export const createServiceWebSocket = (pathWithQuery: string): WebSocket => {
   return new WebSocket(`ws+unix:${serviceIpcPath()}:${pathWithQuery}`, {
     headers: getServiceAuthHeaders('GET', pathWithQuery)
@@ -440,34 +328,15 @@ export const createCoreEventsWebSocket = (): WebSocket => {
   return createServiceWebSocket('/core/events')
 }
 
-export const createSysproxyEventsWebSocket = (): WebSocket => {
-  return createServiceWebSocket('/sysproxy/events')
-}
-
 type ServiceCoreEventHandler = (event: ServiceCoreEvent) => void | Promise<void>
 type ServiceCoreEventStreamState = 'connected' | 'disconnected'
 type ServiceCoreEventStreamHandler = (state: ServiceCoreEventStreamState) => void | Promise<void>
-type ServiceSysproxyEventHandler = (event: ServiceSysproxyEvent) => void | Promise<void>
 
 let serviceCoreEventsWs: WebSocket | null = null
 let serviceCoreEventsManualClose = false
 let serviceCoreEventsReconnectTimer: NodeJS.Timeout | null = null
 const serviceCoreEventHandlers = new Set<ServiceCoreEventHandler>()
 const serviceCoreEventStreamHandlers = new Set<ServiceCoreEventStreamHandler>()
-
-let serviceSysproxyEventsWs: WebSocket | null = null
-let serviceSysproxyEventsManualClose = true
-let serviceSysproxyEventsReconnectTimer: NodeJS.Timeout | null = null
-const serviceSysproxyEventHandlers = new Set<ServiceSysproxyEventHandler>()
-
-function closeServiceWebSocket(ws: WebSocket): void {
-  ws.removeAllListeners()
-  ws.on('error', () => {})
-  if (ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
-    return
-  }
-  ws.close()
-}
 
 export function subscribeServiceCoreEvents(handler: ServiceCoreEventHandler): () => void {
   serviceCoreEventHandlers.add(handler)
@@ -482,13 +351,6 @@ export function subscribeServiceCoreEventStream(
   serviceCoreEventStreamHandlers.add(handler)
   return () => {
     serviceCoreEventStreamHandlers.delete(handler)
-  }
-}
-
-export function subscribeServiceSysproxyEvents(handler: ServiceSysproxyEventHandler): () => void {
-  serviceSysproxyEventHandlers.add(handler)
-  return () => {
-    serviceSysproxyEventHandlers.delete(handler)
   }
 }
 
@@ -512,7 +374,6 @@ export async function startServiceCoreEventStream(): Promise<void> {
     ws = createCoreEventsWebSocket()
   } catch (error) {
     await appendAppLog(`[Service]: create core events ws failed, ${error}\n`)
-    scheduleServiceUnavailableFallback(error)
     scheduleServiceCoreEventReconnect()
     return
   }
@@ -536,15 +397,11 @@ export async function startServiceCoreEventStream(): Promise<void> {
       appendAppLog(`[Service]: handle core event stream state failed, ${error}\n`).catch(() => {})
     })
     if (!serviceCoreEventsManualClose) {
-      scheduleServiceUnavailableFallback(new Error('core events websocket disconnected'))
       scheduleServiceCoreEventReconnect()
     }
   })
   ws.on('error', (error) => {
     appendAppLog(`[Service]: core events ws error, ${error}\n`).catch(() => {})
-    if (!serviceCoreEventsManualClose) {
-      scheduleServiceUnavailableFallback(error)
-    }
   })
 
   await waitForServiceCoreEventsSocket(ws)
@@ -557,70 +414,9 @@ export function stopServiceCoreEventStream(): void {
     serviceCoreEventsReconnectTimer = null
   }
   if (serviceCoreEventsWs) {
-    closeServiceWebSocket(serviceCoreEventsWs)
+    serviceCoreEventsWs.removeAllListeners()
+    serviceCoreEventsWs.close()
     serviceCoreEventsWs = null
-  }
-}
-
-export async function startServiceSysproxyEventStream(): Promise<void> {
-  serviceSysproxyEventsManualClose = false
-  if (
-    serviceSysproxyEventsWs &&
-    (serviceSysproxyEventsWs.readyState === WebSocket.OPEN ||
-      serviceSysproxyEventsWs.readyState === WebSocket.CONNECTING)
-  ) {
-    return
-  }
-
-  if (serviceSysproxyEventsReconnectTimer) {
-    clearTimeout(serviceSysproxyEventsReconnectTimer)
-    serviceSysproxyEventsReconnectTimer = null
-  }
-
-  let ws: WebSocket
-  try {
-    ws = createSysproxyEventsWebSocket()
-  } catch (error) {
-    await appendAppLog(`[Service]: create sysproxy events ws failed, ${error}\n`)
-    scheduleServiceUnavailableFallback(error)
-    scheduleServiceSysproxyEventReconnect()
-    return
-  }
-
-  serviceSysproxyEventsWs = ws
-  ws.on('message', (data) => {
-    dispatchServiceSysproxyEvent(data).catch((error) => {
-      appendAppLog(`[Service]: handle sysproxy event failed, ${error}\n`).catch(() => {})
-    })
-  })
-  ws.on('close', () => {
-    if (serviceSysproxyEventsWs === ws) {
-      serviceSysproxyEventsWs = null
-    }
-    if (!serviceSysproxyEventsManualClose) {
-      scheduleServiceUnavailableFallback(new Error('sysproxy events websocket disconnected'))
-      scheduleServiceSysproxyEventReconnect()
-    }
-  })
-  ws.on('error', (error) => {
-    appendAppLog(`[Service]: sysproxy events ws error, ${error}\n`).catch(() => {})
-    if (!serviceSysproxyEventsManualClose) {
-      scheduleServiceUnavailableFallback(error)
-    }
-  })
-
-  await waitForServiceSysproxyEventsSocket(ws)
-}
-
-export function stopServiceSysproxyEventStream(): void {
-  serviceSysproxyEventsManualClose = true
-  if (serviceSysproxyEventsReconnectTimer) {
-    clearTimeout(serviceSysproxyEventsReconnectTimer)
-    serviceSysproxyEventsReconnectTimer = null
-  }
-  if (serviceSysproxyEventsWs) {
-    closeServiceWebSocket(serviceSysproxyEventsWs)
-    serviceSysproxyEventsWs = null
   }
 }
 
@@ -634,34 +430,7 @@ function scheduleServiceCoreEventReconnect(): void {
   }, 1000)
 }
 
-function scheduleServiceSysproxyEventReconnect(): void {
-  if (serviceSysproxyEventsManualClose || serviceSysproxyEventsReconnectTimer) return
-  serviceSysproxyEventsReconnectTimer = setTimeout(() => {
-    serviceSysproxyEventsReconnectTimer = null
-    startServiceSysproxyEventStream().catch((error) => {
-      appendAppLog(`[Service]: reconnect sysproxy events ws failed, ${error}\n`).catch(() => {})
-    })
-  }, 1000)
-}
-
 async function waitForServiceCoreEventsSocket(ws: WebSocket): Promise<void> {
-  await new Promise<void>((resolve) => {
-    let settled = false
-    const complete = (): void => {
-      if (settled) return
-      settled = true
-      clearTimeout(timer)
-      ws.off('open', complete)
-      ws.off('error', complete)
-      resolve()
-    }
-    const timer = setTimeout(complete, 1500)
-    ws.once('open', complete)
-    ws.once('error', complete)
-  })
-}
-
-async function waitForServiceSysproxyEventsSocket(ws: WebSocket): Promise<void> {
   await new Promise<void>((resolve) => {
     let settled = false
     const complete = (): void => {
@@ -684,16 +453,6 @@ async function dispatchServiceCoreEvent(data: WebSocket.RawData): Promise<void> 
   for (const handler of serviceCoreEventHandlers) {
     await Promise.resolve(handler(event)).catch((error) => {
       appendAppLog(`[Service]: core event handler failed, ${error}\n`).catch(() => {})
-    })
-  }
-}
-
-async function dispatchServiceSysproxyEvent(data: WebSocket.RawData): Promise<void> {
-  const raw = Buffer.isBuffer(data) ? data.toString('utf8') : data.toString()
-  const event = JSON.parse(raw) as ServiceSysproxyEvent
-  for (const handler of serviceSysproxyEventHandlers) {
-    await Promise.resolve(handler(event)).catch((error) => {
-      appendAppLog(`[Service]: sysproxy event handler failed, ${error}\n`).catch(() => {})
     })
   }
 }
@@ -753,16 +512,14 @@ export const setPac = async (
   url: string,
   device?: string,
   onlyActiveDevice?: boolean,
-  useRegistry?: boolean,
-  guard?: boolean
+  useRegistry?: boolean
 ): Promise<void> => {
   const instance = getServiceAxios()
   return await instance.post('/sysproxy/pac', {
     url,
     device,
     only_active_device: onlyActiveDevice,
-    use_registry: useRegistry,
-    guard
+    use_registry: useRegistry
   })
 }
 
@@ -771,8 +528,7 @@ export const setProxy = async (
   bypass?: string,
   device?: string,
   onlyActiveDevice?: boolean,
-  useRegistry?: boolean,
-  guard?: boolean
+  useRegistry?: boolean
 ): Promise<void> => {
   const instance = getServiceAxios()
   return await instance.post('/sysproxy/proxy', {
@@ -780,8 +536,7 @@ export const setProxy = async (
     bypass,
     device,
     only_active_device: onlyActiveDevice,
-    use_registry: useRegistry,
-    guard
+    use_registry: useRegistry
   })
 }
 

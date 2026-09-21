@@ -1,14 +1,8 @@
 import { getAppConfig, getControledMihomoConfig } from '../config'
 import { Worker } from 'worker_threads'
-import {
-  mihomoWorkDir,
-  subStoreBackendPath,
-  subStoreDir,
-  subStoreFrontendDir,
-  subStoreTempDir
-} from '../utils/dirs'
+import { mihomoWorkDir, subStoreDir, substoreLogPath } from '../utils/dirs'
 import subStoreIcon from '../../../resources/subStoreIcon.png?asset'
-import { existsSync, mkdirSync } from 'fs'
+import { createWriteStream, existsSync, mkdirSync } from 'fs'
 import { writeFile, rm, cp } from 'fs/promises'
 import http from 'http'
 import net from 'net'
@@ -17,7 +11,6 @@ import { nativeImage } from 'electron'
 import express from 'express'
 import axios from 'axios'
 import AdmZip from 'adm-zip'
-import { createLogWritable } from '../utils/log'
 import { createHash } from 'crypto'
 
 export let pacPort: number
@@ -32,9 +25,13 @@ interface ReleaseAsset {
   digest?: string
 }
 
-async function downloadReleaseAsset(repo: string, file: string, mixedPort: number) {
+async function downloadReleaseAsset(
+  repo: string,
+  file: string,
+  mixedPort: number
+): Promise<Buffer> {
   const proxy =
-    mixedPort != 0
+    mixedPort !== 0
       ? { proxy: { protocol: 'http' as const, host: '127.0.0.1', port: mixedPort } }
       : {}
   const { data: release } = await axios.get<{ assets: ReleaseAsset[] }>(
@@ -44,7 +41,7 @@ async function downloadReleaseAsset(repo: string, file: string, mixedPort: numbe
       ...proxy
     }
   )
-  const asset = release.assets.find((asset) => asset.name === file)
+  const asset = release.assets.find((item) => item.name === file)
   if (!asset?.browser_download_url || !asset.digest?.match(/^sha256:[a-f\d]{64}$/i)) {
     throw new Error(`无法从 GitHub Release 中找到 "${file}" 对应的 SHA-256 信息`)
   }
@@ -119,7 +116,7 @@ export async function startSubStoreFrontendServer(): Promise<void> {
   await stopSubStoreFrontendServer()
   subStoreFrontendPort = await findAvailablePort(14122)
   const app = express()
-  const frontendDir = subStoreFrontendDir()
+  const frontendDir = path.join(mihomoWorkDir(), 'sub-store-frontend')
   app.use(express.static(frontendDir))
   app.use((_req, res) => {
     res.sendFile(path.join(frontendDir, 'index.html'))
@@ -150,21 +147,21 @@ export async function startSubStoreBackendServer(): Promise<void> {
     subStorePort = await findAvailablePort(38324)
     const icon = nativeImage.createFromPath(subStoreIcon)
     icon.toDataURL()
-    const stdout = createLogWritable('substore')
-    const stderr = createLogWritable('substore')
+    const stdout = createWriteStream(substoreLogPath(), { flags: 'a' })
+    const stderr = createWriteStream(substoreLogPath(), { flags: 'a' })
     const env = {
       SUB_STORE_BACKEND_API_PORT: subStorePort.toString(),
       SUB_STORE_BACKEND_API_HOST: subStoreHost,
       SUB_STORE_DATA_BASE_PATH: subStoreDir(),
       SUB_STORE_BACKEND_CUSTOM_ICON: icon.toDataURL(),
-      SUB_STORE_BACKEND_CUSTOM_NAME: 'Sparkle',
+      SUB_STORE_BACKEND_CUSTOM_NAME: 'Perzike',
       SUB_STORE_BACKEND_SYNC_CRON: subStoreBackendSyncCron,
       SUB_STORE_BACKEND_DOWNLOAD_CRON: subStoreBackendDownloadCron,
       SUB_STORE_BACKEND_UPLOAD_CRON: subStoreBackendUploadCron,
       SUB_STORE_MMDB_COUNTRY_PATH: path.join(mihomoWorkDir(), 'country.mmdb'),
       SUB_STORE_MMDB_ASN_PATH: path.join(mihomoWorkDir(), 'ASN.mmdb')
     }
-    subStoreBackendWorker = new Worker(subStoreBackendPath(), {
+    subStoreBackendWorker = new Worker(path.join(mihomoWorkDir(), 'sub-store.bundle.js'), {
       env: useProxyInSubStore
         ? {
             ...env,
@@ -187,9 +184,9 @@ export async function stopSubStoreBackendServer(): Promise<void> {
 
 export async function downloadSubStore(): Promise<void> {
   const { 'mixed-port': mixedPort = 7890 } = await getControledMihomoConfig()
-  const frontendDir = subStoreFrontendDir()
-  const backendPath = subStoreBackendPath()
-  const tempDir = subStoreTempDir()
+  const frontendDir = path.join(mihomoWorkDir(), 'sub-store-frontend')
+  const backendPath = path.join(mihomoWorkDir(), 'sub-store.bundle.js')
+  const tempDir = path.join(mihomoWorkDir(), 'temp')
 
   try {
     const [backend, frontend] = await Promise.all([

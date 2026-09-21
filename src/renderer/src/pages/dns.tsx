@@ -8,13 +8,13 @@ import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-c
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { restartCore } from '@renderer/utils/ipc'
 import React, { Key, useState } from 'react'
-import { notify } from '@renderer/utils/notification'
 import {
   isValidIPv4Cidr,
   isValidIPv6Cidr,
   isValidDomainWildcard,
   isValidDnsServer
 } from '@renderer/utils/validate'
+import { notify } from '@renderer/utils/notification'
 
 const DNS: React.FC = () => {
   const { controledMihomoConfig, patchControledMihomoConfig } = useControledMihomoConfig()
@@ -31,14 +31,16 @@ const DNS: React.FC = () => {
       '+.local',
       'time.*.com',
       'ntp.*.com',
-      '+.market.xiaomi.com'
+      '+.market.xiaomi.com',
+      'geosite:connectivity-check',
+      'geosite:cn'
     ],
     'enhanced-mode': enhancedMode = 'fake-ip',
     'use-hosts': useHosts = false,
     'use-system-hosts': useSystemHosts = false,
     'respect-rules': respectRules = false,
-    'default-nameserver': defaultNameserver = ['tls://223.5.5.5'],
-    nameserver = ['https://doh.pub/dns-query', 'https://dns.alidns.com/dns-query'],
+    'default-nameserver': defaultNameserver = ['223.5.5.5', '119.29.29.29'],
+    nameserver = ['https://223.5.5.5/dns-query', 'https://1.12.12.12/dns-query'],
     'proxy-server-nameserver': proxyServerNameserver = [],
     'direct-nameserver': directNameserver = [],
     'nameserver-policy': nameserverPolicy = {},
@@ -109,7 +111,6 @@ const DNS: React.FC = () => {
   return (
     <BasePage
       title="DNS 设置"
-      contentClassName="no-scrollbar"
       header={
         changed && (
           <Button
@@ -157,7 +158,7 @@ const DNS: React.FC = () => {
       }
     >
       <SettingCard>
-        <SettingItem compatKey="legacy" title="IPv6" divider>
+        <SettingItem title="IPv6" divider>
           <Switch
             size="sm"
             isSelected={values.ipv6}
@@ -166,11 +167,15 @@ const DNS: React.FC = () => {
             }}
           />
         </SettingItem>
-        <SettingItem compatKey="legacy" title="域名映射模式" divider>
+        <SettingItem title="域名映射模式" divider>
           <Tabs
             size="sm"
             color="primary"
             selectedKey={values.enhancedMode}
+            classNames={{
+              cursor: 'bg-primary',
+              tabContent: 'group-data-[selected=true]:text-primary-foreground'
+            }}
             onSelectionChange={(key: Key) => setValues({ ...values, enhancedMode: key as DnsMode })}
           >
             <Tab key="fake-ip" title="虚假 IP" />
@@ -180,7 +185,7 @@ const DNS: React.FC = () => {
         </SettingItem>
         {values.enhancedMode === 'fake-ip' && (
           <>
-            <SettingItem compatKey="legacy" title="虚假 IP 范围 (IPv4)" divider>
+            <SettingItem title="虚假 IP 范围 (IPv4)" divider>
               <Tooltip
                 content={fakeIPRangeError}
                 placement="right"
@@ -206,7 +211,7 @@ const DNS: React.FC = () => {
               </Tooltip>
             </SettingItem>
             {values.ipv6 && (
-              <SettingItem compatKey="legacy" title="虚假 IP 范围 (IPv6)" divider>
+              <SettingItem title="虚假 IP 范围 (IPv6)" divider>
                 <Tooltip
                   content={fakeIPRange6Error}
                   placement="right"

@@ -1,6 +1,7 @@
 import {
   getControledMihomoConfig,
   getProfileConfig,
+  getProfile,
   getProfileStr,
   getProfileItem,
   getOverride,
@@ -15,7 +16,7 @@ import {
   overridePath
 } from '../utils/dirs'
 import { parseYaml, stringifyYaml } from '../utils/yaml'
-import { copyFile, mkdir, readdir, writeFile } from 'fs/promises'
+import { copyFile, mkdir, writeFile } from 'fs/promises'
 import { deepMerge } from '../utils/merge'
 import vm from 'vm'
 import { existsSync, writeFileSync } from 'fs'
@@ -28,20 +29,14 @@ let runtimeConfigStr: string,
   runtimeConfig: MihomoConfig
 
 export async function generateProfile(): Promise<void> {
-  const [profileConfig, appConfig, controledMihomoConfig] = await Promise.all([
-    getProfileConfig(),
-    getAppConfig(),
-    getControledMihomoConfig()
-  ])
-  const { current } = profileConfig
-  const { diffWorkDir = false, controlDns = true, controlSniff = true } = appConfig
-  const nextRawProfileStr = await getProfileStr(current)
-  let currentProfileConfig = parseYaml<MihomoConfig>(nextRawProfileStr)
-  if (typeof currentProfileConfig !== 'object') currentProfileConfig = {} as MihomoConfig
-  rawProfileStr = nextRawProfileStr
+  const { current } = await getProfileConfig()
+  const { diffWorkDir = false, controlDns = true, controlSniff = true } = await getAppConfig()
+  const currentProfileConfig = await getProfile(current)
+  rawProfileStr = await getProfileStr(current)
   currentProfileStr = stringifyYaml(currentProfileConfig)
   const currentProfile = await overrideProfile(current, currentProfileConfig)
   overrideProfileStr = stringifyYaml(currentProfile)
+  const controledMihomoConfig = await getControledMihomoConfig()
 
   const configToMerge = JSON.parse(JSON.stringify(controledMihomoConfig))
   if (!controlDns) {
@@ -53,11 +48,6 @@ export async function generateProfile(): Promise<void> {
   }
 
   const profile = deepMerge(JSON.parse(JSON.stringify(currentProfile)), configToMerge)
-
-  if (controlDns && profile.dns) {
-    profile.dns['proxy-server-nameserver-policy'] =
-      configToMerge.dns?.['proxy-server-nameserver-policy'] ?? {}
-  }
 
   await cleanProfile(profile, controlDns, controlSniff)
 
@@ -297,24 +287,23 @@ function cleanProxyConfigs(profile: MihomoConfig): void {
 }
 
 async function prepareProfileWorkDir(current: string | undefined): Promise<void> {
-  const targetDir = mihomoProfileWorkDir(current)
-  const sourceDir = mihomoWorkDir()
-  if (!existsSync(targetDir)) {
-    await mkdir(targetDir, { recursive: true })
+  if (!existsSync(mihomoProfileWorkDir(current))) {
+    await mkdir(mihomoProfileWorkDir(current), { recursive: true })
   }
   const copy = async (file: string): Promise<void> => {
-    const targetPath = path.join(targetDir, file)
-    const sourcePath = path.join(sourceDir, file)
+    const targetPath = path.join(mihomoProfileWorkDir(current), file)
+    const sourcePath = path.join(mihomoWorkDir(), file)
     if (!existsSync(targetPath) && existsSync(sourcePath)) {
       await copyFile(sourcePath, targetPath)
     }
   }
-  const files = await readdir(sourceDir, { withFileTypes: true })
-  await Promise.all(
-    files
-      .filter((file) => file.isFile() && /(?:db|dat)$/i.test(file.name))
-      .map((file) => copy(file.name))
-  )
+  await Promise.all([
+    copy('country.mmdb'),
+    copy('geoip.metadb'),
+    copy('geoip.dat'),
+    copy('geosite.dat'),
+    copy('ASN.mmdb')
+  ])
 }
 
 async function overrideProfile(

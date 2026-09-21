@@ -84,12 +84,9 @@ export async function mihomoUpgrade(channel: string): Promise<void> {
 
 export async function mihomoProxyDelay(
   proxy: string,
-  url?: string,
-  provider?: string
+  url?: string
 ): Promise<ControllerProxiesDelay> {
-  return ipcErrorWrapper(
-    await window.electron.ipcRenderer.invoke('mihomoProxyDelay', proxy, url, provider)
-  )
+  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('mihomoProxyDelay', proxy, url))
 }
 
 export async function mihomoGroupDelay(group: string, url?: string): Promise<ControllerGroupDelay> {
@@ -102,10 +99,6 @@ export async function mihomoRulesDisable(rules: Record<string, boolean>): Promis
 
 export async function patchMihomoConfig(patch: Partial<MihomoConfig>): Promise<void> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('patchMihomoConfig', patch))
-}
-
-export async function restartMihomoLogs(): Promise<void> {
-  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('restartMihomoLogs'))
 }
 
 export async function checkAutoRun(): Promise<boolean> {
@@ -124,18 +117,20 @@ export async function getAppConfig(force = false): Promise<AppConfig> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('getAppConfig', force))
 }
 
-export async function getCachedMihomoLogs(): Promise<
-  Array<ControllerLog & { id?: string; seq?: number }>
-> {
-  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('getCachedMihomoLogs'))
-}
-
-export async function clearCachedMihomoLogs(): Promise<void> {
-  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('clearCachedMihomoLogs'))
-}
-
-export async function patchAppConfig(patch: Partial<AppConfig>): Promise<AppConfig> {
+export async function patchAppConfig(patch: Partial<AppConfig>): Promise<void> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('patchAppConfig', patch))
+}
+
+export async function updateProxyGroupState(
+  profileId: string,
+  state: {
+    openState?: Record<string, boolean>
+    searchState?: Record<string, string>
+  }
+): Promise<void> {
+  return ipcErrorWrapper(
+    await window.electron.ipcRenderer.invoke('updateProxyGroupState', profileId, state)
+  )
 }
 
 export async function getControledMihomoConfig(force = false): Promise<Partial<MihomoConfig>> {
@@ -186,8 +181,8 @@ export async function getProfileStr(id: string): Promise<string> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('getProfileStr', id))
 }
 
-export async function getFileStr(id: string, ageSecretKey?: string): Promise<string> {
-  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('getFileStr', id, ageSecretKey))
+export async function getFileStr(id: string): Promise<string> {
+  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('getFileStr', id))
 }
 
 export async function getFilePreviewStr(id: string, format?: string): Promise<string> {
@@ -248,8 +243,35 @@ export async function stopCore(): Promise<void> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('stopCore'))
 }
 
+export async function restartMihomoLogs(): Promise<void> {
+  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('restartMihomoLogs'))
+}
+
 export async function restartMihomoConnections(): Promise<void> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('restartMihomoConnections'))
+}
+
+export async function getTrafficStats(
+  period: TrafficStatsPeriod = 'today',
+  groupBy: TrafficStatsGroupBy = 'host'
+): Promise<TrafficStatsResult> {
+  return ipcErrorWrapper(
+    await window.electron.ipcRenderer.invoke('getTrafficStats', period, groupBy)
+  )
+}
+
+export async function getTrafficStatsDetail(
+  period: TrafficStatsPeriod,
+  groupBy: TrafficStatsGroupBy,
+  key: string
+): Promise<TrafficStatsDetailResult> {
+  return ipcErrorWrapper(
+    await window.electron.ipcRenderer.invoke('getTrafficStatsDetail', period, groupBy, key)
+  )
+}
+
+export async function clearTrafficStats(): Promise<void> {
+  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('clearTrafficStats'))
 }
 
 export async function startMonitor(): Promise<void> {
@@ -262,12 +284,7 @@ export async function triggerSysProxy(
   useRegistry?: boolean
 ): Promise<void> {
   return ipcErrorWrapper(
-    await window.electron.ipcRenderer.invoke(
-      'triggerSysProxy',
-      enable,
-      onlyActiveDevice,
-      useRegistry
-    )
+    await window.electron.ipcRenderer.invoke('triggerSysProxy', enable, onlyActiveDevice, useRegistry)
   )
 }
 
@@ -329,26 +346,24 @@ export async function stopService(): Promise<void> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('stopService'))
 }
 
+export async function getCachedMihomoLogs(): Promise<ControllerLog[]> {
+  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('getCachedMihomoLogs'))
+}
+
+export async function clearCachedMihomoLogs(): Promise<void> {
+  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('clearCachedMihomoLogs'))
+}
+
 export async function findSystemMihomo(): Promise<string[]> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('findSystemMihomo'))
 }
 
-export async function getFilePath(
-  ext: string[],
-  title?: string,
-  filterName?: string
-): Promise<string[] | undefined> {
-  return ipcErrorWrapper(
-    await window.electron.ipcRenderer.invoke('getFilePath', ext, title, filterName)
-  )
+export async function getFilePath(ext: string[]): Promise<string[] | undefined> {
+  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('getFilePath', ext))
 }
 
 export async function readTextFile(filePath: string): Promise<string> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('readTextFile', filePath))
-}
-
-export async function readImageFileDataURL(filePath: string): Promise<string> {
-  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('readImageFileDataURL', filePath))
 }
 
 export async function getRuntimeConfigStr(): Promise<string> {
@@ -375,9 +390,9 @@ export async function checkUpdate(): Promise<AppVersion | undefined> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('checkUpdate'))
 }
 
-export async function downloadAndInstallUpdate(version: string, tag?: string): Promise<void> {
+export async function downloadAndInstallUpdate(version: string): Promise<void> {
   return ipcErrorWrapper(
-    await window.electron.ipcRenderer.invoke('downloadAndInstallUpdate', version, tag)
+    await window.electron.ipcRenderer.invoke('downloadAndInstallUpdate', version)
   )
 }
 
@@ -419,6 +434,26 @@ export async function listWebdavBackups(): Promise<string[]> {
 
 export async function webdavDelete(filename: string): Promise<void> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('webdavDelete', filename))
+}
+
+export async function localBackup(): Promise<string> {
+  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('localBackup'))
+}
+
+export async function localRestore(backupDir: string, filename: string): Promise<void> {
+  return ipcErrorWrapper(
+    await window.electron.ipcRenderer.invoke('localRestore', backupDir, filename)
+  )
+}
+
+export async function listLocalBackups(): Promise<{ backupDir: string; files: string[] }> {
+  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('listLocalBackups'))
+}
+
+export async function localDelete(backupDir: string, filename: string): Promise<void> {
+  return ipcErrorWrapper(
+    await window.electron.ipcRenderer.invoke('localDelete', backupDir, filename)
+  )
 }
 
 export async function setTitleBarOverlay(overlay: TitleBarOverlayOptions): Promise<void> {
@@ -500,10 +535,6 @@ export async function closeTrayIcon(): Promise<void> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('closeTrayIcon'))
 }
 
-export async function updateTrayIcon(): Promise<void> {
-  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('updateTrayIcon'))
-}
-
 export async function setDockVisible(visible: boolean): Promise<void> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('setDockVisible', visible))
 }
@@ -548,22 +579,12 @@ export async function resetAppConfig(): Promise<void> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('resetAppConfig'))
 }
 
-export async function createHeapSnapshot(): Promise<string> {
+export async function createHeapSnapshot(): Promise<void> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('createHeapSnapshot'))
 }
 
 export async function getUserAgent(): Promise<string> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('getUserAgent'))
-}
-
-export async function generateAgeKeyPair(): Promise<{ identity: string; recipient: string }> {
-  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('generateAgeKeyPair'))
-}
-
-export async function ageIdentityToRecipient(identity: string): Promise<string> {
-  return ipcErrorWrapper(
-    await window.electron.ipcRenderer.invoke('ageIdentityToRecipient', identity)
-  )
 }
 
 export async function getAppName(appPath: string): Promise<string> {
@@ -578,50 +599,12 @@ export async function getIconDataURL(appPath: string): Promise<string> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('getIconDataURL', appPath))
 }
 
-export async function resolveThemes(): Promise<{ key: string; label: string; content: string }[]> {
-  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('resolveThemes'))
-}
-
-export async function fetchThemes(): Promise<void> {
-  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('fetchThemes'))
-}
-
-export async function importThemes(files: string[]): Promise<void> {
-  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('importThemes', files))
-}
-
-export async function readTheme(theme: string): Promise<string> {
-  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('readTheme', theme))
-}
-
-export async function writeTheme(theme: string, css: string): Promise<void> {
-  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('writeTheme', theme, css))
-}
-
 export async function startNetworkDetection(): Promise<void> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('startNetworkDetection'))
 }
 
 export async function stopNetworkDetection(): Promise<void> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('stopNetworkDetection'))
-}
-
-let applyThemeRunning = false
-const waitList: string[] = []
-export async function applyTheme(theme: string): Promise<void> {
-  if (applyThemeRunning) {
-    waitList.push(theme)
-    return
-  }
-  applyThemeRunning = true
-  try {
-    return await ipcErrorWrapper(window.electron.ipcRenderer.invoke('applyTheme', theme))
-  } finally {
-    applyThemeRunning = false
-    if (waitList.length > 0) {
-      await applyTheme(waitList.shift() || '')
-    }
-  }
 }
 
 export async function registerShortcut(

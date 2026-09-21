@@ -17,11 +17,9 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import ExecLogModal from './exec-log-modal'
 import { openFile, restartCore } from '@renderer/utils/ipc'
-import { useProfileConfig } from '@renderer/hooks/use-profile-config'
 import ConfirmModal from '../base/base-confirm'
 import QRCodeModal from '../base/base-qrcode-modal'
 import { notify } from '@renderer/utils/notification'
-import { isOverrideUsedByCurrentProfile } from '@renderer/utils/override'
 
 interface Props {
   info: OverrideItem
@@ -42,7 +40,6 @@ interface MenuItem {
 const OverrideItem: React.FC<Props> = (props) => {
   const { info, addOverrideItem, removeOverrideItem, mutateOverrideConfig, updateOverrideItem } =
     props
-  const { profileConfig } = useProfileConfig()
   const [updating, setUpdating] = useState(false)
   const [openInfoEditor, setOpenInfoEditor] = useState(false)
   const [openFileEditor, setOpenFileEditor] = useState(false)
@@ -152,21 +149,19 @@ const OverrideItem: React.FC<Props> = (props) => {
 
   useEffect(() => {
     if (isDragging) {
-      setDisableOpen(true)
-      return
+      setTimeout(() => {
+        setDisableOpen(true)
+      }, 200)
+    } else {
+      setTimeout(() => {
+        setDisableOpen(false)
+      }, 200)
     }
-
-    const timer = window.setTimeout(() => {
-      setDisableOpen(false)
-    }, 160)
-
-    return (): void => window.clearTimeout(timer)
   }, [isDragging])
 
   return (
     <div
-      ref={setNodeRef}
-      className="grid col-span-1 touch-sortable-card"
+      className="grid col-span-1"
       style={{
         position: 'relative',
         transform: CSS.Transform.toString(transform),
@@ -189,7 +184,11 @@ const OverrideItem: React.FC<Props> = (props) => {
         />
       )}
       {showQrCode && info.url && (
-        <QRCodeModal title={info.name} url={info.url} onClose={() => setShowQrCode(false)} />
+        <QRCodeModal
+          title={info.name}
+          url={info.url}
+          onClose={() => setShowQrCode(false)}
+        />
       )}
       {confirmOpen && (
         <ConfirmModal
@@ -213,18 +212,16 @@ const OverrideItem: React.FC<Props> = (props) => {
           setOpenFileEditor(true)
         }}
       >
-        <div {...attributes} {...listeners} className="h-full w-full">
+        <div ref={setNodeRef} {...attributes} {...listeners} className="h-full w-full">
           <CardBody>
-            <div className="flex justify-between h-8 gap-1">
-              <div className="flex min-w-0 items-center">
-                <h3
-                  title={info?.name}
-                  className={`text-ellipsis whitespace-nowrap overflow-hidden text-md font-bold leading-8 text-foreground`}
-                >
-                  {info?.name}
-                </h3>
-              </div>
-              <div className="flex shrink-0" data-no-dnd onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between h-8">
+              <h3
+                title={info?.name}
+                className={`text-ellipsis whitespace-nowrap overflow-hidden text-md font-bold leading-8 text-foreground`}
+              >
+                {info?.name}
+              </h3>
+              <div className="flex" onClick={(e) => e.stopPropagation()}>
                 {info.type === 'remote' && (
                   <Button
                     isIconOnly
@@ -236,9 +233,7 @@ const OverrideItem: React.FC<Props> = (props) => {
                       setUpdating(true)
                       try {
                         await addOverrideItem(info)
-                        if (isOverrideUsedByCurrentProfile(profileConfig, info.id, info.global)) {
-                          await restartCore()
-                        }
+                        await restartCore()
                       } catch (e) {
                         notify(e, { variant: 'danger' })
                       } finally {

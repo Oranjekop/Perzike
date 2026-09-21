@@ -1,46 +1,316 @@
 @import 'tailwindcss';
 @plugin './hero.mjs';
 @import '@heroui-v3/styles';
-@import './main-compatible.css';
 @source '../../../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
 @custom-variant dark (&:is(.dark *));
-
-@keyframes proxy-row-in {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes proxy-tooltip-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(-6px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-  }
-}
-
-@keyframes proxy-tooltip-in-left {
-  from {
-    opacity: 0;
-    transform: translateX(6px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-  }
-}
 
 @font-face {
   font-family: 'twemoji';
   src: url('./twemoji.ttf');
+}
+
+/* Theme tokens are colors only. Card geometry and interaction stay theme-neutral below. */
+:root {
+  --app-card-surface: hsl(var(--heroui-content1));
+  --app-card-hover-surface: hsl(var(--heroui-content2));
+  --app-card-border-color: hsl(var(--heroui-divider) / 0.82);
+  --app-card-hover-border-color: hsl(var(--heroui-primary) / 0.34);
+  --app-page-header-shadow-color: rgb(75 129 181 / 0.045);
+  --app-setting-shadow-color: rgb(64 112 158 / 0.06);
+  --app-sidebar-shadow-color: rgb(68 116 165 / 0.055);
+  --app-selected-shadow-color: hsl(var(--heroui-primary) / 0.18);
+  --app-shadow-small-near-color: rgb(15 23 42 / 0.03);
+  --app-shadow-small-far-color: rgb(90 140 210 / 0.09);
+  --app-shadow-medium-near-color: rgb(15 23 42 / 0.04);
+  --app-shadow-medium-far-color: rgb(90 140 210 / 0.12);
+  --app-ripple-color: hsl(var(--heroui-primary) / 0.8);
+  --app-input-surface: hsl(var(--heroui-default-100));
+  --app-input-hover-surface: hsl(var(--heroui-default-200));
+  --app-input-border-color: hsl(var(--heroui-divider) / 0.68);
+  --app-input-placeholder-color: hsl(var(--heroui-default-500));
+  --app-popup-surface: hsl(var(--heroui-content1));
+  --app-popup-hover-surface: hsl(var(--heroui-content2));
+  --app-control-selected-surface: hsl(var(--heroui-primary) / 0.14);
+  --app-popup-shadow-color: rgb(65 105 145 / 0.14);
+}
+
+.dark {
+  --app-card-surface: hsl(var(--heroui-content1) / 0.96);
+  --app-card-hover-surface: hsl(var(--heroui-content2) / 0.96);
+  --app-page-header-shadow-color: rgb(0 0 0 / 0.12);
+  --app-setting-shadow-color: rgb(0 0 0 / 0.16);
+  --app-sidebar-shadow-color: rgb(0 0 0 / 0.16);
+  --app-selected-shadow-color: rgb(0 0 0 / 0.22);
+  --app-shadow-small-near-color: rgb(0 0 0 / 0.28);
+  --app-shadow-small-far-color: rgb(0 0 0 / 0.18);
+  --app-shadow-medium-near-color: rgb(0 0 0 / 0.28);
+  --app-shadow-medium-far-color: rgb(0 0 0 / 0.2);
+  --app-ripple-color: hsl(var(--heroui-primary) / 0.22);
+  --app-input-surface: #242b38;
+  --app-input-hover-surface: #2a3342;
+  --app-input-border-color: #364155;
+  --app-input-placeholder-color: #8f9aac;
+  --app-popup-surface: #242b38;
+  --app-popup-hover-surface: #303949;
+  --app-control-selected-surface: hsl(var(--heroui-primary) / 0.2);
+  --app-popup-shadow-color: rgb(0 0 0 / 0.42);
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background: hsl(var(--heroui-background));
+  color: hsl(var(--heroui-foreground));
+  font-family: 'Microsoft YaHei UI', 'PingFang SC', 'Noto Sans CJK SC', sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.012em;
+}
+
+.app-shell {
+  background: hsl(var(--heroui-background));
+}
+
+.app-sidebar {
+  background: hsl(var(--heroui-background));
+}
+
+.app-brand-mark {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  background: transparent;
+  object-fit: contain;
+}
+
+.app-brand-copy {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.app-brand-copy h3 {
+  font-weight: 600;
+}
+
+.app-main {
+  background: hsl(var(--heroui-background));
+}
+
+.app-page-header {
+  background: hsl(var(--heroui-background) / 0.9) !important;
+  box-shadow: 0 10px 28px var(--app-page-header-shadow-color);
+}
+
+.app-page-header > .app-drag > .header {
+  padding: 0;
+}
+
+.app-page-title {
+  color: hsl(var(--heroui-foreground));
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.app-page-content {
+  background: hsl(var(--heroui-background));
+}
+
+.setting-card,
+.setting-accordion > div {
+  border: 1px solid hsl(var(--heroui-divider) / 0.9);
+  border-radius: 14px !important;
+  box-shadow: 0 10px 30px var(--app-setting-shadow-color) !important;
+}
+
+.setting-accordion {
+  gap: 10px;
+}
+
+.setting-item {
+  align-items: center;
+  padding: 3px 4px;
+}
+
+.setting-item > div:first-child {
+  min-width: 0;
+}
+
+.setting-item h4 {
+  color: hsl(var(--heroui-foreground));
+  font-weight: 500;
+}
+
+.setting-accordion button {
+  font-weight: 500;
+}
+
+.app-sidebar-grid :is(h3, h4) {
+  font-weight: 600;
+}
+
+.app-sidebar-grid > div > div,
+.outbound-mode-card {
+  border: 1px solid var(--app-card-border-color);
+  border-radius: 13px;
+  box-shadow: 0 8px 22px var(--app-sidebar-shadow-color) !important;
+}
+
+.app-sidebar-grid > div > div {
+  transition-property: background-color, border-color, box-shadow, transform;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+.app-sidebar-grid > div > div:active {
+  transform: scale(0.97);
+}
+
+.app-sidebar-grid > div > div:has(button:not(.pointer-events-none):active),
+.app-sidebar-grid > div > div:has([role='switch']:active) {
+  transform: none;
+}
+
+.app-sidebar-grid > div > div:not(.bg-primary):hover,
+.outbound-mode-card:hover {
+  border-color: var(--app-card-hover-border-color);
+}
+
+.app-sidebar-grid > div > div.bg-primary {
+  border-color: hsl(var(--heroui-primary));
+  box-shadow: 0 8px 20px var(--app-selected-shadow-color) !important;
+}
+
+.app-page-content .shadow-small,
+.app-page-content .shadow-sm,
+.app-page-content .shadow-medium {
+  border: 1px solid var(--app-card-border-color);
+  border-radius: 14px;
+}
+
+.app-page-content input,
+.app-page-content textarea {
+  letter-spacing: -0.008em;
+}
+
+/* Keep input geometry shared across themes; only the surface colors change. */
+[data-slot='input-wrapper'].bg-default-100:not(.bg-transparent) {
+  background-color: var(--app-input-surface) !important;
+  box-shadow: inset 0 0 0 1px var(--app-input-border-color) !important;
+}
+
+[data-slot='input-wrapper'].bg-default-100:not(.bg-transparent)[data-hover='true'] {
+  background-color: var(--app-input-hover-surface) !important;
+}
+
+[data-slot='input-wrapper'].bg-default-100:not(.bg-transparent)[data-focus='true'] {
+  background-color: var(--app-input-surface) !important;
+  box-shadow: inset 0 0 0 1px hsl(var(--heroui-focus)) !important;
+}
+
+[data-slot='input-wrapper'].bg-default-100:not(.bg-transparent) :is(input, textarea)::placeholder {
+  color: var(--app-input-placeholder-color);
+  opacity: 1;
+}
+
+[data-slot='trigger'].bg-default-100 {
+  background-color: var(--app-input-surface) !important;
+  box-shadow: inset 0 0 0 1px var(--app-input-border-color) !important;
+}
+
+[data-slot='trigger'].bg-default-100:is(
+    [data-hover='true'],
+    [data-focus='true'],
+    [data-open='true']
+  ) {
+  background-color: var(--app-input-hover-surface) !important;
+}
+
+[data-slot='trigger'].bg-default-100:is([data-focus='true'], [data-open='true']) {
+  box-shadow: inset 0 0 0 1px hsl(var(--heroui-focus)) !important;
+}
+
+[data-slot='content']:has(:is([role='listbox'], [role='menu'])) {
+  background-color: var(--app-popup-surface) !important;
+  box-shadow:
+    inset 0 0 0 1px var(--app-input-border-color),
+    0 12px 30px var(--app-popup-shadow-color) !important;
+}
+
+:is([role='option'], [role='menuitem'])[aria-selected='true'] {
+  background-color: var(--app-control-selected-surface) !important;
+}
+
+:is([role='option'], [role='menuitem']):is([data-hover='true'], [data-focus='true']) {
+  background-color: var(--app-popup-hover-surface) !important;
+}
+
+/* Form control tracks use the same visible surface hierarchy as inputs. */
+[data-slot='tabList'].bg-default-100,
+label:not([data-selected='true']) > input[role='switch'] + span {
+  background-color: var(--app-input-surface) !important;
+  box-shadow: inset 0 0 0 1px var(--app-input-border-color) !important;
+}
+
+label:not([data-selected='true']) > input[type='radio'] + span {
+  background-color: var(--app-input-surface) !important;
+  border-color: var(--app-input-border-color) !important;
+}
+
+.app-inline-input:is([data-hover='true'], [data-focus='true']) {
+  background-color: var(--app-input-hover-surface) !important;
+  box-shadow: inset 0 0 0 1px var(--app-input-border-color) !important;
+}
+
+.app-page-content table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.app-page-content thead {
+  color: hsl(var(--heroui-default-600));
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Keep long process errors inside the application notification viewport. */
+.app-toast-region {
+  width: min(460px, calc(100vw - 2rem));
+  min-width: 0;
+  max-width: calc(100vw - 2rem);
+}
+
+.app-toast-region [data-slot='toast'] {
+  max-width: 100%;
+}
+
+.app-toast-region [data-slot='toast'][data-frontmost='true'] {
+  overflow: visible;
+}
+
+.app-toast-region [data-slot='toast-content'] {
+  min-width: 0;
+}
+
+.app-toast-region :is([data-slot='toast-title'], [data-slot='toast-description']) {
+  width: 100%;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.app-toast-region [data-slot='toast-description'] {
+  max-height: 8rem;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .driver-popover {
@@ -56,6 +326,10 @@
 
 .driver-popover-close-btn {
   color: hsl(var(--heroui-foreground)) !important;
+}
+
+.driver-active .app-drag {
+  pointer-events: auto;
 }
 
 .driver-popover-progress-text {
@@ -99,30 +373,10 @@
 }
 
 .app-nodrag {
-  -webkit-app-region: none;
+  -webkit-app-region: no-drag;
 }
 .app-drag {
   -webkit-app-region: drag;
-}
-
-.touch-sortable-card {
-  touch-action: pan-y;
-}
-
-.sysproxy-card,
-.tun-card,
-.dns-card,
-.sniff-card,
-.proxy-card,
-.conn-card,
-.profile-card,
-.mihomo-core-card,
-.rule-card,
-.resource-card,
-.override-card,
-.log-card,
-.substore-card {
-  touch-action: pan-y;
 }
 
 .app-drag > .header {
@@ -133,6 +387,91 @@
   font-weight: inherit;
   line-height: inherit;
   color: inherit;
+}
+
+/* Theme-colored ripple for proxy group expand/collapse cards. */
+.proxy-group-card .heroui-ripple {
+  background-color: var(--app-ripple-color) !important;
+}
+
+/* Soften card shadows to better match the light blue background. */
+.shadow-small,
+.shadow-sm {
+  box-shadow:
+    0 1px 2px var(--app-shadow-small-near-color),
+    0 10px 24px var(--app-shadow-small-far-color) !important;
+}
+
+.shadow-medium {
+  box-shadow:
+    0 2px 6px var(--app-shadow-medium-near-color),
+    0 14px 30px var(--app-shadow-medium-far-color) !important;
+}
+
+.app-sidebar-grid > div > div:not(.bg-primary),
+.outbound-mode-card,
+.proxy-group-card {
+  background-color: var(--app-card-surface) !important;
+}
+
+.app-sidebar-grid > div > div:not(.bg-primary):hover,
+.outbound-mode-card:hover,
+.proxy-group-card:hover {
+  background-color: var(--app-card-hover-surface) !important;
+  border-color: var(--app-card-hover-border-color);
+}
+
+.proxy-node-card:hover {
+  background-color: var(--app-card-hover-surface) !important;
+  border-color: var(--app-card-hover-border-color) !important;
+}
+
+/* Full-width compact variant for cards configured as a single sidebar row. */
+.single-row {
+  grid-column: span 2 / span 2;
+}
+
+.single-row > div {
+  display: grid;
+  grid-template-columns: 40px minmax(max-content, 1fr) auto;
+  align-items: center;
+  min-height: 52px;
+}
+
+.single-row > div > .overflow-y-visible,
+.single-row > div > .overflow-y-visible > .flex {
+  display: contents;
+}
+
+.single-row > div > .overflow-y-visible > .flex > :first-child {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+}
+
+.single-row > div > .overflow-y-visible > .flex > :last-child:not(:first-child) {
+  grid-column: 3;
+  grid-row: 1;
+  align-self: center;
+  margin-top: 0;
+  margin-right: 8px;
+}
+
+.single-row > div > .pt-1 {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  width: auto;
+  justify-content: flex-start;
+  overflow: visible;
+  padding: 0;
+  align-self: center;
+  text-align: left;
+}
+
+.single-row > div > .pt-1 h3 {
+  overflow: visible;
+  white-space: nowrap;
 }
 
 * {
@@ -175,11 +514,14 @@
   background-color: transparent;
 }
 
+*::-webkit-scrollbar-thumb {
+  border-radius: 5px;
+}
+
 /* Light mode */
 @media (prefers-color-scheme: light) {
   *::-webkit-scrollbar-thumb {
     background: #c0c1c58f;
-    border-radius: 5px;
   }
 
   *::-webkit-scrollbar-thumb:hover {
@@ -191,10 +533,35 @@
 @media (prefers-color-scheme: dark) {
   *::-webkit-scrollbar-thumb {
     background: #c0c1c550;
-    border-radius: 5px;
   }
 
   *::-webkit-scrollbar-thumb:hover {
     background: #c0c1c58f;
   }
+}
+
+/* Dark theme surface color; layout remains shared with light mode. */
+.dark body,
+.dark main {
+  background-color: hsl(var(--heroui-background)) !important;
+}
+
+/* Keep the top-right window-control area visually continuous with the title bar. */
+.app-drag,
+.app-drag > .header,
+[data-tauri-drag-region],
+.titlebar,
+.window-titlebar,
+.traffic-light-area,
+.window-controls,
+.window-control,
+.window-controls button {
+  background-color: hsl(var(--heroui-background)) !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.window-controls button:hover,
+.window-control:hover {
+  background-color: hsl(var(--heroui-content1) / 0.9) !important;
 }

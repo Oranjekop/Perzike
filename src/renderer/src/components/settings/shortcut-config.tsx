@@ -55,8 +55,8 @@ const ShortcutConfig: React.FC = () => {
   } = appConfig || {}
 
   return (
-    <SettingCard header="快捷键设置">
-      <SettingItem compatKey="legacy" title="打开/关闭窗口" divider>
+    <SettingCard title="快捷键设置">
+      <SettingItem title="打开/关闭窗口" divider>
         <div className="flex justify-end w-[60%]">
           <ShortcutInput
             value={showWindowShortcut}
@@ -65,7 +65,7 @@ const ShortcutConfig: React.FC = () => {
           />
         </div>
       </SettingItem>
-      <SettingItem compatKey="legacy" title="打开/关闭悬浮窗" divider>
+      <SettingItem title="打开/关闭悬浮窗" divider>
         <div className="flex justify-end w-[60%]">
           <ShortcutInput
             value={showFloatingWindowShortcut}
@@ -74,7 +74,7 @@ const ShortcutConfig: React.FC = () => {
           />
         </div>
       </SettingItem>
-      <SettingItem compatKey="legacy" title="打开/关闭系统代理" divider>
+      <SettingItem title="打开/关闭系统代理" divider>
         <div className="flex justify-end w-[60%]">
           <ShortcutInput
             value={triggerSysProxyShortcut}
@@ -83,7 +83,7 @@ const ShortcutConfig: React.FC = () => {
           />
         </div>
       </SettingItem>
-      <SettingItem compatKey="legacy" title="打开/关闭虚拟网卡" divider>
+      <SettingItem title="打开/关闭虚拟网卡" divider>
         <div className="flex justify-end w-[60%]">
           <ShortcutInput
             value={triggerTunShortcut}
@@ -92,7 +92,7 @@ const ShortcutConfig: React.FC = () => {
           />
         </div>
       </SettingItem>
-      <SettingItem compatKey="legacy" title="切换规则模式" divider>
+      <SettingItem title="切换规则模式" divider>
         <div className="flex justify-end w-[60%]">
           <ShortcutInput
             value={ruleModeShortcut}
@@ -101,7 +101,7 @@ const ShortcutConfig: React.FC = () => {
           />
         </div>
       </SettingItem>
-      <SettingItem compatKey="legacy" title="切换全局模式" divider>
+      <SettingItem title="切换全局模式" divider>
         <div className="flex justify-end w-[60%]">
           <ShortcutInput
             value={globalModeShortcut}
@@ -110,7 +110,7 @@ const ShortcutConfig: React.FC = () => {
           />
         </div>
       </SettingItem>
-      <SettingItem compatKey="legacy" title="切换直连模式" divider>
+      <SettingItem title="切换直连模式" divider>
         <div className="flex justify-end w-[60%]">
           <ShortcutInput
             value={directModeShortcut}
@@ -119,7 +119,7 @@ const ShortcutConfig: React.FC = () => {
           />
         </div>
       </SettingItem>
-      <SettingItem compatKey="legacy" title="保留内核退出" divider>
+      <SettingItem title="保留内核退出" divider>
         <div className="flex justify-end w-[60%]">
           <ShortcutInput
             value={quitWithoutCoreShortcut}
@@ -128,7 +128,7 @@ const ShortcutConfig: React.FC = () => {
           />
         </div>
       </SettingItem>
-      <SettingItem compatKey="legacy" title="重启应用">
+      <SettingItem title="重启应用">
         <div className="flex justify-end w-[60%]">
           <ShortcutInput
             value={restartAppShortcut}
@@ -144,7 +144,7 @@ const ShortcutConfig: React.FC = () => {
 const ShortcutInput: React.FC<{
   value: string
   action: string
-  patchAppConfig: (value: Partial<AppConfig>) => Promise<unknown>
+  patchAppConfig: (value: Partial<AppConfig>) => Promise<void>
 }> = (props) => {
   const { value, action, patchAppConfig } = props
   const [inputValue, setInputValue] = useState(value)

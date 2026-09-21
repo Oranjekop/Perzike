@@ -1,8 +1,7 @@
-import { Button, Card, CardBody, CardFooter, Chip, Tooltip } from '@heroui/react'
-import { Meter } from '@heroui-v3/react'
+import { Button, Card, CardBody, CardFooter, Chip, Progress, Tooltip } from '@heroui/react'
 import { useProfileConfig } from '@renderer/hooks/use-profile-config'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { calcTraffic } from '@renderer/utils/calc'
+import { calcTraffic, calcPercent } from '@renderer/utils/calc'
 import { CgLoadbarDoc } from 'react-icons/cg'
 import { IoMdRefresh } from 'react-icons/io'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -95,7 +94,7 @@ const ProfileCard: React.FC<Props> = (props) => {
           ref={setNodeRef}
           {...attributes}
           {...listeners}
-          className={`${match ? 'bg-primary' : 'hover:bg-primary/30'} ${isDragging ? `${disableAnimation ? '' : 'scale-[0.95]'} tap-highlight-transparent` : ''}`}
+          className={`${match ? 'bg-primary' : 'hover:bg-content2'} transition-colors ${isDragging ? `${disableAnimation ? '' : 'scale-[0.95]'} tap-highlight-transparent` : ''}`}
         >
           <CardBody className="pb-1">
             <div
@@ -114,6 +113,7 @@ const ProfileCard: React.FC<Props> = (props) => {
                 <Button
                   isIconOnly
                   size="sm"
+                  title="查看当前运行时配置"
                   variant="light"
                   color="default"
                   onPress={() => {
@@ -206,23 +206,11 @@ const ProfileCard: React.FC<Props> = (props) => {
               </div>
             )}
             {extra && (
-              <Meter aria-label="流量用量" maxValue={total} value={usage}>
-                <Meter.Track
-                  className={
-                    match
-                      ? 'h-2.5 bg-black/22 shadow-[inset_0_0_0_1px_rgb(255_255_255/0.35)]'
-                      : undefined
-                  }
-                >
-                  <Meter.Fill
-                    className={
-                      match
-                        ? 'bg-(--color-accent-foreground) shadow-[0_0_8px_rgb(255_255_255/0.45)]'
-                        : undefined
-                    }
-                  />
-                </Meter.Track>
-              </Meter>
+              <Progress
+                className="w-full"
+                classNames={{ indicator: match ? 'bg-primary-foreground' : 'bg-foreground' }}
+                value={calcPercent(extra?.upload, extra?.download, extra?.total)}
+              />
             )}
           </CardFooter>
         </Card>
@@ -232,7 +220,7 @@ const ProfileCard: React.FC<Props> = (props) => {
           ref={setNodeRef}
           {...attributes}
           {...listeners}
-          className={`${match ? 'bg-primary' : 'hover:bg-primary/30'} ${isDragging ? `${disableAnimation ? '' : 'scale-[0.95]'} tap-highlight-transparent` : ''}`}
+          className={`${match ? 'bg-primary' : 'hover:bg-content2'} transition-colors ${isDragging ? `${disableAnimation ? '' : 'scale-[0.95]'} tap-highlight-transparent` : ''}`}
         >
           <CardBody className="pb-1 pt-0 px-0 overflow-y-visible">
             <div className="flex justify-between">
@@ -252,6 +240,7 @@ const ProfileCard: React.FC<Props> = (props) => {
                 className="bg-transparent"
                 variant="flat"
                 color="default"
+                title="查看当前运行时配置"
                 onPress={() => {
                   setShowRuntimeConfig(true)
                 }}

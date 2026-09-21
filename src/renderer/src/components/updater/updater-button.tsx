@@ -1,24 +1,20 @@
 import { Button } from '@heroui/react'
 import React, { useState, useEffect } from 'react'
-import UpdaterDrawer from './updater-drawer'
+import UpdaterModal from './updater-modal'
 import { GrUpgrade } from 'react-icons/gr'
 import { cancelUpdate } from '@renderer/utils/ipc'
-import { notify } from '@renderer/utils/notification'
-
-let notifiedUpdateVersion = ''
-let hiddenUpdateButtonVersion = ''
 
 interface Props {
   iconOnly?: boolean
-  latest?: AppVersion
-  showButtonAfterNotification?: boolean
+  latest?: {
+    version: string
+    changelog: string
+  }
 }
 
 const UpdaterButton: React.FC<Props> = (props) => {
-  const { iconOnly, latest, showButtonAfterNotification = true } = props
-  const [openDrawer, setOpenDrawer] = useState(false)
-  const [drawerReopenSignal, setDrawerReopenSignal] = useState(0)
-  const [showButton, setShowButton] = useState(false)
+  const { iconOnly, latest } = props
+  const [openModal, setOpenModal] = useState(false)
   const [updateStatus, setUpdateStatus] = useState<{
     downloading: boolean
     progress: number
@@ -36,50 +32,12 @@ const UpdaterButton: React.FC<Props> = (props) => {
       setUpdateStatus(status)
     }
 
-    const unsubscribe = window.electron.ipcRenderer.on('update-status', handleUpdateStatus)
+    window.electron.ipcRenderer.on('update-status', handleUpdateStatus)
 
     return (): void => {
-      unsubscribe()
+      window.electron.ipcRenderer.removeAllListeners('update-status')
     }
   }, [])
-
-  useEffect(() => {
-    if (!latest) return
-
-    if (hiddenUpdateButtonVersion === latest.version) {
-      setShowButton(false)
-      return
-    }
-
-    if (latest.version === notifiedUpdateVersion) {
-      setShowButton(showButtonAfterNotification)
-      return
-    }
-
-    notifiedUpdateVersion = latest.version
-    hiddenUpdateButtonVersion = latest.version
-    setShowButton(false)
-    notify('发现新版本', {
-      actionProps: {
-        children: '查看内容',
-        onPress: () => {
-          setOpenDrawer(true)
-          setDrawerReopenSignal((signal) => signal + 1)
-        },
-        variant: 'secondary'
-      },
-      body: `${latest.version} 版本就绪`,
-      forceToast: true,
-      onClose: () => {
-        if (hiddenUpdateButtonVersion === latest.version) {
-          hiddenUpdateButtonVersion = ''
-        }
-        setShowButton(showButtonAfterNotification)
-      },
-      timeout: 8000,
-      variant: 'accent'
-    })
-  }, [latest, showButtonAfterNotification])
 
   const handleCancelUpdate = async (): Promise<void> => {
     try {
@@ -94,29 +52,37 @@ const UpdaterButton: React.FC<Props> = (props) => {
 
   return (
     <>
-      {openDrawer && (
-        <UpdaterDrawer
+      {openModal && (
+        <UpdaterModal
           version={latest.version}
-          tag={latest.tag}
           changelog={latest.changelog}
           updateStatus={updateStatus}
-          reopenSignal={drawerReopenSignal}
           onCancel={handleCancelUpdate}
           onClose={() => {
-            setOpenDrawer(false)
+            setOpenModal(false)
           }}
         />
       )}
-      {showButton && (
+      {iconOnly ? (
         <Button
           isIconOnly
-          aria-label="查看更新"
-          className={iconOnly ? 'app-nodrag' : 'fixed right-11.25 app-nodrag'}
+          className={`app-nodrag`}
           color="danger"
-          size={iconOnly ? 'md' : 'sm'}
+          size="md"
           onPress={() => {
-            setOpenDrawer(true)
-            setDrawerReopenSignal((signal) => signal + 1)
+            setOpenModal(true)
+          }}
+        >
+          <GrUpgrade />
+        </Button>
+      ) : (
+        <Button
+          isIconOnly
+          className={`fixed right-11.25 app-nodrag`}
+          color="danger"
+          size="sm"
+          onPress={() => {
+            setOpenModal(true)
           }}
         >
           <GrUpgrade />

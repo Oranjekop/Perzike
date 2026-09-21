@@ -5,8 +5,8 @@ import SettingItem from '@renderer/components/base/base-setting-item'
 import EditableList from '@renderer/components/base/base-list-editor'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
 import { restartCore } from '@renderer/utils/ipc'
-import React, { useState } from 'react'
 import { notify } from '@renderer/utils/notification'
+import React, { useState } from 'react'
 
 const Sniffer: React.FC = () => {
   const { controledMihomoConfig, patchControledMihomoConfig } = useControledMihomoConfig()
@@ -80,7 +80,6 @@ const Sniffer: React.FC = () => {
   return (
     <BasePage
       title="域名嗅探设置"
-      contentClassName="no-scrollbar"
       header={
         changed && (
           <Button
@@ -95,9 +94,7 @@ const Sniffer: React.FC = () => {
                   'override-destination': values.overrideDestination,
                   sniff: values.sniff,
                   'skip-domain': values.skipDomain,
-                  'force-domain': values.forceDomain,
-                  'skip-dst-address': values.skipDstAddress,
-                  'skip-src-address': values.skipSrcAddress
+                  'force-domain': values.forceDomain
                 }
               })
             }
@@ -108,7 +105,7 @@ const Sniffer: React.FC = () => {
       }
     >
       <SettingCard>
-        <SettingItem compatKey="legacy" title="覆盖连接地址" divider>
+        <SettingItem title="覆盖连接地址" divider>
           <Switch
             size="sm"
             isSelected={values.overrideDestination}
@@ -128,7 +125,7 @@ const Sniffer: React.FC = () => {
             }}
           />
         </SettingItem>
-        <SettingItem compatKey="legacy" title="对真实 IP 映射嗅探" divider>
+        <SettingItem title="对真实 IP 映射嗅探" divider>
           <Switch
             size="sm"
             isSelected={values.forceDNSMapping}
@@ -137,7 +134,7 @@ const Sniffer: React.FC = () => {
             }}
           />
         </SettingItem>
-        <SettingItem compatKey="legacy" title="对未映射 IP 地址嗅探" divider>
+        <SettingItem title="对未映射 IP 地址嗅探" divider>
           <Switch
             size="sm"
             isSelected={values.parsePureIP}
@@ -146,7 +143,7 @@ const Sniffer: React.FC = () => {
             }}
           />
         </SettingItem>
-        <SettingItem compatKey="legacy" title="HTTP 端口嗅探" divider>
+        <SettingItem title="HTTP 端口嗅探" divider>
           <Input
             size="sm"
             className="w-[50%]"
@@ -155,7 +152,7 @@ const Sniffer: React.FC = () => {
             onValueChange={(v) => handleSniffPortChange('HTTP', v)}
           />
         </SettingItem>
-        <SettingItem compatKey="legacy" title="TLS 端口嗅探" divider>
+        <SettingItem title="TLS 端口嗅探" divider>
           <Input
             size="sm"
             className="w-[50%]"
@@ -164,7 +161,7 @@ const Sniffer: React.FC = () => {
             onValueChange={(v) => handleSniffPortChange('TLS', v)}
           />
         </SettingItem>
-        <SettingItem compatKey="legacy" title="QUIC 端口嗅探" divider>
+        <SettingItem title="QUIC 端口嗅探" divider>
           <Input
             size="sm"
             className="w-[50%]"

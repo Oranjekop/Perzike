@@ -8,10 +8,10 @@ import {
   DropdownItem,
   DropdownMenu,
   DropdownTrigger,
+  Progress,
   Tooltip
 } from '@heroui/react'
-import { Meter } from '@heroui-v3/react'
-import { calcTraffic } from '@renderer/utils/calc'
+import { calcPercent, calcTraffic } from '@renderer/utils/calc'
 import { IoMdMore, IoMdRefresh } from 'react-icons/io'
 import dayjs from 'dayjs'
 import React, { Key, useEffect, useMemo, useState } from 'react'
@@ -42,7 +42,6 @@ interface MenuItem {
   color: 'default' | 'danger'
   className: string
 }
-
 const ProfileItem: React.FC<Props> = (props) => {
   const {
     info,
@@ -164,21 +163,19 @@ const ProfileItem: React.FC<Props> = (props) => {
 
   useEffect(() => {
     if (isDragging) {
-      setDisableSelect(true)
-      return
+      setTimeout(() => {
+        setDisableSelect(true)
+      }, 100)
+    } else {
+      setTimeout(() => {
+        setDisableSelect(false)
+      }, 100)
     }
-
-    const timer = window.setTimeout(() => {
-      setDisableSelect(false)
-    }, 160)
-
-    return (): void => window.clearTimeout(timer)
   }, [isDragging])
 
   return (
     <div
-      ref={setNodeRef}
-      className="grid col-span-1 touch-sortable-card"
+      className="grid col-span-1"
       style={{
         position: 'relative',
         transform: CSS.Transform.toString(transform),
@@ -202,7 +199,11 @@ const ProfileItem: React.FC<Props> = (props) => {
         />
       )}
       {showQrCode && info.url && (
-        <QRCodeModal title={info.name} url={info.url} onClose={() => setShowQrCode(false)} />
+        <QRCodeModal
+          title={info.name}
+          url={info.url}
+          onClose={() => setShowQrCode(false)}
+        />
       )}
       {confirmOpen && (
         <ConfirmModal
@@ -229,18 +230,16 @@ const ProfileItem: React.FC<Props> = (props) => {
         }}
         className={`${isCurrent ? 'bg-primary' : ''} ${selecting ? 'blur-sm' : ''}`}
       >
-        <div {...attributes} {...listeners} className="w-full h-full">
+        <div ref={setNodeRef} {...attributes} {...listeners} className="w-full h-full">
           <CardBody className="pb-1">
-            <div className="flex justify-between h-8 gap-1">
-              <div className="flex min-w-0 items-center">
-                <h3
-                  title={info?.name}
-                  className={`text-ellipsis whitespace-nowrap overflow-hidden text-md font-bold leading-8 ${isCurrent ? 'text-primary-foreground' : 'text-foreground'}`}
-                >
-                  {info?.name}
-                </h3>
-              </div>
-              <div className="flex shrink-0" data-no-dnd onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between h-8">
+              <h3
+                title={info?.name}
+                className={`text-ellipsis whitespace-nowrap overflow-hidden text-md font-bold leading-8 ${isCurrent ? 'text-primary-foreground' : 'text-foreground'}`}
+              >
+                {info?.name}
+              </h3>
+              <div className="flex" onClick={(e) => e.stopPropagation()}>
                 {info.type === 'remote' && (
                   <Tooltip placement="left" content={dayjs(info.updated).fromNow()}>
                     <Button
@@ -347,23 +346,13 @@ const ProfileItem: React.FC<Props> = (props) => {
               </div>
             )}
             {extra && (
-              <Meter aria-label="流量用量" maxValue={total} value={usage}>
-                <Meter.Track
-                  className={
-                    isCurrent
-                      ? 'h-2.5 bg-black/22 shadow-[inset_0_0_0_1px_rgb(255_255_255/0.35)]'
-                      : undefined
-                  }
-                >
-                  <Meter.Fill
-                    className={
-                      isCurrent
-                        ? 'bg-(--color-accent-foreground) shadow-[0_0_8px_rgb(255_255_255/0.45)]'
-                        : undefined
-                    }
-                  />
-                </Meter.Track>
-              </Meter>
+              <Progress
+                className="w-full"
+                classNames={{
+                  indicator: isCurrent ? 'bg-primary-foreground' : 'bg-foreground'
+                }}
+                value={calcPercent(extra?.upload, extra?.download, extra?.total)}
+              />
             )}
           </CardFooter>
         </div>

@@ -16,15 +16,15 @@ export const RulesProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   })
 
   React.useEffect(() => {
-    const unsubscribeRulesUpdated = window.electron.ipcRenderer.on('rulesUpdated', () => {
+    window.electron.ipcRenderer.on('rulesUpdated', () => {
       mutate()
     })
-    const unsubscribeCoreStarted = window.electron.ipcRenderer.on('core-started', () => {
+    window.electron.ipcRenderer.on('core-started', () => {
       mutate()
     })
     return (): void => {
-      unsubscribeRulesUpdated()
-      unsubscribeCoreStarted()
+      window.electron.ipcRenderer.removeAllListeners('rulesUpdated')
+      window.electron.ipcRenderer.removeAllListeners('core-started')
     }
   }, [])
 

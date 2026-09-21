@@ -106,6 +106,7 @@ interface ControllerConnectionDetail {
   downloadSpeed?: number
 }
 
+// ${api}/logs
 interface ControllerLog {
   type: LogLevel
   payload: string
@@ -134,7 +135,6 @@ interface ControllerProxiesDetail {
   history: ControllerProxiesHistory[]
   id: string
   name: string
-  'provider-name'?: string
   tfo: boolean
   type: MihomoProxyType
   udp: boolean

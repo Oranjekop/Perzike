@@ -18,7 +18,6 @@ const InterfaceSelect: React.FC<{
 
   return (
     <Select
-      aria-label="网络接口"
       size="sm"
       className="w-75"
       selectedKeys={new Set([value])}
