@@ -591,7 +591,7 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
       titleBarOverlay: useWindowFrame
         ? false
         : {
-            height: acrylicEnabled ? 56 : 48,
+            height: 48,
             ...titleBarOverlayColors[titleBarOverlayTheme],
             ...(acrylicEnabled ? { color: '#00000000' } : {})
           },

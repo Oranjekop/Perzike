@@ -137,7 +137,7 @@ const App: React.FC = () => {
   }
   const setTitlebar = (): void => {
     if (!useWindowFrame && platform !== 'darwin') {
-      const options = { height: window.api.acrylicEnabled ? 56 : 48 } as TitleBarOverlayOptions
+      const options = { height: 48 } as TitleBarOverlayOptions
       try {
         const colors = titleBarOverlayColors[getResolvedAppTheme()]
         options.color = window.api.acrylicEnabled ? '#00000000' : colors.color
