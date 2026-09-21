@@ -37,7 +37,6 @@ import useSWR from 'swr'
 import ConfirmModal from '@renderer/components/base/base-confirm'
 import { notify } from '@renderer/utils/notification'
 import appIcon from '@renderer/assets/app-icon.png'
-import WindowResizeHandles from '@renderer/components/base/window-resize-handles'
 
 let navigate: NavigateFunction
 
@@ -331,7 +330,6 @@ const App: React.FC = () => {
       }}
       className={`app-shell w-full h-screen flex ${resizing ? 'cursor-ew-resize' : ''}`}
     >
-      {window.api.acrylicEnabled && <WindowResizeHandles />}
       {showQuitConfirm && (
         <ConfirmModal
           title="确定要退出 Perzike 吗？"

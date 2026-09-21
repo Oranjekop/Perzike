@@ -584,9 +584,6 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
       y: mainWindowState.y,
       show: false,
       frame: useWindowFrame,
-      transparent: acrylicEnabled,
-      roundedCorners: true,
-      backgroundColor: acrylicEnabled ? '#00000000' : undefined,
       backgroundMaterial: acrylicEnabled ? 'acrylic' : undefined,
       title: process.platform === 'win32' ? 'Perzike' : '',
       fullscreenable: false,
@@ -612,6 +609,9 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
     mainWindowState.manage(mainWindow)
     mainWindow.on('ready-to-show', async () => {
       updateRuntimeIcon()
+      if (acrylicEnabled) {
+        mainWindow?.setBackgroundMaterial('acrylic')
+      }
       const { silentStart = false } = await getAppConfig()
       if (!silentStart) {
         if (quitTimeout) {

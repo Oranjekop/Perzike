@@ -568,17 +568,15 @@ label:not([data-selected='true']) > input[type='radio'] + span {
 
 /* A single translucent tint lets the native acrylic backdrop show through. */
 .app-acrylic {
-  --app-acrylic-tint: rgb(247 251 255 / 0.38);
-  --app-acrylic-edge: rgb(255 255 255 / 0.68);
-  --app-card-surface: hsl(var(--heroui-content1) / 0.6);
-  --app-card-hover-surface: hsl(var(--heroui-content2) / 0.72);
+  --app-acrylic-tint: rgb(247 251 255 / 0.24);
+  --app-card-surface: hsl(var(--heroui-content1) / 0.7);
+  --app-card-hover-surface: hsl(var(--heroui-content2) / 0.8);
 }
 
 .app-acrylic.dark {
-  --app-acrylic-tint: rgb(17 22 30 / 0.42);
-  --app-acrylic-edge: rgb(255 255 255 / 0.12);
-  --app-card-surface: hsl(var(--heroui-content1) / 0.56);
-  --app-card-hover-surface: hsl(var(--heroui-content2) / 0.7);
+  --app-acrylic-tint: rgb(15 17 21 / 0.32);
+  --app-card-surface: hsl(var(--heroui-content1) / 0.66);
+  --app-card-hover-surface: hsl(var(--heroui-content2) / 0.78);
 }
 
 .app-acrylic,
@@ -594,9 +592,6 @@ label:not([data-selected='true']) > input[type='radio'] + span {
 
 .app-acrylic .app-shell {
   background: var(--app-acrylic-tint) !important;
-  border: 1px solid var(--app-acrylic-edge);
-  border-radius: 10px;
-  overflow: hidden;
 }
 
 .app-acrylic .app-sidebar,
@@ -604,10 +599,6 @@ label:not([data-selected='true']) > input[type='radio'] + span {
 .app-acrylic .app-page-content,
 .app-acrylic .app-page-header {
   background: transparent !important;
-}
-
-.app-acrylic .app-page-header {
-  backdrop-filter: blur(24px) saturate(1.25);
 }
 
 .app-acrylic .app-drag,
@@ -618,53 +609,4 @@ label:not([data-selected='true']) > input[type='radio'] + span {
 .app-acrylic .setting-card,
 .app-acrylic .setting-accordion > div {
   background-color: var(--app-card-surface) !important;
-  backdrop-filter: blur(16px) saturate(1.15);
 }
-
-.app-window-resize-handle {
-  position: fixed;
-  z-index: 100;
-  touch-action: none;
-}
-
-.app-window-resize-handle--top,
-.app-window-resize-handle--bottom {
-  right: 12px;
-  left: 12px;
-  height: 6px;
-  cursor: ns-resize;
-}
-
-.app-window-resize-handle--top { top: 0; }
-.app-window-resize-handle--bottom { bottom: 0; }
-
-.app-window-resize-handle--left,
-.app-window-resize-handle--right {
-  top: 12px;
-  bottom: 12px;
-  width: 6px;
-  cursor: ew-resize;
-}
-
-.app-window-resize-handle--left { left: 0; }
-.app-window-resize-handle--right { right: 0; }
-
-.app-window-resize-handle--top-left,
-.app-window-resize-handle--top-right,
-.app-window-resize-handle--bottom-left,
-.app-window-resize-handle--bottom-right {
-  z-index: 101;
-  width: 12px;
-  height: 12px;
-}
-
-.app-window-resize-handle--top-left,
-.app-window-resize-handle--bottom-right { cursor: nwse-resize; }
-
-.app-window-resize-handle--top-right,
-.app-window-resize-handle--bottom-left { cursor: nesw-resize; }
-
-.app-window-resize-handle--top-left { top: 0; left: 0; }
-.app-window-resize-handle--top-right { top: 0; right: 0; }
-.app-window-resize-handle--bottom-left { bottom: 0; left: 0; }
-.app-window-resize-handle--bottom-right { bottom: 0; right: 0; }
