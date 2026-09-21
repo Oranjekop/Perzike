@@ -1,4 +1,4 @@
-import { app, dialog, ipcMain } from 'electron'
+import { app, dialog, ipcMain, screen, type Point, type Rectangle } from 'electron'
 import {
   mihomoChangeProxy,
   mihomoCloseConnections,
@@ -185,7 +185,66 @@ async function patchAppConfigWithServiceSync(patch: Partial<AppConfig>): Promise
   })
 }
 
+type ResizeEdge =
+  | 'top'
+  | 'right'
+  | 'bottom'
+  | 'left'
+  | 'top-left'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-right'
+
+const resizeEdges: ResizeEdge[] = [
+  'top',
+  'right',
+  'bottom',
+  'left',
+  'top-left',
+  'top-right',
+  'bottom-left',
+  'bottom-right'
+]
+
+let mainWindowResize: { edge: ResizeEdge; bounds: Rectangle; cursor: Point } | null = null
+
 export function registerIpcMainHandlers(): void {
+  ipcMain.on('mainWindowResizeStart', (event, edge: ResizeEdge) => {
+    if (event.sender !== mainWindow?.webContents || mainWindow.isMaximized()) return
+    if (!resizeEdges.includes(edge)) return
+    mainWindowResize = {
+      edge,
+      bounds: mainWindow.getBounds(),
+      cursor: screen.getCursorScreenPoint()
+    }
+  })
+  ipcMain.on('mainWindowResizeUpdate', (event) => {
+    if (event.sender !== mainWindow?.webContents || !mainWindowResize) return
+    const { edge, bounds, cursor } = mainWindowResize
+    const current = screen.getCursorScreenPoint()
+    const deltaX = current.x - cursor.x
+    const deltaY = current.y - cursor.y
+    const [minimumWidth, minimumHeight] = mainWindow.getMinimumSize()
+    const width = edge.includes('left')
+      ? Math.max(minimumWidth, bounds.width - deltaX)
+      : edge.includes('right')
+        ? Math.max(minimumWidth, bounds.width + deltaX)
+        : bounds.width
+    const height = edge.includes('top')
+      ? Math.max(minimumHeight, bounds.height - deltaY)
+      : edge.includes('bottom')
+        ? Math.max(minimumHeight, bounds.height + deltaY)
+        : bounds.height
+    mainWindow.setBounds({
+      x: edge.includes('left') ? bounds.x + bounds.width - width : bounds.x,
+      y: edge.includes('top') ? bounds.y + bounds.height - height : bounds.y,
+      width,
+      height
+    })
+  })
+  ipcMain.on('mainWindowResizeEnd', (event) => {
+    if (event.sender === mainWindow?.webContents) mainWindowResize = null
+  })
   ipcMain.handle('mihomoVersion', ipcErrorWrapper(mihomoVersion))
   ipcMain.handle('mihomoConfig', ipcErrorWrapper(mihomoConfig))
   ipcMain.handle('mihomoCloseConnection', (_e, id) => ipcErrorWrapper(mihomoCloseConnection)(id))

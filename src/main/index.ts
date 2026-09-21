@@ -584,11 +584,8 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
       y: mainWindowState.y,
       show: false,
       frame: useWindowFrame,
-      backgroundColor: acrylicEnabled
-        ? titleBarOverlayTheme === 'dark'
-          ? '#0f151e'
-          : '#f7fbff'
-        : undefined,
+      transparent: acrylicEnabled,
+      backgroundColor: acrylicEnabled ? '#00000000' : undefined,
       backgroundMaterial: acrylicEnabled ? 'acrylic' : undefined,
       title: process.platform === 'win32' ? 'Perzike' : '',
       fullscreenable: false,
