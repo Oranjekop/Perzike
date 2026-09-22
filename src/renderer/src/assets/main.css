@@ -616,16 +616,20 @@ label:not([data-selected='true']) > input[type='radio'] + span {
 .app-acrylic .outbound-mode-card,
 .app-acrylic .app-page-content :is(.shadow-small, .shadow-sm, .shadow-medium):not(.bg-primary):not([class*='bg-secondary']):not([class*='bg-danger']) {
   background-color: var(--app-card-surface) !important;
-  /* Paint the same surface through the border, without a white outline. */
-  border-color: transparent !important;
+  /* Match the border to the surface so translucent cards remain seamless. */
+  border-color: var(--app-card-surface) !important;
   background-clip: border-box;
   backdrop-filter: blur(30px) saturate(1.12);
   box-shadow: 0 0 6px var(--app-acrylic-card-shadow) !important;
 }
 
 .app-acrylic .app-sidebar-grid > div > div:not(.bg-primary):hover,
-.app-acrylic .outbound-mode-card:hover {
+.app-acrylic .outbound-mode-card:hover,
+.app-acrylic .proxy-group-card:hover,
+.app-acrylic .proxy-node-card:hover {
   background-color: var(--app-card-hover-surface) !important;
+  border-color: var(--app-card-hover-surface) !important;
+  background-clip: border-box;
 }
 
 .app-acrylic .app-sidebar-grid > div > div.bg-primary,
