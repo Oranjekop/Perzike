@@ -1,4 +1,4 @@
-import { Button, Card, CardBody, Chip } from '@heroui/react'
+import { Button, Card, CardBody, Chip, Switch } from '@heroui/react'
 import BasePage from '@renderer/components/base/base-page'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import {
@@ -53,7 +53,7 @@ const Proxies: React.FC = () => {
   const { mode = 'rule' } = controledMihomoConfig || {}
   const { groups = [], mutate } = useGroups()
   const { isOpenMap, searchValueMap, setIsOpen, setSearchValue, syncGroups } = useProxiesState()
-  const { appConfig } = useAppConfig()
+  const { appConfig, patchAppConfig } = useAppConfig()
   const {
     proxyDisplayLayout = 'double',
     groupDisplayLayout = 'double',
@@ -63,6 +63,7 @@ const Proxies: React.FC = () => {
     closeMode = 'all',
     proxyCols = 'auto',
     showGlobalByMode = false,
+    showHiddenProxyGroups = false,
     delayTestUrlScope = 'group',
     delayTestConcurrency = 50
   } = appConfig || {}
@@ -641,16 +642,28 @@ const Proxies: React.FC = () => {
       title="代理组"
       contentClassName={!isCardMode ? 'overflow-y-hidden' : undefined}
       header={
-        <Button
-          size="sm"
-          isIconOnly
-          variant="light"
-          className="app-nodrag"
-          title="代理组设置"
-          onPress={() => setIsSettingModalOpen(true)}
-        >
-          <MdTune className="text-lg" />
-        </Button>
+        <>
+          <Switch
+            size="sm"
+            className="app-nodrag mr-1"
+            isSelected={showHiddenProxyGroups}
+            onValueChange={(value) => {
+              void patchAppConfig({ showHiddenProxyGroups: value })
+            }}
+          >
+            显示隐藏代理组
+          </Switch>
+          <Button
+            size="sm"
+            isIconOnly
+            variant="light"
+            className="app-nodrag"
+            title="代理组设置"
+            onPress={() => setIsSettingModalOpen(true)}
+          >
+            <MdTune className="text-lg" />
+          </Button>
+        </>
       }
     >
       {isSettingModalOpen && <ProxySettingModal onClose={() => setIsSettingModalOpen(false)} />}

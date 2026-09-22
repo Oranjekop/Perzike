@@ -34,7 +34,6 @@ const ProxySettingModal: React.FC<Props> = (props) => {
     autoCloseConnection = true,
     closeMode = 'all',
     showGlobalByMode = false,
-    showHiddenProxyGroups = false,
     delayTestUrl,
     delayTestUrlScope = 'group',
     delayTestConcurrency,
@@ -179,15 +178,6 @@ const ProxySettingModal: React.FC<Props> = (props) => {
               isSelected={showGlobalByMode}
               onValueChange={(v) => {
                 patchAppConfig({ showGlobalByMode: v })
-              }}
-            />
-          </SettingItem>
-          <SettingItem title="显示隐藏代理组" divider>
-            <Switch
-              size="sm"
-              isSelected={showHiddenProxyGroups}
-              onValueChange={(v) => {
-                patchAppConfig({ showHiddenProxyGroups: v })
               }}
             />
           </SettingItem>
