@@ -440,10 +440,10 @@ const App: React.FC = () => {
           className="side app-sidebar h-full overflow-y-auto no-scrollbar"
         >
           <div
-            className={`app-drag sticky top-0 z-40 ${disableAnimation ? 'bg-background/95 backdrop-blur-sm' : 'bg-transparent backdrop-blur'} h-12.25`}
+            className={`app-drag sticky top-0 z-40 h-12.25 ${disableAnimation ? 'bg-background/95 backdrop-blur-sm' : 'bg-transparent backdrop-blur'}`}
           >
             <div
-              className={`flex ${platform === 'win32' ? 'justify-between' : 'justify-end gap-2'} p-2 ${!useWindowFrame && platform === 'darwin' ? 'ml-15' : ''}`}
+              className={`flex h-full translate-y-[3px] items-center px-2 ${platform === 'win32' ? 'justify-between' : 'justify-end gap-2'} ${!useWindowFrame && platform === 'darwin' ? 'ml-15' : ''}`}
             >
               {platform === 'win32' && (
                 <div className="app-brand flex ml-1 items-center gap-2">
