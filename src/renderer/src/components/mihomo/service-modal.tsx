@@ -126,6 +126,8 @@ const ServiceModal: React.FC<Props> = (props) => {
         return '运行中'
       case 'stopped':
         return '已停止'
+      case 'paused':
+        return '已暂停'
       case 'not-installed':
         return '未安装'
       case 'need-init':
@@ -191,11 +193,13 @@ const ServiceModal: React.FC<Props> = (props) => {
                           ? 'success'
                           : status === 'stopped'
                             ? 'warning'
-                            : status === 'not-installed'
-                              ? 'danger'
-                              : status === 'need-init'
-                                ? 'warning'
-                                : 'default'
+                            : status === 'paused'
+                              ? 'warning'
+                              : status === 'not-installed'
+                                ? 'danger'
+                                : status === 'need-init'
+                                  ? 'warning'
+                                  : 'default'
                       }
                       variant="flat"
                       size="sm"

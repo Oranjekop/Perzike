@@ -1,4 +1,4 @@
-import { Button, Card, CardBody, Chip, Switch } from '@heroui/react'
+import { Button, Card, CardBody, Chip } from '@heroui/react'
 import BasePage from '@renderer/components/base/base-page'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import {
@@ -17,7 +17,7 @@ import {
 import ProxyItem from '@renderer/components/proxies/proxy-item'
 import ProxySettingModal from '@renderer/components/proxies/proxy-setting-modal'
 import { IoIosArrowBack } from 'react-icons/io'
-import { MdDoubleArrow, MdOutlineSpeed, MdTune } from 'react-icons/md'
+import { MdDoubleArrow, MdOutlineSpeed, MdTune, MdVisibility, MdVisibilityOff } from 'react-icons/md'
 import { useGroups } from '@renderer/hooks/use-groups'
 import { useProxiesState } from '@renderer/hooks/use-proxies-state'
 import CollapseInput from '@renderer/components/base/collapse-input'
@@ -643,16 +643,24 @@ const Proxies: React.FC = () => {
       contentClassName={!isCardMode ? 'overflow-y-hidden' : undefined}
       header={
         <>
-          <Switch
+          <Button
             size="sm"
-            className="app-nodrag mr-1"
-            isSelected={showHiddenProxyGroups}
-            onValueChange={(value) => {
-              void patchAppConfig({ showHiddenProxyGroups: value })
+            isIconOnly
+            variant="light"
+            color={showHiddenProxyGroups ? 'primary' : 'default'}
+            className="app-nodrag"
+            title={showHiddenProxyGroups ? '隐藏已隐藏的代理组' : '显示隐藏代理组'}
+            aria-label={showHiddenProxyGroups ? '隐藏已隐藏的代理组' : '显示隐藏代理组'}
+            onPress={() => {
+              void patchAppConfig({ showHiddenProxyGroups: !showHiddenProxyGroups })
             }}
           >
-            显示隐藏代理组
-          </Switch>
+            {showHiddenProxyGroups ? (
+              <MdVisibility className="text-lg" />
+            ) : (
+              <MdVisibilityOff className="text-lg" />
+            )}
+          </Button>
           <Button
             size="sm"
             isIconOnly

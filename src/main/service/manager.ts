@@ -583,39 +583,44 @@ export async function restartService(): Promise<void> {
 export async function serviceStatus(): Promise<
   'running' | 'stopped' | 'not-installed' | 'paused' | 'unknown' | 'need-init'
 > {
-  const execPath = servicePath()
-
   try {
-    const { stderr } = await execFilePromise(execPath, serviceCommandArgs('status'))
-    if (stderr.includes('the service is not installed')) {
-      return 'not-installed'
+    if (process.platform === 'win32') {
+      const windowsStatus = await getWindowsServiceState()
+      if (windowsStatus !== 'running') {
+        return windowsStatus
+      }
     } else {
+      const { stderr } = await execFilePromise(servicePath(), serviceCommandArgs('status'))
+      if (stderr.includes('the service is not installed')) {
+        return 'not-installed'
+      }
+    }
+
+    try {
+      await ping()
       try {
-        await ping()
-        try {
-          await test()
-          return 'running'
-        } catch (error) {
-          if (
-            error instanceof ServiceAPIError &&
-            error.status !== undefined &&
-            [401, 403, 409, 503].includes(error.status)
-          ) {
-            return 'need-init'
-          }
-          return 'unknown'
-        }
-      } catch (e) {
-        const errorMsg = e instanceof Error ? e.message : String(e)
+        await test()
+        return 'running'
+      } catch (error) {
         if (
-          errorMsg.includes('EACCES') ||
-          errorMsg.includes('permission denied') ||
-          errorMsg.includes('access is denied')
+          error instanceof ServiceAPIError &&
+          error.status !== undefined &&
+          [401, 403, 409, 503].includes(error.status)
         ) {
           return 'need-init'
         }
-        return 'stopped'
+        return 'running'
       }
+    } catch (e) {
+      const errorMsg = e instanceof Error ? e.message : String(e)
+      if (
+        errorMsg.includes('EACCES') ||
+        errorMsg.includes('permission denied') ||
+        errorMsg.includes('access is denied')
+      ) {
+        return 'need-init'
+      }
+      return process.platform === 'win32' ? 'running' : 'stopped'
     }
   } catch (error) {
     return 'unknown'
