@@ -590,9 +590,18 @@ export async function serviceStatus(): Promise<
         return windowsStatus
       }
     } else {
-      const { stderr } = await execFilePromise(servicePath(), serviceCommandArgs('status'))
-      if (stderr.includes('the service is not installed')) {
-        return 'not-installed'
+      try {
+        await execFilePromise(servicePath(), serviceCommandArgs('status'))
+      } catch (error) {
+        const commandError = error as Error & { stdout?: string; stderr?: string }
+        const output = `${commandError.stdout || ''}\n${commandError.stderr || ''}\n${commandError.message}`
+        if (
+          output.includes('"state": "not-installed"') ||
+          output.includes('the service is not installed')
+        ) {
+          return 'not-installed'
+        }
+        throw error
       }
     }
 
