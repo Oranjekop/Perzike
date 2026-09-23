@@ -41,6 +41,9 @@ const calcAutoProxyCols = (): number => {
   }
 }
 
+// Keep trailing space independent of which group is open during height transitions.
+const ProxyListFooter = (): React.JSX.Element => <div className="h-2" />
+
 type ProxyListRow =
   | {
       type: 'group'
@@ -398,9 +401,7 @@ const Proxies: React.FC = () => {
       const isGroupDelaying = group ? (delaying.get(group.name) ?? false) : false
       const groupTypeName = group ? getGroupTypeName(group.type) : ''
       return group ? (
-        <div
-          className={`w-full pt-2 ${index === groupCounts.length - 1 && !isGroupOpen ? 'pb-2' : ''} px-2`}
-        >
+        <div className="w-full pt-2 px-2">
           <Card
             as="div"
             isPressable
@@ -514,44 +515,46 @@ const Proxies: React.FC = () => {
       const { groupIndex, rowIndex } = row
       return allProxies[groupIndex] ? (
         <motion.div
-          className="proxy-expansion-row overflow-hidden"
+          className="proxy-expansion-row grid min-h-px overflow-hidden"
           initial={
             animateGroups && openingGroups.has(visibleGroups[groupIndex].name)
-              ? { height: 1, opacity: 0 }
+              ? { gridTemplateRows: '0fr', opacity: 0 }
               : false
           }
           animate={{
-            height: closingGroups.has(visibleGroups[groupIndex].name) ? 1 : 'auto',
+            gridTemplateRows: closingGroups.has(visibleGroups[groupIndex].name) ? '0fr' : '1fr',
             opacity: closingGroups.has(visibleGroups[groupIndex].name) ? 0 : 1
           }}
           transition={{ duration: animateGroups ? 0.2 : 0, ease: 'easeOut' }}
           inert={closingGroups.has(visibleGroups[groupIndex].name)}
         >
-          <div
-            style={
-              proxyCols !== 'auto'
-                ? { gridTemplateColumns: `repeat(${proxyCols}, minmax(0, 1fr))` }
-                : {}
-            }
-            className={`grid ${proxyCols === 'auto' ? 'sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' : ''} ${groupIndex === groupCounts.length - 1 && rowIndex === groupCounts[groupIndex] - 1 ? 'pb-2' : ''} gap-2 pt-2 mx-2`}
-          >
-            {Array.from({ length: cols }).map((_, columnIndex) => {
-              const proxy = allProxies[groupIndex][rowIndex * cols + columnIndex]
-              if (!proxy) return null
-              const isSelected = proxy.name === visibleGroups[groupIndex].now
-              return (
-                <ProxyItem
-                  key={proxy.name}
-                  mutateProxies={mutate}
-                  onProxyDelay={onProxyDelay}
-                  onSelect={onChangeProxy}
-                  proxy={proxy}
-                  group={visibleGroups[groupIndex]}
-                  proxyDisplayLayout={proxyDisplayLayout}
-                  selected={isSelected}
-                />
-              )
-            })}
+          <div className="min-h-0 overflow-hidden">
+            <div
+              style={
+                proxyCols !== 'auto'
+                  ? { gridTemplateColumns: `repeat(${proxyCols}, minmax(0, 1fr))` }
+                  : {}
+              }
+              className={`grid ${proxyCols === 'auto' ? 'sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' : ''} gap-2 pt-2 mx-2`}
+            >
+              {Array.from({ length: cols }).map((_, columnIndex) => {
+                const proxy = allProxies[groupIndex][rowIndex * cols + columnIndex]
+                if (!proxy) return null
+                const isSelected = proxy.name === visibleGroups[groupIndex].now
+                return (
+                  <ProxyItem
+                    key={proxy.name}
+                    mutateProxies={mutate}
+                    onProxyDelay={onProxyDelay}
+                    onSelect={onChangeProxy}
+                    proxy={proxy}
+                    group={visibleGroups[groupIndex]}
+                    proxyDisplayLayout={proxyDisplayLayout}
+                    selected={isSelected}
+                  />
+                )
+              })}
+            </div>
           </div>
         </motion.div>
       ) : (
@@ -767,6 +770,10 @@ const Proxies: React.FC = () => {
         <div className="h-full min-h-0">
           <Virtuoso
             ref={virtuosoRef}
+            components={{ Footer: ProxyListFooter }}
+            skipAnimationFrameInResizeObserver
+            style={{ overflowAnchor: 'none' }}
+            increaseViewportBy={{ top: 300, bottom: 300 }}
             data={rows}
             computeItemKey={(_, row) =>
               row.type === 'group'

@@ -74,15 +74,22 @@ export function useSmoothWheel(root: RefObject<HTMLElement | null>, disabled: bo
           /(auto|scroll)/.test(style.overflowY) &&
           element.scrollHeight > element.clientHeight + 1
         ) {
-          const delta =
+          const rawDelta =
             event.deltaY *
             (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? element.clientHeight : 1)
-          const start = element === scroller ? target : element.scrollTop
+          // A notch is a short step, even when Windows reports a large wheel delta.
+          const delta = Math.sign(rawDelta) * Math.min(Math.abs(rawDelta) * 0.4, 64)
+          const continuing =
+            element === scroller && Math.sign(target - element.scrollTop) === Math.sign(delta)
+          const start = continuing ? target : element.scrollTop
           const next = Math.max(
             0,
-            Math.min(element.scrollHeight - element.clientHeight, start + delta)
+            Math.min(
+              element.scrollHeight - element.clientHeight,
+              Math.max(element.scrollTop - 160, Math.min(element.scrollTop + 160, start + delta))
+            )
           )
-          if (next !== start) {
+          if (next !== element.scrollTop) {
             event.preventDefault()
             if (scroller !== element) cancel()
             scroller = element
