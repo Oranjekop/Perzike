@@ -596,7 +596,7 @@ export async function serviceStatus(): Promise<
         const commandError = error as Error & { stdout?: string; stderr?: string }
         const output = `${commandError.stdout || ''}\n${commandError.stderr || ''}\n${commandError.message}`
         if (
-          output.includes('"state": "not-installed"') ||
+          /"state"\s*:\s*"not-installed"/.test(output) ||
           output.includes('the service is not installed')
         ) {
           return 'not-installed'
