@@ -1,4 +1,4 @@
-import { Button, Select, SelectItem, Switch, Tab, Tabs } from '@heroui/react'
+import { Button, Select, SelectItem, Switch, Tab, Tabs } from '@renderer/components/ui'
 import BasePage from '@renderer/components/base/base-page'
 import SettingCard from '@renderer/components/base/base-setting-card'
 import SettingItem from '@renderer/components/base/base-setting-item'
@@ -164,7 +164,7 @@ const Mihomo: React.FC = () => {
           divider
         >
           <Select
-            classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}
+            classNames={{ trigger: 'data-[hovered=true]:bg-default-200' }}
             className="w-37.5"
             size="sm"
             selectedKeys={new Set([core])}
@@ -177,7 +177,7 @@ const Mihomo: React.FC = () => {
         </SettingItem>
         <SettingItem title="内核进程优先级" divider>
           <Select
-            classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}
+            classNames={{ trigger: 'data-[hovered=true]:bg-default-200' }}
             className="w-37.5"
             size="sm"
             selectedKeys={new Set([mihomoCpuPriority])}

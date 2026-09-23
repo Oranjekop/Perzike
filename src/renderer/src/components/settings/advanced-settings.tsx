@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import SettingCard from '../base/base-setting-card'
 import SettingItem from '../base/base-setting-item'
-import { Button, Input, Select, SelectItem, Switch, Tab, Tabs, Tooltip } from '@heroui/react'
+import { Button, Input, Select, SelectItem, Switch, Tab, Tabs, Tooltip } from '@renderer/components/ui'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import {
   copyEnv,
@@ -118,7 +118,7 @@ const AdvancedSettings: React.FC = () => {
         divider
       >
         <Select
-          classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}
+          classNames={{ trigger: 'data-[hovered=true]:bg-default-200' }}
           className="w-37.5"
           size="sm"
           selectionMode="multiple"

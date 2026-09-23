@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Button, Input, Select, SelectItem, Switch, Tooltip } from '@heroui/react'
+import { Button, Input, Select, SelectItem, Switch, Tooltip } from '@renderer/components/ui'
 import { IoIosHelpCircle } from 'react-icons/io'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
@@ -165,7 +165,7 @@ const LogSetting: React.FC = () => {
       </SettingItem>
       <SettingItem title="日志等级">
         <Select
-          classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}
+          classNames={{ trigger: 'data-[hovered=true]:bg-default-200' }}
           className="w-25"
           size="sm"
           selectedKeys={new Set([logLevel])}

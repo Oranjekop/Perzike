@@ -1,5 +1,5 @@
 import React from 'react'
-import { cn, Switch, SwitchProps } from '@heroui/react'
+import { cn, Switch, SwitchProps } from '@renderer/components/ui'
 import './border-switch.css'
 
 interface SiderSwitchProps extends SwitchProps {
@@ -17,7 +17,6 @@ const BorderSwitch: React.FC<SiderSwitchProps> = (props) => {
           'border-transparent': !isShowBorder,
           'border-primary-foreground': isShowBorder
         }),
-        thumb: cn('absolute z-4', 'transform -translate-x-[2px]'),
         ...classNames
       }}
       size="sm"

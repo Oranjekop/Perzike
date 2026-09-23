@@ -2,7 +2,6 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { HashRouter } from 'react-router-dom'
 import { ThemeProvider as NextThemesProvider } from 'next-themes'
-import { HeroUIProvider } from '@heroui/react'
 import { init, platform } from '@renderer/utils/init'
 import '@renderer/assets/main.css'
 import App from '@renderer/App'
@@ -48,29 +47,27 @@ init().then(() => {
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <HeroUIProvider>
-      <NextThemesProvider attribute="class" enableSystem defaultTheme="dark">
-        <AppNotificationProvider />
-        <BaseErrorBoundary>
-          <HashRouter>
-            <AppConfigProvider>
-              <ControledMihomoConfigProvider>
-                <ProfileConfigProvider>
-                  <OverrideConfigProvider>
-                    <GroupsProvider>
-                      <ProxiesStateProvider>
-                        <RulesProvider>
-                          <App />
-                        </RulesProvider>
-                      </ProxiesStateProvider>
-                    </GroupsProvider>
-                  </OverrideConfigProvider>
-                </ProfileConfigProvider>
-              </ControledMihomoConfigProvider>
-            </AppConfigProvider>
-          </HashRouter>
-        </BaseErrorBoundary>
-      </NextThemesProvider>
-    </HeroUIProvider>
+    <NextThemesProvider attribute="class" enableSystem defaultTheme="dark">
+      <AppNotificationProvider />
+      <BaseErrorBoundary>
+        <HashRouter>
+          <AppConfigProvider>
+            <ControledMihomoConfigProvider>
+              <ProfileConfigProvider>
+                <OverrideConfigProvider>
+                  <GroupsProvider>
+                    <ProxiesStateProvider>
+                      <RulesProvider>
+                        <App />
+                      </RulesProvider>
+                    </ProxiesStateProvider>
+                  </GroupsProvider>
+                </OverrideConfigProvider>
+              </ProfileConfigProvider>
+            </ControledMihomoConfigProvider>
+          </AppConfigProvider>
+        </HashRouter>
+      </BaseErrorBoundary>
+    </NextThemesProvider>
   </React.StrictMode>
 )

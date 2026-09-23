@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { Button, ScrollShadow, Chip, Accordion, AccordionItem } from '@heroui/react'
+import { Button, ScrollShadow, Chip, Accordion, AccordionItem } from '@renderer/components/ui'
 import { IoRefresh, IoClose, IoCheckmarkCircle } from 'react-icons/io5'
 import { useGroups } from './hooks/use-groups'
 import { mihomoChangeProxy, mihomoGroupDelay, mihomoCloseConnections } from './utils/ipc'
@@ -160,7 +160,7 @@ const TrayMenuApp: React.FC = () => {
             itemClasses={{
               base: 'py-0',
               title: 'text-sm font-medium',
-              trigger: 'py-2 data-[hover=true]:bg-default-100 rounded-lg px-2',
+              trigger: 'py-2 data-[hovered=true]:bg-default-100 rounded-lg px-2',
               content: 'pt-0 pb-2'
             }}
           >
@@ -169,36 +169,34 @@ const TrayMenuApp: React.FC = () => {
                 key={group.name}
                 aria-label={group.name}
                 title={
-                  <div className="flex items-center justify-between w-full pr-2">
-                    <div className="flex items-center gap-2">
-                      <span>{group.name}</span>
-                      <Chip size="sm" variant="flat" className="text-[10px] h-4">
-                        {group.type}
-                      </Chip>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="light"
-                        isIconOnly
-                        isLoading={testingGroup === group.name}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleTestDelay(group.name, group.testUrl)
-                        }}
-                        className="min-w-5 w-5 h-5"
-                      >
-                        <IoRefresh className="text-xs" />
-                      </Button>
-                      <Chip
-                        size="sm"
-                        color={getDelayColor(getCurrentDelay(group))}
-                        variant="flat"
-                        className="text-[10px] h-5 min-w-13"
-                      >
-                        {formatDelay(getCurrentDelay(group))}
-                      </Chip>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <span>{group.name}</span>
+                    <Chip size="sm" variant="flat" className="text-[10px] h-4">
+                      {group.type}
+                    </Chip>
+                  </div>
+                }
+                actions={
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="light"
+                      isIconOnly
+                      isLoading={testingGroup === group.name}
+                      aria-label={`测试 ${group.name} 延迟`}
+                      onPress={() => handleTestDelay(group.name, group.testUrl)}
+                      className="min-w-5 w-5 h-5"
+                    >
+                      <IoRefresh className="text-xs" />
+                    </Button>
+                    <Chip
+                      size="sm"
+                      color={getDelayColor(getCurrentDelay(group))}
+                      variant="flat"
+                      className="text-[10px] h-5 min-w-13"
+                    >
+                      {formatDelay(getCurrentDelay(group))}
+                    </Chip>
                   </div>
                 }
               >

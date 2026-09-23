@@ -1,4 +1,4 @@
-import { Card, CardBody, CardHeader } from '@heroui/react'
+import { Card, CardBody, CardHeader } from '@renderer/components/ui'
 import React from 'react'
 
 const colorMap = {

@@ -1,4 +1,4 @@
-import { Button, Card, CardBody } from '@heroui/react'
+import { Button, Card, CardBody } from '@renderer/components/ui'
 import { mihomoUnfixedProxy } from '@renderer/utils/ipc'
 import React, { useMemo, useState } from 'react'
 import { FaMapPin } from 'react-icons/fa6'
@@ -99,7 +99,7 @@ const ProxyItem: React.FC<Props> = (props) => {
                   color={delayColor(delay)}
                   onPress={onDelay}
                   variant="light"
-                  className={`${selected ? 'text-primary-foreground data-[hover=true]:bg-white/20 hover:bg-white/20' : ''} h-8 w-8 min-w-8 p-0 text-xs`}
+                  className={`${selected ? 'text-primary-foreground data-[hovered=true]:bg-white/20 hover:bg-white/20' : ''} h-8 w-8 min-w-8 p-0 text-xs`}
                 >
                   {delayText(delay)}
                 </Button>
@@ -146,7 +146,7 @@ const ProxyItem: React.FC<Props> = (props) => {
                     color={delayColor(delay)}
                     onPress={onDelay}
                     variant="light"
-                    className={`${selected ? 'text-primary-foreground data-[hover=true]:bg-white/20 hover:bg-white/20' : ''} h-full w-8 min-w-8 p-0 text-sm`}
+                    className={`${selected ? 'text-primary-foreground data-[hovered=true]:bg-white/20 hover:bg-white/20' : ''} h-full w-8 min-w-8 p-0 text-sm`}
                   >
                     {delayText(delay)}
                   </Button>

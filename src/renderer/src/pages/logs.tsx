@@ -3,7 +3,7 @@ import LogItem from '@renderer/components/logs/log-item'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
 import { startTransition, useEffect, useMemo, useRef, useState } from 'react'
-import { Button, Divider, Input, Select, SelectItem } from '@heroui/react'
+import { Button, Divider, Input, Select, SelectItem } from '@renderer/components/ui'
 import { Virtuoso } from 'react-virtuoso'
 import { IoLocationSharp } from 'react-icons/io5'
 import { CgTrash } from 'react-icons/cg'
@@ -150,7 +150,7 @@ const Logs: React.FC = () => {
             <Select
               aria-label="日志等级过滤"
               className="w-24 shrink-0"
-              classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}
+              classNames={{ trigger: 'data-[hovered=true]:bg-default-200' }}
               size="sm"
               selectedKeys={new Set([activeLogLevelFilter])}
               disallowEmptySelection

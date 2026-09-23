@@ -1,5 +1,5 @@
-import { Button, Card, CardBody, Chip } from '@heroui/react'
-import { Avatar } from '@heroui-v3/react'
+import { Button, Card, CardBody, Chip } from '@renderer/components/ui'
+import { Avatar } from '@heroui/react'
 import { calcTraffic } from '@renderer/utils/calc'
 import React, { memo, useMemo } from 'react'
 import { CgClose, CgTrash } from 'react-icons/cg'

@@ -1,4 +1,4 @@
-import { Button, Card, CardBody, CardFooter, Tooltip } from '@heroui/react'
+import { Button, Card, CardBody, CardFooter, Tooltip } from '@renderer/components/ui'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import React from 'react'
 import { IoStatsChartOutline } from 'react-icons/io5'

@@ -12,7 +12,7 @@ import {
   ModalHeader,
   Spinner,
   Pagination
-} from '@heroui/react'
+} from '@renderer/components/ui'
 import BasePage from '@renderer/components/base/base-page'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { calcTraffic } from '@renderer/utils/calc'

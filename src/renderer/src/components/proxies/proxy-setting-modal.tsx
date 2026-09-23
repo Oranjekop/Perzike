@@ -11,7 +11,7 @@ import {
   SelectItem,
   Tab,
   Tabs
-} from '@heroui/react'
+} from '@renderer/components/ui'
 import React, { useState, useEffect, useRef } from 'react'
 import SettingItem from '../base/base-setting-item'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
@@ -82,7 +82,7 @@ const ProxySettingModal: React.FC<Props> = (props) => {
           </SettingItem>
           <SettingItem title="代理节点展示列数" divider>
             <Select
-              classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}
+              classNames={{ trigger: 'data-[hovered=true]:bg-default-200' }}
               className="w-37.5"
               size="sm"
               selectedKeys={new Set([proxyCols])}

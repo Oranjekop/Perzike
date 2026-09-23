@@ -1,4 +1,4 @@
-import { Button, Label, Modal, Separator, Switch } from '@heroui-v3/react'
+import { Button, Label, Modal, Separator, Switch } from '@heroui/react'
 import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { BaseEditor } from '../base/base-editor-lazy'
 import {
@@ -175,10 +175,10 @@ const ConfigViewer: React.FC<Props> = ({ onClose }) => {
                 >
                   <Switch.Content>
                     <Label>显示覆写后文本</Label>
+                    <Switch.Control>
+                      <Switch.Thumb />
+                    </Switch.Control>
                   </Switch.Content>
-                  <Switch.Control>
-                    <Switch.Thumb />
-                  </Switch.Control>
                 </Switch>
               </div>
               <Button

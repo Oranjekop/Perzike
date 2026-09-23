@@ -1,5 +1,5 @@
 import React from 'react'
-import { Accordion, AccordionItem, Card, CardBody } from '@heroui/react'
+import { Accordion, AccordionItem, Card, CardBody } from '@renderer/components/ui'
 
 interface Props {
   title?: string
@@ -20,7 +20,7 @@ const SettingCard: React.FC<Props> = (props) => {
       {...props}
     >
       <AccordionItem
-        className="data-[open=true]:pb-2"
+        className="data-[expanded=true]:pb-2"
         keepContentMounted
         title={props.title}
         indicator={({ isOpen }) => (

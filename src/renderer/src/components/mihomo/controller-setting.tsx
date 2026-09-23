@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import SettingCard from '../base/base-setting-card'
 import SettingItem from '../base/base-setting-item'
-import { Button, Input, Select, SelectItem, Switch, Tooltip } from '@heroui/react'
+import { Button, Input, Select, SelectItem, Switch, Tooltip } from '@renderer/components/ui'
 import { mihomoUpgradeUI, restartCore } from '@renderer/utils/ipc'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
 import EditableList from '../base/base-list-editor'
@@ -239,7 +239,7 @@ const ControllerSetting: React.FC = () => {
                   </Button>
                 )}
                 <Select
-                  classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}
+                  classNames={{ trigger: 'data-[hovered=true]:bg-default-200' }}
                   className="w-37.5"
                   size="sm"
                   selectedKeys={new Set([externalUiUrlInput])}
