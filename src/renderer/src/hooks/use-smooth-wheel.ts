@@ -10,6 +10,7 @@ export function useSmoothWheel(root: RefObject<HTMLElement | null>, disabled: bo
     let scroller: HTMLElement | null = null
     let target = 0
     let lastTime = 0
+    let lastWritten = 0
     const cancel = (): void => {
       cancelAnimationFrame(frame)
       frame = 0
@@ -36,6 +37,7 @@ export function useSmoothWheel(root: RefObject<HTMLElement | null>, disabled: bo
                 ),
         behavior: 'instant'
       })
+      lastWritten = scroller.scrollTop
       if (Math.abs(distance) < 0.75) {
         cancel()
         return
@@ -54,8 +56,10 @@ export function useSmoothWheel(root: RefObject<HTMLElement | null>, disabled: bo
       if (
         !(event.target instanceof Element) ||
         event.target.closest('textarea, input, select, .monaco-editor')
-      )
+      ) {
+        cancel()
         return
+      }
       // Pixel-precision trackpads already have smooth momentum from the OS.
       if (
         event.deltaMode === 0 &&
@@ -94,6 +98,7 @@ export function useSmoothWheel(root: RefObject<HTMLElement | null>, disabled: bo
             if (scroller !== element) cancel()
             scroller = element
             target = next
+            lastWritten = element.scrollTop
             if (!frame) {
               lastTime = performance.now()
               frame = requestAnimationFrame(step)
@@ -104,12 +109,18 @@ export function useSmoothWheel(root: RefObject<HTMLElement | null>, disabled: bo
         element = element.parentElement
       }
     }
+    const onScroll = (event: Event): void => {
+      if (scroller && event.target === scroller && Math.abs(scroller.scrollTop - lastWritten) > 1)
+        cancel()
+    }
     host.addEventListener('wheel', wheel, { passive: false })
+    host.addEventListener('scroll', onScroll, true)
     host.addEventListener('pointerdown', cancel, true)
     host.addEventListener('keydown', cancel, true)
     return () => {
       cancel()
       host.removeEventListener('wheel', wheel)
+      host.removeEventListener('scroll', onScroll, true)
       host.removeEventListener('pointerdown', cancel, true)
       host.removeEventListener('keydown', cancel, true)
     }
