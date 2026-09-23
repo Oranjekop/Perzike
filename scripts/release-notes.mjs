@@ -138,6 +138,10 @@ if (/^\+\s*<Tab key="mips"/m.test(tunStackDiff)) {
 
 const rules = [
   {
+    message: '修复退出和重启应用时可能卡住的问题，为内核停止及退出清理增加超时处理',
+    patterns: [/^src\/main\/utils\/shutdown\.ts$/]
+  },
+  {
     message: '修复左侧卡片拖动越过标题栏的问题，并保持卡片排序稳定',
     patterns: [/^src\/renderer\/src\/components\/sider\/restrict-card-drag\.ts$/]
   },

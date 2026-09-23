@@ -1,15 +1,7 @@
 import { electronApp, optimizer, is } from './utils/electron-utils'
 import { registerIpcMainHandlers } from './utils/ipc'
 import windowStateKeeper from 'electron-window-state'
-import {
-  app,
-  shell,
-  BrowserWindow,
-  Menu,
-  powerMonitor,
-  ipcMain,
-  nativeTheme
-} from 'electron'
+import { app, shell, BrowserWindow, Menu, powerMonitor, ipcMain, nativeTheme } from 'electron'
 import { addOverrideItem, addProfileItem, getAppConfig, patchControledMihomoConfig } from './config'
 import { quitWithoutCore, startCore, stopCore } from './core/manager'
 import { disableSysProxySync, triggerSysProxy } from './sys/sysproxy'
@@ -34,6 +26,7 @@ import { getAppConfigSync } from './config/app'
 import { getUserAgent } from './utils/userAgent'
 import { showNotification } from './utils/notification'
 import { flushTrafficStats } from './resolve/trafficStats'
+import { cleanupForExit } from './utils/shutdown'
 
 let quitTimeout: NodeJS.Timeout | null = null
 export let mainWindow: BrowserWindow | null = null
@@ -260,60 +253,54 @@ app.on('window-all-closed', () => {
   // Don't quit app when all windows are closed
 })
 
-app.on('before-quit', async (e) => {
-  if (!isQuitting && !notQuitDialog) {
-    e.preventDefault()
-
-    const now = Date.now()
-    if (now - lastQuitAttempt < 500) {
-      isQuitting = true
-      if (quitTimeout) {
-        clearTimeout(quitTimeout)
-        quitTimeout = null
-      }
-      await flushTrafficStats()
-      await triggerSysProxy(false, false)
-      await stopCore()
-      exitApp()
-      return
-    }
-    lastQuitAttempt = now
-
-    const confirmed = await showQuitConfirmDialog()
-
-    if (confirmed) {
-      isQuitting = true
-      if (quitTimeout) {
-        clearTimeout(quitTimeout)
-        quitTimeout = null
-      }
-      await flushTrafficStats()
-      await triggerSysProxy(false, false)
-      await stopCore()
-      exitApp()
-    }
-  } else if (notQuitDialog) {
-    isQuitting = true
-    if (quitTimeout) {
-      clearTimeout(quitTimeout)
-      quitTimeout = null
-    }
-    await flushTrafficStats()
-    await triggerSysProxy(false, false)
-    await stopCore()
-    exitApp()
-  }
-})
-
-powerMonitor.on('shutdown', async () => {
+async function quitApplication(useRegistry = false): Promise<void> {
+  if (isQuitting) return
+  isQuitting = true
   if (quitTimeout) {
     clearTimeout(quitTimeout)
     quitTimeout = null
   }
-  await flushTrafficStats()
-  await triggerSysProxy(false, false, true)
-  await stopCore()
-  exitApp()
+  try {
+    await cleanupForExit(
+      [
+        { name: 'traffic stats', timeoutMs: 2000, run: flushTrafficStats },
+        {
+          name: 'system proxy',
+          timeoutMs: 5000,
+          run: () => triggerSysProxy(false, false, useRegistry)
+        },
+        { name: 'core', timeoutMs: 12000, run: () => stopCore() }
+      ],
+      (name, error) => console.error('[Shutdown] ' + name, error)
+    )
+  } finally {
+    exitApp()
+  }
+}
+
+let quitConfirmPending = false
+app.on('before-quit', async (e) => {
+  // Keep windows alive until cleanup completes; repeated requests share this shutdown.
+  e.preventDefault()
+  if (isQuitting) return
+
+  const now = Date.now()
+  if (notQuitDialog || now - lastQuitAttempt < 500) {
+    await quitApplication()
+    return
+  }
+  if (quitConfirmPending) return
+  lastQuitAttempt = now
+  quitConfirmPending = true
+  try {
+    if (await showQuitConfirmDialog()) await quitApplication()
+  } finally {
+    quitConfirmPending = false
+  }
+})
+
+powerMonitor.on('shutdown', () => {
+  void quitApplication(true)
 })
 
 app.on('will-quit', () => {

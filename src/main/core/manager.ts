@@ -655,7 +655,7 @@ export async function stopCore(force = false): Promise<void> {
     }
   }
 
-  if (child && !child.killed) {
+  if (child) {
     await stopChildProcess(child)
     child = undefined as unknown as ChildProcess
   }

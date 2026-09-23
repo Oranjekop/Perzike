@@ -3,7 +3,7 @@ import { appendAppLog } from '../utils/log'
 
 export async function stopChildProcess(process: ChildProcess): Promise<void> {
   return new Promise<void>((resolve) => {
-    if (!process || process.killed) {
+    if (!process || process.exitCode !== null || process.signalCode !== null) {
       resolve()
       return
     }
@@ -24,6 +24,8 @@ export async function stopChildProcess(process: ChildProcess): Promise<void> {
         isResolved = true
 
         timers.forEach((timer) => clearTimeout(timer))
+        process.off('close', resolveOnce)
+        process.off('exit', resolveOnce)
         resolve()
       }
     }
@@ -35,7 +37,7 @@ export async function stopChildProcess(process: ChildProcess): Promise<void> {
       process.kill('SIGINT')
 
       const timer1 = setTimeout(async () => {
-        if (!process.killed && !isResolved) {
+        if (!isResolved) {
           try {
             if (pid) {
               globalThis.process.kill(pid, 0)
@@ -49,12 +51,14 @@ export async function stopChildProcess(process: ChildProcess): Promise<void> {
       timers.push(timer1)
 
       const timer2 = setTimeout(async () => {
-        if (!process.killed && !isResolved) {
+        if (!isResolved) {
           try {
             if (pid) {
               globalThis.process.kill(pid, 0)
               process.kill('SIGKILL')
-              await appendAppLog(`[Manager]: Force killed process ${pid} with SIGKILL\n`)
+              void appendAppLog(`[Manager]: Force killed process ${pid} with SIGKILL\n`).catch(
+                () => {}
+              )
             }
           } catch {
             // ignore
