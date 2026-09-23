@@ -33,7 +33,7 @@ export function useSmoothWheel(root: RefObject<HTMLElement | null>, disabled: bo
               Math.sign(distance) *
                 Math.min(
                   Math.abs(distance),
-                  Math.max(1, Math.abs(distance) * (1 - Math.exp(-dt / 65)))
+                  Math.max(1, Math.abs(distance) * (1 - Math.exp(-dt / 35)))
                 ),
         behavior: 'instant'
       })
@@ -98,6 +98,8 @@ export function useSmoothWheel(root: RefObject<HTMLElement | null>, disabled: bo
             if (scroller !== element) cancel()
             scroller = element
             target = next
+            // Respond in the same wheel event; animate only the short remaining distance.
+            element.scrollTop += (target - element.scrollTop) * 0.65
             lastWritten = element.scrollTop
             if (!frame) {
               lastTime = performance.now()

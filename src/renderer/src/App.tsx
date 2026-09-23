@@ -2,6 +2,7 @@ import { useTheme } from 'next-themes'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavigateFunction, useLocation, useNavigate, useRoutes } from 'react-router-dom'
 import OutboundModeSwitcher from '@renderer/components/sider/outbound-mode-switcher'
+import { restrictCardDrag } from '@renderer/components/sider/restrict-card-drag'
 import SysproxySwitcher from '@renderer/components/sider/sysproxy-switcher'
 import TunSwitcher from '@renderer/components/sider/tun-switcher'
 import { Button, Divider } from '@renderer/components/ui'
@@ -473,7 +474,12 @@ const App: React.FC = () => {
             <OutboundModeSwitcher />
           </div>
           <div style={{ overflowX: 'clip' }}>
-            <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={onDragEnd}>
+            <DndContext
+              sensors={sensors}
+              modifiers={[restrictCardDrag]}
+              collisionDetection={closestCorners}
+              onDragEnd={onDragEnd}
+            >
               <div
                 className="app-sidebar-grid grid grid-cols-2 gap-2 m-2"
                 onClickCapture={onSiderClickCapture}

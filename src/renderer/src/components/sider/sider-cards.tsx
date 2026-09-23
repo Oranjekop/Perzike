@@ -4,6 +4,7 @@ import { SortableContext } from '@dnd-kit/sortable'
 import { useNavigate } from 'react-router-dom'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { useCardDndSensors } from '@renderer/hooks/use-card-dnd-sensors'
+import { restrictCardDrag } from './restrict-card-drag'
 import { markInitialContentPartReady } from '@renderer/utils/startup'
 import ConnCard from './conn-card'
 import DNSCard from './dns-card'
@@ -161,6 +162,7 @@ export default function SiderCards({ iconOnly = false }: Props): React.JSX.Eleme
     <div style={{ overflowX: 'clip' }}>
       <DndContext
         sensors={sensors}
+        modifiers={[restrictCardDrag]}
         collisionDetection={closestCorners}
         onDragStart={() => {
           suppressClickRef.current = true

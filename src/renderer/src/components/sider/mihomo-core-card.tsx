@@ -80,6 +80,7 @@ const MihomoCoreCard: React.FC<Props> = (props) => {
 
   return (
     <div
+      ref={setNodeRef}
       style={{
         position: 'relative',
         transform: CSS.Transform.toString(transform),
@@ -91,18 +92,12 @@ const MihomoCoreCard: React.FC<Props> = (props) => {
       {mihomoCoreCardStatus === 'col-span-2' ? (
         <Card
           fullWidth
-          ref={setNodeRef}
           {...attributes}
           {...listeners}
           className={`${match ? 'bg-primary' : 'hover:bg-content2'} transition-colors ${isDragging ? `${disableAnimation ? '' : 'scale-[0.95]'} tap-highlight-transparent` : ''}`}
         >
           <CardBody>
-            <div
-              ref={setNodeRef}
-              {...attributes}
-              {...listeners}
-              className="flex justify-between h-8"
-            >
+            <div {...attributes} {...listeners} className="flex justify-between h-8">
               <h3
                 className={`text-md font-bold leading-8 ${match ? 'text-primary-foreground' : 'text-foreground'} `}
               >
@@ -146,7 +141,6 @@ const MihomoCoreCard: React.FC<Props> = (props) => {
       ) : (
         <Card
           fullWidth
-          ref={setNodeRef}
           {...attributes}
           {...listeners}
           className={`${match ? 'bg-primary' : 'hover:bg-content2'} transition-colors ${isDragging ? `${disableAnimation ? '' : 'scale-[0.95]'} tap-highlight-transparent` : ''}`}

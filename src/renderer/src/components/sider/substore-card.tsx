@@ -55,6 +55,7 @@ const SubStoreCard: React.FC<Props> = (props) => {
 
   return (
     <div
+      ref={setNodeRef}
       style={{
         position: 'relative',
         transform: CSS.Transform.toString(transform),
@@ -64,7 +65,6 @@ const SubStoreCard: React.FC<Props> = (props) => {
       className={`${substoreCardStatus} ${!useSubStore ? 'hidden' : ''} substore-card`}
     >
       <Card
-        ref={setNodeRef}
         {...attributes}
         {...listeners}
         fullWidth

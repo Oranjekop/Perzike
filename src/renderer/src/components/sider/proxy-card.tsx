@@ -16,8 +16,11 @@ const ProxyCard: React.FC<Props> = (props) => {
   const { appConfig } = useAppConfig()
   const { controledMihomoConfig } = useControledMihomoConfig()
   const { iconOnly } = props
-  const { proxyCardStatus = 'col-span-2', disableAnimation = false, showGlobalByMode = false } =
-    appConfig || {}
+  const {
+    proxyCardStatus = 'col-span-2',
+    disableAnimation = false,
+    showGlobalByMode = false
+  } = appConfig || {}
   const { mode = 'rule' } = controledMihomoConfig || {}
   const location = useLocation()
   const navigate = useNavigate()
@@ -62,6 +65,7 @@ const ProxyCard: React.FC<Props> = (props) => {
   }
   return (
     <div
+      ref={setNodeRef}
       style={{
         position: 'relative',
         transform: CSS.Transform.toString(transform),
@@ -72,7 +76,6 @@ const ProxyCard: React.FC<Props> = (props) => {
     >
       <Card
         fullWidth
-        ref={setNodeRef}
         {...attributes}
         {...listeners}
         className={`${match ? 'bg-primary' : 'hover:bg-content2'} transition-colors ${isDragging ? `${disableAnimation ? '' : 'scale-[0.95]'} tap-highlight-transparent` : ''}`}

@@ -138,6 +138,14 @@ if (/^\+\s*<Tab key="mips"/m.test(tunStackDiff)) {
 
 const rules = [
   {
+    message: '修复左侧卡片拖动越过标题栏的问题，并保持卡片排序稳定',
+    patterns: [/^src\/renderer\/src\/components\/sider\/restrict-card-drag\.ts$/]
+  },
+  {
+    message: '提高页面滚轮响应速度，同时保持短距离平滑滚动',
+    patterns: [/^src\/renderer\/src\/hooks\/use-smooth-wheel\.ts$/]
+  },
+  {
     message: '调整 GitHub Actions 发布流程，自动生成并使用中文发布日志',
     patterns: [/^\.github\/workflows\//]
   },

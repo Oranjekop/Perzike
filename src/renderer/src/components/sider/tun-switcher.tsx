@@ -67,6 +67,7 @@ const TunSwitcher: React.FC<Props> = (props) => {
 
   return (
     <div
+      ref={setNodeRef}
       style={{
         position: 'relative',
         transform: CSS.Transform.toString(transform),
@@ -77,7 +78,6 @@ const TunSwitcher: React.FC<Props> = (props) => {
     >
       <Card
         fullWidth
-        ref={setNodeRef}
         {...attributes}
         {...listeners}
         className={`${match ? 'bg-primary' : 'hover:bg-content2'} transition-colors ${isDragging ? `${disableAnimation ? '' : 'scale-[0.95]'} tap-highlight-transparent` : ''}`}

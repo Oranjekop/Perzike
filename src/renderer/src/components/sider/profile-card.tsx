@@ -1,4 +1,12 @@
-import { Button, Card, CardBody, CardFooter, Chip, Progress, Tooltip } from '@renderer/components/ui'
+import {
+  Button,
+  Card,
+  CardBody,
+  CardFooter,
+  Chip,
+  Progress,
+  Tooltip
+} from '@renderer/components/ui'
 import { useProfileConfig } from '@renderer/hooks/use-profile-config'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { calcTraffic, calcPercent } from '@renderer/utils/calc'
@@ -79,6 +87,7 @@ const ProfileCard: React.FC<Props> = (props) => {
 
   return (
     <div
+      ref={setNodeRef}
       style={{
         position: 'relative',
         transform: CSS.Transform.toString(transform),
@@ -91,18 +100,12 @@ const ProfileCard: React.FC<Props> = (props) => {
       {profileCardStatus === 'col-span-2' ? (
         <Card
           fullWidth
-          ref={setNodeRef}
           {...attributes}
           {...listeners}
           className={`${match ? 'bg-primary' : 'hover:bg-content2'} transition-colors ${isDragging ? `${disableAnimation ? '' : 'scale-[0.95]'} tap-highlight-transparent` : ''}`}
         >
           <CardBody className="pb-1">
-            <div
-              ref={setNodeRef}
-              {...attributes}
-              {...listeners}
-              className="flex justify-between h-8"
-            >
+            <div {...attributes} {...listeners} className="flex justify-between h-8">
               <h3
                 title={info?.name}
                 className={`text-ellipsis whitespace-nowrap overflow-hidden text-md font-bold leading-8 ${match ? 'text-primary-foreground' : 'text-foreground'} `}
@@ -217,7 +220,6 @@ const ProfileCard: React.FC<Props> = (props) => {
       ) : (
         <Card
           fullWidth
-          ref={setNodeRef}
           {...attributes}
           {...listeners}
           className={`${match ? 'bg-primary' : 'hover:bg-content2'} transition-colors ${isDragging ? `${disableAnimation ? '' : 'scale-[0.95]'} tap-highlight-transparent` : ''}`}
