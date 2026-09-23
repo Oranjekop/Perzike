@@ -131,6 +131,18 @@ function createAxiosConfig(
   }
 }
 
+function createReleaseLookupConfig(mixedPort: number): AxiosRequestConfig {
+  const config = createAxiosConfig(mixedPort)
+  return {
+    ...config,
+    headers: {
+      ...config.headers,
+      'Cache-Control': 'no-cache'
+    },
+    params: { _: Date.now() }
+  }
+}
+
 async function fetchReleaseByTag(
   tag: string,
   mixedPort: number
@@ -138,7 +150,7 @@ async function fetchReleaseByTag(
   try {
     const res = await axios.get<GithubRelease>(
       `https://api.github.com/repos/Oranjekop/Perzike/releases/tags/${tag}`,
-      createAxiosConfig(mixedPort)
+      createReleaseLookupConfig(mixedPort)
     )
     return res.data
   } catch (e) {
@@ -152,7 +164,7 @@ async function fetchReleaseByTag(
 async function fetchReleases(mixedPort: number): Promise<GithubRelease[]> {
   const res = await axios.get<GithubRelease[]>(
     'https://api.github.com/repos/Oranjekop/Perzike/releases?per_page=20',
-    createAxiosConfig(mixedPort)
+    createReleaseLookupConfig(mixedPort)
   )
   return res.data
 }
@@ -177,7 +189,7 @@ async function resolveReleaseForChannel(
     if (release.draft) return false
     if (updateChannel === 'stable' && release.prerelease) return false
     if (updateChannel === 'beta' && !release.prerelease) return false
-    return Boolean(getLatestYmlAsset(release))
+    return true
   })
 }
 
@@ -206,11 +218,11 @@ export async function checkUpdate(): Promise<AppVersion | undefined> {
 
   const latestYmlAsset = getLatestYmlAsset(release)
   if (!latestYmlAsset) {
-    return undefined
+    throw new Error(`最新版本 ${release.tag_name} 的更新文件尚不可用，请稍后重试`)
   }
 
   const res = await axios.get(latestYmlAsset.browser_download_url, {
-    ...createAxiosConfig(mixedPort),
+    ...createReleaseLookupConfig(mixedPort),
     responseType: 'text'
   })
   const latest = parseYaml<AppVersion>(res.data)
