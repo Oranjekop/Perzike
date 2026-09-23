@@ -153,6 +153,18 @@ body {
   min-width: 0;
 }
 
+.profile-editor-body > .setting-item {
+  flex-shrink: 0;
+}
+
+.setting-item:has(.profile-overrides) {
+  align-items: flex-start;
+}
+
+.setting-item:has(.profile-overrides) > div:first-child {
+  height: auto;
+}
+
 .setting-item h4 {
   color: hsl(var(--heroui-foreground));
   font-weight: 500;

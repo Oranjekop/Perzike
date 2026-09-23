@@ -22,6 +22,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     isLoading,
     disabled,
     isDisabled,
+    isIconOnly,
     fullWidth,
     startContent,
     endContent,
@@ -39,6 +40,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       ref={ref}
       variant="tertiary"
       size={size}
+      isIconOnly={isIconOnly}
       isDisabled={disabled || isDisabled || isLoading}
       data-ui-color={color}
       data-ui-variant={variant}
@@ -49,8 +51,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       style={{ ...colorStyle(color), ...style }}
     >
       {isLoading ? <Hero.Spinner size="sm" color="current" /> : startContent}
-      {children}
-      {endContent}
+      {!(isLoading && isIconOnly) && children}
+      {!(isLoading && isIconOnly) && endContent}
     </Hero.Button>
   )
 })

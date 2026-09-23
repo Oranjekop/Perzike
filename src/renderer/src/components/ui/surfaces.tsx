@@ -137,6 +137,7 @@ export function Badge({
           size={size}
           className={cn('ui-badge', className)}
           data-ui-variant={variant}
+          data-ui-color={color}
           data-ui-outline={showOutline || undefined}
           style={colorStyle(color)}
         >

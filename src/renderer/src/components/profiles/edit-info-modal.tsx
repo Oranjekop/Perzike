@@ -75,7 +75,7 @@ const EditInfoModal: React.FC<Props> = (props) => {
     >
       <ModalContent>
         <ModalHeader className="flex app-drag">{item.id ? '编辑信息' : '导入远程配置'}</ModalHeader>
-        <ModalBody>
+        <ModalBody className="profile-editor-body">
           <SettingItem title="名称">
             <Input
               size="sm"
@@ -173,12 +173,14 @@ const EditInfoModal: React.FC<Props> = (props) => {
             </>
           )}
           <SettingItem title="覆写">
-            <div>
+            <div
+              className={cn(inputWidth, 'profile-overrides flex flex-col gap-2 max-w-full min-w-0')}
+            >
               {overrideItems
                 .filter((i) => i.global)
                 .map((i) => {
                   return (
-                    <div className="flex mb-2" key={i.id}>
+                    <div className="flex" key={i.id}>
                       <Button disabled fullWidth variant="flat" size="sm">
                         {i.name} (全局)
                       </Button>
@@ -189,7 +191,7 @@ const EditInfoModal: React.FC<Props> = (props) => {
                 if (!overrideItems.find((t) => t.id === i)) return null
                 if (overrideItems.find((t) => t.id === i)?.global) return null
                 return (
-                  <div className="flex mb-2" key={i}>
+                  <div className="flex" key={i}>
                     <Button disabled fullWidth variant="flat" size="sm">
                       {overrideItems.find((t) => t.id === i)?.name}
                     </Button>
