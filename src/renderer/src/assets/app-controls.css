@@ -536,7 +536,12 @@
     color: inherit;
   }
   .ui-accordion-panel[inert] {
-    display: none;
+    height: 0;
+    opacity: 0;
+  }
+  .app-motion-disabled .ui-accordion-panel,
+  .app-motion-disabled .ui-accordion-trigger > svg {
+    transition: none;
   }
   .ui-modal-backdrop {
     background: transparent;

@@ -101,14 +101,15 @@ const App: React.FC = () => {
     updateChannel = 'stable',
     disableAnimation = false
   } = appConfig || {}
-  const siderOrderArray = useMemo(
-    () => {
-      if (!siderOrder) return defaultSiderOrder
-      if (siderOrder.length === 0 || siderOrder.includes('traffic')) return siderOrder
-      return [...siderOrder, 'traffic']
-    },
-    [siderOrder]
-  )
+  useEffect(() => {
+    document.documentElement.classList.toggle('app-motion-disabled', disableAnimation)
+    return () => document.documentElement.classList.remove('app-motion-disabled')
+  }, [disableAnimation])
+  const siderOrderArray = useMemo(() => {
+    if (!siderOrder) return defaultSiderOrder
+    if (siderOrder.length === 0 || siderOrder.includes('traffic')) return siderOrder
+    return [...siderOrder, 'traffic']
+  }, [siderOrder])
   const narrowWidth = platform === 'darwin' ? 70 : 60
   const [order, setOrder] = useState(siderOrderArray)
   const [siderWidthValue, setSiderWidthValue] = useState(siderWidth)

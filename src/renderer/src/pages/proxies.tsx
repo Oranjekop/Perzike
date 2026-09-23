@@ -10,20 +10,24 @@ import {
 } from '@renderer/utils/ipc'
 import { FaLocationCrosshairs } from 'react-icons/fa6'
 import { useEffect, useMemo, useRef, useState, useCallback, useLayoutEffect } from 'react'
-import {
-  Virtuoso,
-  VirtuosoHandle
-} from 'react-virtuoso'
+import { Virtuoso, VirtuosoHandle } from 'react-virtuoso'
 import ProxyItem from '@renderer/components/proxies/proxy-item'
 import ProxySettingModal from '@renderer/components/proxies/proxy-setting-modal'
 import { IoIosArrowBack } from 'react-icons/io'
-import { MdDoubleArrow, MdOutlineSpeed, MdTune, MdVisibility, MdVisibilityOff } from 'react-icons/md'
+import {
+  MdDoubleArrow,
+  MdOutlineSpeed,
+  MdTune,
+  MdVisibility,
+  MdVisibilityOff
+} from 'react-icons/md'
 import { useGroups } from '@renderer/hooks/use-groups'
 import { useProxiesState } from '@renderer/hooks/use-proxies-state'
 import CollapseInput from '@renderer/components/base/collapse-input'
 import { includesIgnoreCase } from '@renderer/utils/includes'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
 import { getGroupTypeName } from '@renderer/utils/group-type'
+import { motion, useReducedMotion } from 'framer-motion'
 
 const calcAutoProxyCols = (): number => {
   if (window.matchMedia('(min-width: 1536px)').matches) {
@@ -65,9 +69,21 @@ const Proxies: React.FC = () => {
     showGlobalByMode = false,
     showHiddenProxyGroups = false,
     delayTestUrlScope = 'group',
-    delayTestConcurrency = 50
+    delayTestConcurrency = 50,
+    disableAnimation = false
   } = appConfig || {}
   const isCardMode = proxyGroupDisplayMode === 'card'
+  const reducedMotion = useReducedMotion()
+  const animateGroups = !disableAnimation && !reducedMotion
+  const [closingGroups, setClosingGroups] = useState<Set<string>>(new Set())
+  const [openingGroups, setOpeningGroups] = useState<Set<string>>(new Set())
+  const closingTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>())
+  useEffect(
+    () => () => {
+      closingTimers.current.forEach(clearTimeout)
+    },
+    []
+  )
   const [cols, setCols] = useState(() =>
     proxyCols !== 'auto' ? parseInt(proxyCols) : calcAutoProxyCols()
   )
@@ -91,7 +107,8 @@ const Proxies: React.FC = () => {
     const counts: number[] = []
     const proxiesByGroup: (ControllerProxiesDetail | ControllerGroupDetail)[][] = []
     visibleGroups.forEach((group) => {
-      const isGroupOpen = isCardMode || (isOpenMap.get(group.name) ?? false)
+      const isGroupOpen =
+        isCardMode || closingGroups.has(group.name) || (isOpenMap.get(group.name) ?? false)
       const groupSearchValue = searchValueMap.get(group.name) ?? ''
       if (isGroupOpen) {
         let groupProxies = group.all.filter(
@@ -118,7 +135,7 @@ const Proxies: React.FC = () => {
       }
     })
     return { groupCounts: counts, allProxies: proxiesByGroup }
-  }, [visibleGroups, isOpenMap, searchValueMap, proxyDisplayOrder, cols, isCardMode])
+  }, [visibleGroups, isOpenMap, searchValueMap, proxyDisplayOrder, cols, isCardMode, closingGroups])
   const rows = useMemo<ProxyListRow[]>(() => {
     return visibleGroups.flatMap((_, groupIndex) => {
       const groupRows: ProxyListRow[] = [{ type: 'group', groupIndex }]
@@ -225,9 +242,43 @@ const Proxies: React.FC = () => {
     (index: number) => {
       const group = visibleGroups[index]
       if (!group) return
+      const oldTimer = closingTimers.current.get(group.name)
+      if (oldTimer) clearTimeout(oldTimer)
+      closingTimers.current.delete(group.name)
+      const closing = animateGroups && (isOpenMap.get(group.name) ?? false)
+      setOpeningGroups((previous) => {
+        const next = new Set(previous)
+        if (animateGroups && !closing) next.add(group.name)
+        else next.delete(group.name)
+        return next
+      })
+      setClosingGroups((previous) => {
+        const next = new Set(previous)
+        if (closing) next.add(group.name)
+        else next.delete(group.name)
+        return next
+      })
+      if (animateGroups) {
+        closingTimers.current.set(
+          group.name,
+          setTimeout(() => {
+            closingTimers.current.delete(group.name)
+            setOpeningGroups((previous) => {
+              const next = new Set(previous)
+              next.delete(group.name)
+              return next
+            })
+            setClosingGroups((previous) => {
+              const next = new Set(previous)
+              next.delete(group.name)
+              return next
+            })
+          }, 240)
+        )
+      }
       setIsOpen(group.name, !(isOpenMap.get(group.name) ?? false))
     },
-    [visibleGroups, isOpenMap, setIsOpen]
+    [visibleGroups, isOpenMap, setIsOpen, animateGroups]
   )
 
   const updateSearchValue = useCallback(
@@ -248,7 +299,9 @@ const Proxies: React.FC = () => {
       for (let i = 0; i < targetIndex; i++) {
         rowIndex += 1 + groupCounts[i]
       }
-      const currentProxyIndex = allProxies[targetIndex].findIndex((proxy) => proxy.name === group.now)
+      const currentProxyIndex = allProxies[targetIndex].findIndex(
+        (proxy) => proxy.name === group.now
+      )
       rowIndex += 1 + Math.max(0, Math.floor(currentProxyIndex / cols))
       virtuosoRef.current?.scrollToIndex({
         index: rowIndex,
@@ -376,10 +429,15 @@ const Proxies: React.FC = () => {
                       <span className="flag-emoji inline-block">{group.name}</span>
                       {groupDisplayLayout === 'single' && (
                         <>
-                          <div title={groupTypeName} className="inline ml-2 text-sm text-foreground-500">
+                          <div
+                            title={groupTypeName}
+                            className="inline ml-2 text-sm text-foreground-500"
+                          >
                             {groupTypeName}
                           </div>
-                          <div className="inline flag-emoji ml-2 text-sm text-foreground-500">{group.now}</div>
+                          <div className="inline flag-emoji ml-2 text-sm text-foreground-500">
+                            {group.now}
+                          </div>
                         </>
                       )}
                     </div>
@@ -455,32 +513,47 @@ const Proxies: React.FC = () => {
       }
       const { groupIndex, rowIndex } = row
       return allProxies[groupIndex] ? (
-        <div
-          style={
-            proxyCols !== 'auto'
-              ? { gridTemplateColumns: `repeat(${proxyCols}, minmax(0, 1fr))` }
-              : {}
+        <motion.div
+          className="proxy-expansion-row overflow-hidden"
+          initial={
+            animateGroups && openingGroups.has(visibleGroups[groupIndex].name)
+              ? { height: 1, opacity: 0 }
+              : false
           }
-          className={`grid ${proxyCols === 'auto' ? 'sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' : ''} ${groupIndex === groupCounts.length - 1 && rowIndex === groupCounts[groupIndex] - 1 ? 'pb-2' : ''} gap-2 pt-2 mx-2`}
+          animate={{
+            height: closingGroups.has(visibleGroups[groupIndex].name) ? 1 : 'auto',
+            opacity: closingGroups.has(visibleGroups[groupIndex].name) ? 0 : 1
+          }}
+          transition={{ duration: animateGroups ? 0.2 : 0, ease: 'easeOut' }}
+          inert={closingGroups.has(visibleGroups[groupIndex].name)}
         >
-          {Array.from({ length: cols }).map((_, columnIndex) => {
-            const proxy = allProxies[groupIndex][rowIndex * cols + columnIndex]
-            if (!proxy) return null
-            const isSelected = proxy.name === visibleGroups[groupIndex].now
-            return (
-              <ProxyItem
-                key={proxy.name}
-                mutateProxies={mutate}
-                onProxyDelay={onProxyDelay}
-                onSelect={onChangeProxy}
-                proxy={proxy}
-                group={visibleGroups[groupIndex]}
-                proxyDisplayLayout={proxyDisplayLayout}
-                selected={isSelected}
-              />
-            )
-          })}
-        </div>
+          <div
+            style={
+              proxyCols !== 'auto'
+                ? { gridTemplateColumns: `repeat(${proxyCols}, minmax(0, 1fr))` }
+                : {}
+            }
+            className={`grid ${proxyCols === 'auto' ? 'sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' : ''} ${groupIndex === groupCounts.length - 1 && rowIndex === groupCounts[groupIndex] - 1 ? 'pb-2' : ''} gap-2 pt-2 mx-2`}
+          >
+            {Array.from({ length: cols }).map((_, columnIndex) => {
+              const proxy = allProxies[groupIndex][rowIndex * cols + columnIndex]
+              if (!proxy) return null
+              const isSelected = proxy.name === visibleGroups[groupIndex].now
+              return (
+                <ProxyItem
+                  key={proxy.name}
+                  mutateProxies={mutate}
+                  onProxyDelay={onProxyDelay}
+                  onSelect={onChangeProxy}
+                  proxy={proxy}
+                  group={visibleGroups[groupIndex]}
+                  proxyDisplayLayout={proxyDisplayLayout}
+                  selected={isSelected}
+                />
+              )
+            })}
+          </div>
+        </motion.div>
       ) : (
         <div>Never See This</div>
       )
@@ -495,7 +568,10 @@ const Proxies: React.FC = () => {
       onProxyDelay,
       onChangeProxy,
       visibleGroups,
-      proxyDisplayLayout
+      proxyDisplayLayout,
+      closingGroups,
+      openingGroups,
+      animateGroups
     ]
   )
 
@@ -534,7 +610,10 @@ const Proxies: React.FC = () => {
                         <span className="flag-emoji inline-block">{group.name}</span>
                         {groupDisplayLayout === 'single' && (
                           <>
-                            <span className="ml-2 text-sm text-foreground-500" title={getGroupTypeName(group.type)}>
+                            <span
+                              className="ml-2 text-sm text-foreground-500"
+                              title={getGroupTypeName(group.type)}
+                            >
                               {getGroupTypeName(group.type)}
                             </span>
                             <span className="flag-emoji ml-2 text-sm text-foreground-500">

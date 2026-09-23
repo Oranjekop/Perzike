@@ -152,7 +152,9 @@ export function Tabs({
       className={cn('ui-tabs', fullWidth && 'w-full', className)}
       style={colorStyle(color)}
     >
-      <Hero.Tabs.ListContainer className="ui-tabs-container">
+      {/* These compact tab lists need overflow for badges and card shadows,
+          not v3's additional masked horizontal scroller. */}
+      <div className="ui-tabs-container">
         <Hero.Tabs.List
           aria-label={props['aria-label'] ?? '选项'}
           data-slot="tabList"
@@ -176,7 +178,7 @@ export function Tabs({
             </Hero.Tabs.Tab>
           ))}
         </Hero.Tabs.List>
-      </Hero.Tabs.ListContainer>
+      </div>
       {items
         .filter((item) => item.props.children != null)
         .map((item, index) => (
