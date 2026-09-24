@@ -138,6 +138,10 @@ if (/^\+\s*<Tab key="mips"/m.test(tunStackDiff)) {
 
 const rules = [
   {
+    message: '修复隐藏卡片参与排序导致的侧栏拖动错位，改善半宽与整行卡片混合排列',
+    patterns: [/^src\/renderer\/src\/components\/sider\/card-sorting\.ts$/]
+  },
+  {
     message: '修复退出和重启应用时可能卡住的问题，为内核停止及退出清理增加超时处理',
     patterns: [/^src\/main\/utils\/shutdown\.ts$/]
   },

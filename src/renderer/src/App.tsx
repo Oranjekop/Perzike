@@ -3,6 +3,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavigateFunction, useLocation, useNavigate, useRoutes } from 'react-router-dom'
 import OutboundModeSwitcher from '@renderer/components/sider/outbound-mode-switcher'
 import { restrictCardDrag } from '@renderer/components/sider/restrict-card-drag'
+import {
+  sidebarGridSortingStrategy,
+  visibleCardOrder
+} from '@renderer/components/sider/card-sorting'
 import SysproxySwitcher from '@renderer/components/sider/sysproxy-switcher'
 import TunSwitcher from '@renderer/components/sider/tun-switcher'
 import { Button, Divider } from '@renderer/components/ui'
@@ -113,6 +117,7 @@ const App: React.FC = () => {
   }, [siderOrder])
   const narrowWidth = platform === 'darwin' ? 70 : 60
   const [order, setOrder] = useState(siderOrderArray)
+  const visibleOrder = useMemo(() => visibleCardOrder(order, appConfig), [order, appConfig])
   const [siderWidthValue, setSiderWidthValue] = useState(siderWidth)
   const siderWidthValueRef = useRef(siderWidthValue)
   const [resizing, setResizing] = useState(false)
@@ -414,7 +419,7 @@ const App: React.FC = () => {
             className={`${latest ? 'h-[calc(100%-275px)]' : 'h-[calc(100%-227px)]'} overflow-y-auto no-scrollbar`}
           >
             <div className="h-full w-full flex flex-col gap-2">
-              {order.map((key: string) => {
+              {visibleOrder.map((key: string) => {
                 const Component = componentMap[key]
                 if (!Component) return null
                 return <Component key={key} iconOnly={true} />
@@ -484,8 +489,8 @@ const App: React.FC = () => {
                 className="app-sidebar-grid grid grid-cols-2 gap-2 m-2"
                 onClickCapture={onSiderClickCapture}
               >
-                <SortableContext items={order}>
-                  {order.map((key: string) => {
+                <SortableContext items={visibleOrder} strategy={sidebarGridSortingStrategy}>
+                  {visibleOrder.map((key: string) => {
                     const Component = componentMap[key]
                     if (!Component) return null
                     return <Component key={key} />

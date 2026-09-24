@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { useCardDndSensors } from '@renderer/hooks/use-card-dnd-sensors'
 import { restrictCardDrag } from './restrict-card-drag'
+import { sidebarGridSortingStrategy, visibleCardOrder } from './card-sorting'
 import { markInitialContentPartReady } from '@renderer/utils/startup'
 import ConnCard from './conn-card'
 import DNSCard from './dns-card'
@@ -144,7 +145,8 @@ export default function SiderCards({ iconOnly = false }: Props): React.JSX.Eleme
     if (route) navigate(route)
   }
 
-  const cards = order.map((key: string) => {
+  const visibleOrder = visibleCardOrder(order, appConfig).filter((key) => key in componentMap)
+  const cards = visibleOrder.map((key: string) => {
     const Component = componentMap[key]
     if (!Component) return null
     return <Component key={key} iconOnly={iconOnly} />
@@ -173,7 +175,9 @@ export default function SiderCards({ iconOnly = false }: Props): React.JSX.Eleme
         }}
       >
         <div className="grid grid-cols-2 gap-2 m-2" onClickCapture={onClickCapture}>
-          <SortableContext items={order}>{cards}</SortableContext>
+          <SortableContext items={visibleOrder} strategy={sidebarGridSortingStrategy}>
+            {cards}
+          </SortableContext>
         </div>
       </DndContext>
     </div>
