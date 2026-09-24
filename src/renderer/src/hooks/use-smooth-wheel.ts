@@ -1,4 +1,5 @@
 import { useEffect, type RefObject } from 'react'
+import { advanceScroll } from './smooth-scroll-motion'
 
 // Smooth discrete mouse-wheel steps; leave touchpad gestures and native controls alone.
 export function useSmoothWheel(root: RefObject<HTMLElement | null>, disabled: boolean): void {
@@ -11,34 +12,30 @@ export function useSmoothWheel(root: RefObject<HTMLElement | null>, disabled: bo
     let target = 0
     let lastTime = 0
     let lastWritten = 0
+    let position = 0
+    let velocity = 0
     const cancel = (): void => {
       cancelAnimationFrame(frame)
       frame = 0
       scroller = null
+      velocity = 0
     }
     const step = (now: number): void => {
       if (!scroller?.isConnected || reduced.matches) {
         cancel()
         return
       }
-      const dt = Math.min(40, now - lastTime)
+      const dt = Math.min(64, now - lastTime) / 1000
       lastTime = now
       target = Math.max(0, Math.min(target, scroller.scrollHeight - scroller.clientHeight))
-      const distance = target - scroller.scrollTop
-      scroller.scrollTo({
-        top:
-          Math.abs(distance) < 0.75
-            ? target
-            : scroller.scrollTop +
-              Math.sign(distance) *
-                Math.min(
-                  Math.abs(distance),
-                  Math.max(1, Math.abs(distance) * (1 - Math.exp(-dt / 35)))
-                ),
-        behavior: 'instant'
-      })
+      // Retain fractional positions instead of feeding rounded DOM pixels back into motion.
+      const next = advanceScroll(position, velocity, target, dt)
+      position = Math.max(0, Math.min(next.position, scroller.scrollHeight - scroller.clientHeight))
+      velocity = next.velocity
+      const settled = Math.abs(target - position) < 0.5 && Math.abs(velocity) < 8
+      scroller.scrollTo({ top: settled ? target : position, behavior: 'instant' })
       lastWritten = scroller.scrollTop
-      if (Math.abs(distance) < 0.75) {
+      if (settled) {
         cancel()
         return
       }
@@ -55,7 +52,9 @@ export function useSmoothWheel(root: RefObject<HTMLElement | null>, disabled: bo
         return
       if (
         !(event.target instanceof Element) ||
-        event.target.closest('textarea, input, select, .monaco-editor')
+        event.target.closest(
+          'textarea, select, input[type="number"], input[type="range"], .monaco-editor'
+        )
       ) {
         cancel()
         return
@@ -95,11 +94,15 @@ export function useSmoothWheel(root: RefObject<HTMLElement | null>, disabled: bo
           )
           if (next !== element.scrollTop) {
             event.preventDefault()
-            if (scroller !== element) cancel()
+            if (scroller !== element) {
+              cancel()
+              position = element.scrollTop
+            } else if (!continuing) {
+              // A reversal cancels outstanding travel without jumping the current position.
+              velocity = 0
+            }
             scroller = element
             target = next
-            // Respond in the same wheel event; animate only the short remaining distance.
-            element.scrollTop += (target - element.scrollTop) * 0.65
             lastWritten = element.scrollTop
             if (!frame) {
               lastTime = performance.now()

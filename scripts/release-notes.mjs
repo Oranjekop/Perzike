@@ -146,7 +146,7 @@ const rules = [
     patterns: [/^src\/renderer\/src\/components\/sider\/restrict-card-drag\.ts$/]
   },
   {
-    message: '提高页面滚轮响应速度，同时保持短距离平滑滚动',
+    message: '优化页面平滑滚动，消除起步跳动，改善连续滚动、换向和输入框区域的滚动体验',
     patterns: [/^src\/renderer\/src\/hooks\/use-smooth-wheel\.ts$/]
   },
   {
