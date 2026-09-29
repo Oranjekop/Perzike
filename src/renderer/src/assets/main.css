@@ -122,6 +122,8 @@ body {
 
 .app-page-content {
   background: hsl(var(--heroui-background));
+  /* The content overlaps the header for top alignment; hide that overlap while scrolling. */
+  clip-path: inset(7px 0 0);
 }
 
 .setting-card,
