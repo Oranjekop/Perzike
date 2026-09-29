@@ -166,77 +166,79 @@ const TrafficStats: React.FC = () => {
         </>
       }
     >
-      <div className="flex h-full min-h-0 w-full flex-col gap-2 p-2">
-        <Card fullWidth className="shrink-0 border border-default-200/70 bg-content1">
-          <CardBody className="gap-1.5 px-4 py-2">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-2">
-                <span className="shrink-0 text-sm font-semibold">时间段</span>
-                <p
-                  className="truncate text-xs text-foreground-500"
-                  title="数据按本地日期保存，最多保留 400 天"
+      <div className="flex h-full min-h-0 w-full flex-col gap-2 pt-2">
+        <div className="shrink-0 px-2">
+          <Card fullWidth className="border border-default-200/70 bg-content1">
+            <CardBody className="gap-1.5 px-4 py-2">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="shrink-0 text-sm font-semibold">时间段</span>
+                  <p
+                    className="truncate text-xs text-foreground-500"
+                    title="数据按本地日期保存，最多保留 400 天"
+                  >
+                    数据按本地日期保存，最多保留 400 天
+                  </p>
+                </div>
+                <Tabs
+                  aria-label="时间段"
+                  size="sm"
+                  color="primary"
+                  selectedKey={period}
+                  className="w-fit shrink-0"
+                  classNames={{
+                    cursor: 'bg-primary',
+                    tabContent: 'group-data-[selected=true]:text-primary-foreground'
+                  }}
+                  onSelectionChange={(key: Key) => {
+                    setPeriod(key as TrafficStatsPeriod)
+                    setSelectedKey(undefined)
+                    setGroupPage(1)
+                  }}
                 >
-                  数据按本地日期保存，最多保留 400 天
-                </p>
+                  {periods.map((item) => (
+                    <Tab key={item.key} title={item.label} />
+                  ))}
+                </Tabs>
               </div>
-              <Tabs
-                aria-label="时间段"
-                size="sm"
-                color="primary"
-                selectedKey={period}
-                className="w-fit shrink-0"
-                classNames={{
-                  cursor: 'bg-primary',
-                  tabContent: 'group-data-[selected=true]:text-primary-foreground'
-                }}
-                onSelectionChange={(key: Key) => {
-                  setPeriod(key as TrafficStatsPeriod)
-                  setSelectedKey(undefined)
-                  setGroupPage(1)
-                }}
-              >
-                {periods.map((item) => (
-                  <Tab key={item.key} title={item.label} />
-                ))}
-              </Tabs>
-            </div>
-            <Divider />
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-2">
-                <span className="shrink-0 text-sm font-semibold">分组方式</span>
-                <p
-                  className="truncate text-xs text-foreground-500"
-                  title="点击列表项可查看该分组的三维明细"
+              <Divider />
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="shrink-0 text-sm font-semibold">分组方式</span>
+                  <p
+                    className="truncate text-xs text-foreground-500"
+                    title="点击列表项可查看该分组的三维明细"
+                  >
+                    点击列表项可查看该分组的三维明细
+                  </p>
+                </div>
+                <Tabs
+                  aria-label="分组方式"
+                  size="sm"
+                  color="primary"
+                  selectedKey={groupBy}
+                  className="w-fit shrink-0"
+                  classNames={{
+                    cursor: 'bg-primary',
+                    tabContent: 'group-data-[selected=true]:text-primary-foreground'
+                  }}
+                  onSelectionChange={(key: Key) => {
+                    setGroupBy(key as TrafficStatsGroupBy)
+                    setSelectedKey(undefined)
+                    setGroupPage(1)
+                  }}
                 >
-                  点击列表项可查看该分组的三维明细
-                </p>
+                  {groupings.map((item) => (
+                    <Tab key={item.key} title={item.label} />
+                  ))}
+                </Tabs>
               </div>
-              <Tabs
-                aria-label="分组方式"
-                size="sm"
-                color="primary"
-                selectedKey={groupBy}
-                className="w-fit shrink-0"
-                classNames={{
-                  cursor: 'bg-primary',
-                  tabContent: 'group-data-[selected=true]:text-primary-foreground'
-                }}
-                onSelectionChange={(key: Key) => {
-                  setGroupBy(key as TrafficStatsGroupBy)
-                  setSelectedKey(undefined)
-                  setGroupPage(1)
-                }}
-              >
-                {groupings.map((item) => (
-                  <Tab key={item.key} title={item.label} />
-                ))}
-              </Tabs>
-            </div>
-          </CardBody>
-        </Card>
+            </CardBody>
+          </Card>
+        </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 px-2 pb-2">
             {error && (
               <Card fullWidth shadow="none" className="border border-danger/30 bg-danger/10">
                 <CardBody className="p-4 text-sm text-danger">
