@@ -139,6 +139,7 @@ const TrafficStats: React.FC = () => {
   return (
     <BasePage
       title="流量统计"
+      contentClassName="overflow-y-hidden"
       header={
         <>
           <Button
@@ -165,17 +166,21 @@ const TrafficStats: React.FC = () => {
         </>
       }
     >
-      <div className="flex w-full flex-col gap-2 p-2">
-        <Card fullWidth className="border border-default-200/70 bg-content1">
-          <CardBody className="gap-3 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold">时间段</div>
-                <p className="mt-1 text-xs text-foreground-500">
+      <div className="flex h-full min-h-0 w-full flex-col gap-2 p-2">
+        <Card fullWidth className="shrink-0 border border-default-200/70 bg-content1">
+          <CardBody className="gap-1.5 px-4 py-2">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="shrink-0 text-sm font-semibold">时间段</span>
+                <p
+                  className="truncate text-xs text-foreground-500"
+                  title="数据按本地日期保存，最多保留 400 天"
+                >
                   数据按本地日期保存，最多保留 400 天
                 </p>
               </div>
               <Tabs
+                aria-label="时间段"
                 size="sm"
                 color="primary"
                 selectedKey={period}
@@ -196,12 +201,18 @@ const TrafficStats: React.FC = () => {
               </Tabs>
             </div>
             <Divider />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold">分组方式</div>
-                <p className="mt-1 text-xs text-foreground-500">点击列表项可查看该分组的三维明细</p>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="shrink-0 text-sm font-semibold">分组方式</span>
+                <p
+                  className="truncate text-xs text-foreground-500"
+                  title="点击列表项可查看该分组的三维明细"
+                >
+                  点击列表项可查看该分组的三维明细
+                </p>
               </div>
               <Tabs
+                aria-label="分组方式"
                 size="sm"
                 color="primary"
                 selectedKey={groupBy}
@@ -224,153 +235,157 @@ const TrafficStats: React.FC = () => {
           </CardBody>
         </Card>
 
-        {error && (
-          <Card fullWidth shadow="none" className="border border-danger/30 bg-danger/10">
-            <CardBody className="p-4 text-sm text-danger">
-              流量统计读取失败：{String(error)}
-            </CardBody>
-          </Card>
-        )}
+        <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
+          <div className="flex flex-col gap-2">
+            {error && (
+              <Card fullWidth shadow="none" className="border border-danger/30 bg-danger/10">
+                <CardBody className="p-4 text-sm text-danger">
+                  流量统计读取失败：{String(error)}
+                </CardBody>
+              </Card>
+            )}
 
-        <Card fullWidth className="border border-default-200/70 bg-content1">
-          <CardBody className="p-4">
-            <div className="grid gap-4 md:grid-cols-[minmax(250px,0.8fr)_minmax(0,1.2fr)] md:gap-5">
-              <div className="min-w-0">
-                <div className="flex items-end justify-between gap-3">
-                  <div>
-                    <div className="text-xs text-foreground-500">总流量</div>
-                    <div className="mt-0.5 text-2xl font-bold tracking-tight">
-                      {isLoading ? '—' : calcTraffic(data?.total || 0)}
-                    </div>
-                  </div>
-                  <div className="shrink-0 text-right text-[11px] text-foreground-500">
-                    {formatUpdatedAt(data?.updatedAt)}
-                  </div>
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
-                  <SummaryMetric
-                    label="上传"
-                    value={calcTraffic(data?.upload || 0)}
-                    tone="up"
-                    compact
-                  />
-                  <SummaryMetric
-                    label="下载"
-                    value={calcTraffic(data?.download || 0)}
-                    tone="down"
-                    compact
-                  />
-                  <SummaryMetric label="请求数" value={`${data?.requests || 0}`} compact />
-                  <SummaryMetric
-                    label="统计范围"
-                    value={periods.find((item) => item.key === period)?.label || ''}
-                    compact
-                  />
-                </div>
-              </div>
-
-              <div className="min-w-0 border-t border-divider pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <div className="text-sm font-semibold">每日流量</div>
-                    <div className="mt-0.5 text-[11px] text-foreground-500">上传与下载合计</div>
-                  </div>
-                  <div className="text-[11px] text-foreground-500">{daily.length} 天</div>
-                </div>
-                <div className="mt-3 flex h-24 items-end gap-1.5 overflow-hidden sm:h-28">
-                  {daily.map((item) => {
-                    const height = Math.max(5, Math.round((item.total / maxDailyTotal) * 100))
-                    return (
-                      <div
-                        key={item.date}
-                        className="group flex h-full min-w-0 flex-1 flex-col justify-end"
-                      >
-                        <div
-                          className="w-full rounded-t-md bg-primary/75 transition-all group-hover:bg-primary"
-                          style={{ height: `${height}%` }}
-                          title={`${item.date}: ${calcTraffic(item.total)}`}
-                        />
+            <Card fullWidth className="border border-default-200/70 bg-content1">
+              <CardBody className="p-4">
+                <div className="grid gap-4 md:grid-cols-[minmax(250px,0.8fr)_minmax(0,1.2fr)] md:gap-5">
+                  <div className="min-w-0">
+                    <div className="flex items-end justify-between gap-3">
+                      <div>
+                        <div className="text-xs text-foreground-500">总流量</div>
+                        <div className="mt-0.5 text-2xl font-bold tracking-tight">
+                          {isLoading ? '—' : calcTraffic(data?.total || 0)}
+                        </div>
                       </div>
-                    )
-                  })}
-                  {daily.length === 0 && (
-                    <div className="flex h-full w-full items-center justify-center rounded-lg bg-content2/60 text-xs text-foreground-500">
-                      暂无历史数据
+                      <div className="shrink-0 text-right text-[11px] text-foreground-500">
+                        {formatUpdatedAt(data?.updatedAt)}
+                      </div>
                     </div>
-                  )}
+                    <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
+                      <SummaryMetric
+                        label="上传"
+                        value={calcTraffic(data?.upload || 0)}
+                        tone="up"
+                        compact
+                      />
+                      <SummaryMetric
+                        label="下载"
+                        value={calcTraffic(data?.download || 0)}
+                        tone="down"
+                        compact
+                      />
+                      <SummaryMetric label="请求数" value={`${data?.requests || 0}`} compact />
+                      <SummaryMetric
+                        label="统计范围"
+                        value={periods.find((item) => item.key === period)?.label || ''}
+                        compact
+                      />
+                    </div>
+                  </div>
+
+                  <div className="min-w-0 border-t border-divider pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <div className="text-sm font-semibold">每日流量</div>
+                        <div className="mt-0.5 text-[11px] text-foreground-500">上传与下载合计</div>
+                      </div>
+                      <div className="text-[11px] text-foreground-500">{daily.length} 天</div>
+                    </div>
+                    <div className="mt-3 flex h-24 items-end gap-1.5 overflow-hidden sm:h-28">
+                      {daily.map((item) => {
+                        const height = Math.max(5, Math.round((item.total / maxDailyTotal) * 100))
+                        return (
+                          <div
+                            key={item.date}
+                            className="group flex h-full min-w-0 flex-1 flex-col justify-end"
+                          >
+                            <div
+                              className="w-full rounded-t-md bg-primary/75 transition-all group-hover:bg-primary"
+                              style={{ height: `${height}%` }}
+                              title={`${item.date}: ${calcTraffic(item.total)}`}
+                            />
+                          </div>
+                        )
+                      })}
+                      {daily.length === 0 && (
+                        <div className="flex h-full w-full items-center justify-center rounded-lg bg-content2/60 text-xs text-foreground-500">
+                          暂无历史数据
+                        </div>
+                      )}
+                    </div>
+                    {daily.length > 0 && (
+                      <div className="mt-1.5 flex justify-between text-[10px] text-foreground-400">
+                        <span>{formatDate(daily[0].date)}</span>
+                        <span>{formatDate(daily[daily.length - 1].date)}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                {daily.length > 0 && (
-                  <div className="mt-1.5 flex justify-between text-[10px] text-foreground-400">
-                    <span>{formatDate(daily[0].date)}</span>
-                    <span>{formatDate(daily[daily.length - 1].date)}</span>
+              </CardBody>
+            </Card>
+
+            <Card fullWidth className="border border-default-200/70 bg-content1">
+              <CardBody className="p-0">
+                <div className="flex items-center justify-between gap-3 px-4 py-3">
+                  <div>
+                    <div className="text-sm font-semibold">按{groupLabels[groupBy]}统计</div>
+                    <div className="mt-1 text-xs text-foreground-500">
+                      共 {data?.groups.length || 0} 个分组
+                    </div>
+                  </div>
+                  {isLoading && <Spinner size="sm" />}
+                </div>
+                <Divider />
+                {(data?.groups.length || 0) > 0 ? (
+                  <div className="divide-y divide-divider">
+                    {pagedGroups.map((group) => (
+                      <button
+                        key={group.key}
+                        type="button"
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-content2/70"
+                        onClick={() => setSelectedKey(group.key)}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium">{group.key}</div>
+                          <div className="mt-1 truncate text-xs text-foreground-500">
+                            {group.requests} 请求 · ↑ {calcTraffic(group.upload)} · ↓{' '}
+                            {calcTraffic(group.download)}
+                          </div>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <div className="text-sm font-semibold">{calcTraffic(group.total)}</div>
+                          <div className="mt-1 text-xs text-foreground-400">查看详情</div>
+                        </div>
+                        <IoChevronForward className="shrink-0 text-lg text-foreground-400" />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex min-h-36 items-center justify-center px-4 py-8 text-sm text-foreground-500">
+                    还没有统计数据，产生连接后会自动记录。
                   </div>
                 )}
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-
-        <Card fullWidth className="border border-default-200/70 bg-content1">
-          <CardBody className="p-0">
-            <div className="flex items-center justify-between gap-3 px-4 py-3">
-              <div>
-                <div className="text-sm font-semibold">按{groupLabels[groupBy]}统计</div>
-                <div className="mt-1 text-xs text-foreground-500">
-                  共 {data?.groups.length || 0} 个分组
-                </div>
-              </div>
-              {isLoading && <Spinner size="sm" />}
-            </div>
-            <Divider />
-            {(data?.groups.length || 0) > 0 ? (
-              <div className="divide-y divide-divider">
-                {pagedGroups.map((group) => (
-                  <button
-                    key={group.key}
-                    type="button"
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-content2/70"
-                    onClick={() => setSelectedKey(group.key)}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">{group.key}</div>
-                      <div className="mt-1 truncate text-xs text-foreground-500">
-                        {group.requests} 请求 · ↑ {calcTraffic(group.upload)} · ↓{' '}
-                        {calcTraffic(group.download)}
-                      </div>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <div className="text-sm font-semibold">{calcTraffic(group.total)}</div>
-                      <div className="mt-1 text-xs text-foreground-400">查看详情</div>
-                    </div>
-                    <IoChevronForward className="shrink-0 text-lg text-foreground-400" />
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="flex min-h-36 items-center justify-center px-4 py-8 text-sm text-foreground-500">
-                还没有统计数据，产生连接后会自动记录。
-              </div>
-            )}
-            {groupPageCount > 1 && (
-              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-divider px-4 py-3">
-                <span className="text-xs text-foreground-500">
-                  第 {currentGroupPage} / {groupPageCount} 页，每页 {GROUP_PAGE_SIZE} 条
-                </span>
-                <Pagination
-                  aria-label="分组列表分页"
-                  size="sm"
-                  color="primary"
-                  variant="flat"
-                  total={groupPageCount}
-                  page={currentGroupPage}
-                  onChange={setGroupPage}
-                  showControls
-                  disableAnimation={disableAnimation}
-                />
-              </div>
-            )}
-          </CardBody>
-        </Card>
+                {groupPageCount > 1 && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-divider px-4 py-3">
+                    <span className="text-xs text-foreground-500">
+                      第 {currentGroupPage} / {groupPageCount} 页，每页 {GROUP_PAGE_SIZE} 条
+                    </span>
+                    <Pagination
+                      aria-label="分组列表分页"
+                      size="sm"
+                      color="primary"
+                      variant="flat"
+                      total={groupPageCount}
+                      page={currentGroupPage}
+                      onChange={setGroupPage}
+                      showControls
+                      disableAnimation={disableAnimation}
+                    />
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+          </div>
+        </div>
       </div>
 
       <Modal
