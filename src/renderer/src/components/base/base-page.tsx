@@ -45,7 +45,7 @@ const BasePage = forwardRef<HTMLDivElement, Props>((props, ref) => {
   return (
     <div ref={contentRef} className="app-page w-full h-full">
       <div
-        className={`app-page-header sticky top-0 z-40 h-10 w-full ${disableAnimation ? 'bg-background/95 backdrop-blur-sm' : 'bg-transparent backdrop-blur'}`}
+        className={`app-page-header sticky top-0 z-40 h-14 w-full ${disableAnimation ? 'bg-background/95 backdrop-blur-sm' : 'bg-transparent backdrop-blur'}`}
       >
         <div className="app-drag px-4 flex justify-between h-full items-center">
           <div className="title app-page-title h-full flex items-center">{props.title}</div>
@@ -77,7 +77,7 @@ const BasePage = forwardRef<HTMLDivElement, Props>((props, ref) => {
         </div>
       </div>
       <div
-        className={`content app-page-content h-[calc(100vh-40px)] overflow-y-auto custom-scrollbar ${props.contentClassName ?? ''}`}
+        className={`content app-page-content -mt-2 h-[calc(100vh-48px)] overflow-y-auto custom-scrollbar ${props.contentClassName ?? ''}`}
       >
         {props.children}
       </div>

@@ -138,7 +138,7 @@ if (/^\+\s*<Tab key="mips"/m.test(tunStackDiff)) {
 
 const rules = [
   {
-    message: '移除各页面标题栏下方分割线，并上移页面内容',
+    message: '保留标题栏原有高度，移除分割线，并让页面内容与侧栏选择区对齐',
     patterns: [/^src\/renderer\/src\/components\/base\/base-page\.tsx$/]
   },
   {
