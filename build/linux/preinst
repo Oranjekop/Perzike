@@ -1,7 +1,7 @@
 #!/bin/bash
 
-SERVICE_NAME='SparkleService'
-STATE_DIR='/run/sparkle'
+SERVICE_NAME='PerzikeService'
+STATE_DIR='/run/perzike'
 STATE_FILE="$STATE_DIR/service-was-running"
 PID_FILES="/var/run/$SERVICE_NAME.pid /run/$SERVICE_NAME.pid"
 
@@ -65,13 +65,13 @@ wait_service_stopped() {
     return 1
 }
 
-stop_sparkle_service_if_running() {
+stop_perzike_service_if_running() {
     if ! service_is_running; then
         return
     fi
 
     if ! mark_service_running; then
-        echo "Failed to record running Sparkle service state" >&2
+        echo "Failed to record running Perzike service state" >&2
         exit 1
     fi
 
@@ -85,10 +85,10 @@ stop_sparkle_service_if_running() {
         return
     fi
 
-    echo "Sparkle service is still running; aborting install to avoid replacing active files" >&2
+    echo "Perzike service is still running; aborting install to avoid replacing active files" >&2
     exit 1
 }
 
-stop_sparkle_service_if_running
+stop_perzike_service_if_running
 
 exit 0

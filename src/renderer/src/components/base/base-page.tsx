@@ -1,4 +1,4 @@
-import { Button } from '@renderer/components/ui'
+import { Button, Divider } from '@renderer/components/ui'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { platform } from '@renderer/utils/init'
 import { isAlwaysOnTop, setAlwaysOnTop } from '@renderer/utils/ipc'
@@ -47,7 +47,7 @@ const BasePage = forwardRef<HTMLDivElement, Props>((props, ref) => {
       <div
         className={`app-page-header sticky top-0 z-40 h-14 w-full ${disableAnimation ? 'bg-background/95 backdrop-blur-sm' : 'bg-transparent backdrop-blur'}`}
       >
-        <div className="app-drag px-4 flex justify-between h-full items-center">
+        <div className="app-drag px-4 flex justify-between h-[calc(100%-1px)] items-center">
           <div className="title app-page-title h-full flex items-center">{props.title}</div>
           <div
             style={{ marginRight: overlayWidth }}
@@ -75,9 +75,11 @@ const BasePage = forwardRef<HTMLDivElement, Props>((props, ref) => {
             />
           </div>
         </div>
+
+        <Divider />
       </div>
       <div
-        className={`content app-page-content h-[calc(100vh-49px)] overflow-y-auto custom-scrollbar ${props.contentClassName ?? ''}`}
+        className={`content app-page-content h-[calc(100vh-56px)] overflow-y-auto custom-scrollbar ${props.contentClassName ?? ''}`}
       >
         {props.children}
       </div>
