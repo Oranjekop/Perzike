@@ -12,6 +12,7 @@
 
 /* Theme tokens are colors only. Card geometry and interaction stay theme-neutral below. */
 :root {
+  --app-titlebar-height: 49px;
   --app-card-surface: hsl(var(--heroui-content1));
   --app-card-hover-surface: hsl(var(--heroui-content2));
   --app-card-border-color: transparent;
