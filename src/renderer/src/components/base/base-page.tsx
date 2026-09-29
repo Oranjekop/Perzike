@@ -77,7 +77,7 @@ const BasePage = forwardRef<HTMLDivElement, Props>((props, ref) => {
         </div>
       </div>
       <div
-        className={`content app-page-content -mt-[7px] h-[calc(100vh-49px)] overflow-y-auto custom-scrollbar ${props.contentClassName ?? ''}`}
+        className={`content app-page-content h-[calc(100vh-56px)] overflow-y-auto custom-scrollbar ${props.contentClassName ?? ''}`}
       >
         {props.children}
       </div>
