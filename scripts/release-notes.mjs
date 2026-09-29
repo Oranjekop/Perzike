@@ -138,6 +138,10 @@ if (/^\+\s*<Tab key="mips"/m.test(tunStackDiff)) {
 
 const rules = [
   {
+    message: '移除各页面标题栏下方分割线，并上移页面内容',
+    patterns: [/^src\/renderer\/src\/components\/base\/base-page\.tsx$/]
+  },
+  {
     message: '修复隐藏卡片参与排序导致的侧栏拖动错位，改善半宽与整行卡片混合排列',
     patterns: [/^src\/renderer\/src\/components\/sider\/card-sorting\.ts$/]
   },
