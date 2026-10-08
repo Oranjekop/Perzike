@@ -15,6 +15,7 @@ export default function SidebarNavButton({
   return (
     <div
       className="app-sidebar-nav-item"
+      data-active={props.color === 'primary' && props.variant === 'solid'}
       data-selected={expanded && props.color === 'primary' && props.variant === 'solid'}
     >
       <Button

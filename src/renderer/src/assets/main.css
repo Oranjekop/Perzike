@@ -138,6 +138,11 @@ body {
   padding: 4px;
 }
 
+.app-sidebar-compact .app-sidebar-nav-item[data-active='false']:hover {
+  background: var(--app-control-selected-surface);
+  border-radius: 8px;
+}
+
 .app-sidebar-nav-item[data-selected='true'] {
   background: hsl(var(--heroui-primary));
   border-radius: 8px;
