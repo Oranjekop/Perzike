@@ -103,10 +103,17 @@ body {
   gap: 12px;
 }
 
+.app-sidebar-compact-nav {
+  gap: 8px;
+}
+
 .app-sidebar-compact-nav > div {
   height: 32px;
   flex: 0 0 32px;
+  margin-block: 0;
+  padding-block: 0;
   padding-inline: calc((var(--sidebar-compact-width) - 32px) / 2);
+  align-items: center;
   justify-content: flex-start;
 }
 
@@ -127,15 +134,30 @@ body {
   width: 100%;
   flex: 1 1 0;
   min-width: 32px;
+  align-items: center;
   justify-content: flex-start;
+  padding-block: 0;
   padding-inline: 6px;
   gap: 12px;
   height: 32px;
+  line-height: 20px;
   overflow: hidden;
 }
 
-.app-sidebar-compact .app-sidebar-nav-button > svg {
-  flex-shrink: 0;
+.app-sidebar-nav-icon {
+  display: inline-flex;
+  flex: 0 0 20px;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+}
+
+.app-sidebar-nav-icon > svg {
+  display: block;
+  width: 20px;
+  height: 20px;
 }
 
 .app-sidebar-nav-label {
@@ -163,8 +185,8 @@ body {
   padding-inline: 10px;
 }
 
-.app-acrylic .app-sidebar-compact[data-expanded='true'] {
-  background: hsl(var(--heroui-background) / 0.96) !important;
+.app-acrylic .app-sidebar.app-sidebar-compact {
+  background: hsl(var(--heroui-background)) !important;
 }
 
 .app-motion-disabled .app-sidebar-compact {
@@ -295,8 +317,7 @@ body {
   transform: none;
 }
 
-.app-sidebar-grid > div > div:not(.bg-primary):hover,
-.outbound-mode-card:hover {
+.app-sidebar-grid > div > div:not(.bg-primary):hover {
   border-color: var(--app-card-hover-border-color);
 }
 
@@ -527,7 +548,6 @@ label:not([data-selected='true']) > input[type='radio'] + span {
 }
 
 .app-sidebar-grid > div > div:not(.bg-primary):hover,
-.outbound-mode-card:hover,
 .proxy-group-card:hover {
   background-color: var(--app-card-hover-surface) !important;
   border-color: var(--app-card-hover-border-color);
@@ -741,7 +761,6 @@ label:not([data-selected='true']) > input[type='radio'] + span {
 }
 
 .app-acrylic .app-sidebar-grid > div > div:not(.bg-primary):hover,
-.app-acrylic .outbound-mode-card:hover,
 .app-acrylic .proxy-group-card:hover,
 .app-acrylic .proxy-node-card:hover {
   background-color: var(--app-card-hover-surface) !important;

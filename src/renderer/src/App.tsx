@@ -416,7 +416,7 @@ const App: React.FC = () => {
         />
       )}
       {siderWidthValue === narrowWidth ? (
-        <div style={{ width: `${narrowWidth}px` }} className="relative h-full shrink-0">
+        <div style={{ width: `${narrowWidth}px` }} className="relative z-[60] h-full shrink-0">
           <SidebarExpandedContext.Provider value={sidebarExpanded}>
             <div
               style={{ '--sidebar-compact-width': `${narrowWidth}px` } as React.CSSProperties}
@@ -558,7 +558,7 @@ const App: React.FC = () => {
       <Divider orientation="vertical" />
       <div
         style={{ width: `calc(100% - ${siderWidthValue + 1}px)` }}
-        className="main app-main grow h-full overflow-hidden"
+        className="main app-main relative z-0 isolate grow h-full overflow-hidden"
       >
         {page}
       </div>

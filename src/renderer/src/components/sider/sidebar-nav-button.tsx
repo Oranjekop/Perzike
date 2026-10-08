@@ -21,7 +21,9 @@ export default function SidebarNavButton({
         aria-label={label}
         className={`app-sidebar-nav-button ${className}`}
       >
-        {children}
+        <span className="app-sidebar-nav-icon" aria-hidden="true">
+          {children}
+        </span>
         <span className="app-sidebar-nav-label" aria-hidden="true">
           {label}
         </span>
