@@ -13,7 +13,10 @@ export default function SidebarNavButton({
 }: ButtonProps & { label: string; control?: React.ReactNode }): React.JSX.Element {
   const expanded = useContext(SidebarExpandedContext)
   return (
-    <div className="app-sidebar-nav-item">
+    <div
+      className="app-sidebar-nav-item"
+      data-selected={expanded && props.color === 'primary' && props.variant === 'solid'}
+    >
       <Button
         {...props}
         size="sm"

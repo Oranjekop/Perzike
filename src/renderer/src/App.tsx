@@ -42,6 +42,7 @@ import useSWR from 'swr'
 import ConfirmModal from '@renderer/components/base/base-confirm'
 import { notify } from '@renderer/utils/notification'
 import appIcon from '@renderer/assets/app-icon.png'
+import { useSidebarExpansion } from '@renderer/hooks/use-sidebar-expansion'
 import SidebarNavButton, {
   SidebarExpandedContext
 } from '@renderer/components/sider/sidebar-nav-button'
@@ -124,10 +125,12 @@ const App: React.FC = () => {
   const [siderWidthValue, setSiderWidthValue] = useState(siderWidth)
   const siderWidthValueRef = useRef(siderWidthValue)
   const [resizing, setResizing] = useState(false)
-  const [sidebarExpanded, setSidebarExpanded] = useState(false)
-  useEffect(() => {
-    setSidebarExpanded(false)
-  }, [siderWidthValue])
+  const {
+    expanded: sidebarExpanded,
+    scheduleExpansion,
+    expandImmediately,
+    collapse: collapseSidebar
+  } = useSidebarExpansion(siderWidthValue === narrowWidth && !resizing)
   const resizingRef = useRef(resizing)
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -422,22 +425,20 @@ const App: React.FC = () => {
               style={{ '--sidebar-compact-width': `${narrowWidth}px` } as React.CSSProperties}
               className="side app-sidebar app-sidebar-compact absolute inset-y-0 left-0 z-50 flex flex-col"
               data-expanded={sidebarExpanded}
-              onMouseEnter={() => {
-                if (!resizing) setSidebarExpanded(true)
-              }}
-              onMouseLeave={() => setSidebarExpanded(false)}
+              onMouseEnter={scheduleExpansion}
+              onMouseLeave={collapseSidebar}
               onFocusCapture={(event) => {
-                if (event.target.matches(':focus-visible')) setSidebarExpanded(true)
+                if (event.target.matches(':focus-visible')) expandImmediately()
               }}
               onBlurCapture={(event) => {
                 if (
                   !event.currentTarget.contains(event.relatedTarget) &&
                   !event.currentTarget.matches(':hover')
                 )
-                  setSidebarExpanded(false)
+                  collapseSidebar()
               }}
               onKeyDown={(event) => {
-                if (event.key === 'Escape') setSidebarExpanded(false)
+                if (event.key === 'Escape') collapseSidebar()
               }}
             >
               <div className="app-drag flex justify-center items-center z-40 bg-transparent h-11.25">

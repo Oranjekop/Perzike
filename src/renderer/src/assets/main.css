@@ -130,6 +130,15 @@ body {
   flex-shrink: 0;
 }
 
+.app-sidebar-nav-item[data-selected='true'] {
+  background: hsl(var(--heroui-primary));
+  border-radius: 8px;
+}
+
+.app-sidebar-nav-item[data-selected='true'] > .ui-switch .switch__control {
+  box-shadow: inset 0 0 0 1px hsl(var(--heroui-primary-foreground) / 0.5);
+}
+
 .app-sidebar-compact .app-sidebar-nav-button {
   width: 100%;
   flex: 1 1 0;
@@ -152,6 +161,13 @@ body {
   width: 20px;
   height: 20px;
   line-height: 1;
+}
+
+.app-sidebar-compact[data-expanded='false'] .app-sidebar-nav-button {
+  flex: 0 0 32px;
+  width: 32px;
+  justify-content: center;
+  gap: 0;
 }
 
 .app-sidebar-nav-icon > svg {
@@ -559,29 +575,29 @@ label:not([data-selected='true']) > input[type='radio'] + span {
 }
 
 /* Full-width compact variant for cards configured as a single sidebar row. */
-.single-row {
+.app-sidebar-grid > .single-row {
   grid-column: span 2 / span 2;
 }
 
-.single-row > div {
+.app-sidebar-grid > .single-row > div {
   display: grid;
   grid-template-columns: 40px minmax(max-content, 1fr) auto;
   align-items: center;
   min-height: 52px;
 }
 
-.single-row > div > .overflow-y-visible,
-.single-row > div > .overflow-y-visible > .flex {
+.app-sidebar-grid > .single-row > div > .overflow-y-visible,
+.app-sidebar-grid > .single-row > div > .overflow-y-visible > .flex {
   display: contents;
 }
 
-.single-row > div > .overflow-y-visible > .flex > :first-child {
+.app-sidebar-grid > .single-row > div > .overflow-y-visible > .flex > :first-child {
   grid-column: 1;
   grid-row: 1;
   align-self: center;
 }
 
-.single-row > div > .overflow-y-visible > .flex > :last-child:not(:first-child) {
+.app-sidebar-grid > .single-row > div > .overflow-y-visible > .flex > :last-child:not(:first-child) {
   grid-column: 3;
   grid-row: 1;
   align-self: center;
@@ -589,7 +605,7 @@ label:not([data-selected='true']) > input[type='radio'] + span {
   margin-right: 8px;
 }
 
-.single-row > div > .pt-1 {
+.app-sidebar-grid > .single-row > div > .pt-1 {
   grid-column: 2;
   grid-row: 1;
   min-width: 0;
@@ -601,7 +617,7 @@ label:not([data-selected='true']) > input[type='radio'] + span {
   text-align: left;
 }
 
-.single-row > div > .pt-1 h3 {
+.app-sidebar-grid > .single-row > div > .pt-1 h3 {
   overflow: visible;
   white-space: nowrap;
 }
