@@ -26,7 +26,7 @@ export function useSidebarExpansion(enabled: boolean): {
     timer.current = setTimeout(() => {
       timer.current = undefined
       setExpanded(true)
-    }, 2000)
+    }, 800)
   }, [cancel, enabled])
   useEffect(() => {
     if (!enabled) collapse()

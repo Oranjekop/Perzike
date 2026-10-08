@@ -130,6 +130,14 @@ body {
   flex-shrink: 0;
 }
 
+.app-sidebar-nav-item > .ui-switch .switch__control {
+  box-sizing: border-box;
+  width: 40px;
+  height: 24px;
+  border: 0;
+  padding: 4px;
+}
+
 .app-sidebar-nav-item[data-selected='true'] {
   background: hsl(var(--heroui-primary));
   border-radius: 8px;
