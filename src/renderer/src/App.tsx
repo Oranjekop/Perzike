@@ -422,15 +422,19 @@ const App: React.FC = () => {
               style={{ '--sidebar-compact-width': `${narrowWidth}px` } as React.CSSProperties}
               className="side app-sidebar app-sidebar-compact absolute inset-y-0 left-0 z-50 flex flex-col"
               data-expanded={sidebarExpanded}
-              onPointerEnter={(event) => {
-                if (event.pointerType === 'mouse' && !resizing) setSidebarExpanded(true)
+              onMouseEnter={() => {
+                if (!resizing) setSidebarExpanded(true)
               }}
-              onPointerLeave={() => setSidebarExpanded(false)}
+              onMouseLeave={() => setSidebarExpanded(false)}
               onFocusCapture={(event) => {
                 if (event.target.matches(':focus-visible')) setSidebarExpanded(true)
               }}
               onBlurCapture={(event) => {
-                if (!event.currentTarget.contains(event.relatedTarget)) setSidebarExpanded(false)
+                if (
+                  !event.currentTarget.contains(event.relatedTarget) &&
+                  !event.currentTarget.matches(':hover')
+                )
+                  setSidebarExpanded(false)
               }}
               onKeyDown={(event) => {
                 if (event.key === 'Escape') setSidebarExpanded(false)

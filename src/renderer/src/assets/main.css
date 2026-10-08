@@ -104,6 +104,8 @@ body {
 }
 
 .app-sidebar-compact-nav > div {
+  height: 32px;
+  flex: 0 0 32px;
   padding-inline: calc((var(--sidebar-compact-width) - 32px) / 2);
   justify-content: flex-start;
 }
@@ -113,6 +115,7 @@ body {
   align-items: center;
   width: 100%;
   min-width: 0;
+  height: 32px;
   gap: 4px;
 }
 
@@ -122,11 +125,12 @@ body {
 
 .app-sidebar-compact .app-sidebar-nav-button {
   width: 100%;
-  flex: 1;
+  flex: 1 1 0;
   min-width: 32px;
   justify-content: flex-start;
   padding-inline: 6px;
   gap: 12px;
+  height: 32px;
   overflow: hidden;
 }
 
