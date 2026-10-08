@@ -103,6 +103,7 @@ async function setSysProxy(onlyActiveDevice: boolean, useRegistry = false): Prom
         }
       } else {
         await execFilePromise(servicePath(), [
+          'sysproxy',
           'pac',
           '--url',
           `http://${host || '127.0.0.1'}:${pacPort}/pac`,
@@ -128,6 +129,7 @@ async function setSysProxy(onlyActiveDevice: boolean, useRegistry = false): Prom
           }
         } else {
           await execFilePromise(servicePath(), [
+            'sysproxy',
             'proxy',
             '--server',
             `${host || '127.0.0.1'}:${port}`,
@@ -142,7 +144,10 @@ async function setSysProxy(onlyActiveDevice: boolean, useRegistry = false): Prom
   }
 }
 
-export async function disableSysProxy(onlyActiveDevice: boolean, useRegistry = false): Promise<void> {
+export async function disableSysProxy(
+  onlyActiveDevice: boolean,
+  useRegistry = false
+): Promise<void> {
   await stopPacServer()
   const { sysProxy } = await getAppConfig()
   const { settingMode = 'exec' } = sysProxy
@@ -155,7 +160,7 @@ export async function disableSysProxy(onlyActiveDevice: boolean, useRegistry = f
       throw new Error('服务可能未安装')
     }
   } else {
-    await execFilePromise(servicePath(), ['disable', ...registryArgs(useRegistry)])
+    await execFilePromise(servicePath(), ['sysproxy', 'disable', ...registryArgs(useRegistry)])
   }
 }
 
@@ -163,7 +168,7 @@ export function disableSysProxySync(useRegistry = false): void {
   if (process.platform !== 'win32') return
 
   try {
-    execFileSync(servicePath(), ['disable', ...registryArgs(useRegistry)], {
+    execFileSync(servicePath(), ['sysproxy', 'disable', ...registryArgs(useRegistry)], {
       stdio: 'ignore',
       timeout: 5000
     })
