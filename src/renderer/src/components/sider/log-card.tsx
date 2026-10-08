@@ -1,4 +1,5 @@
-import { Button, Card, CardBody, CardFooter, Tooltip } from '@renderer/components/ui'
+import SidebarNavButton from './sidebar-nav-button'
+import { Button, Card, CardBody, CardFooter } from '@renderer/components/ui'
 import { IoJournalOutline } from 'react-icons/io5'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useSortable } from '@dnd-kit/sortable'
@@ -32,19 +33,17 @@ const LogCard: React.FC<Props> = (props) => {
   if (iconOnly) {
     return (
       <div className={`${logCardStatus} flex justify-center`}>
-        <Tooltip content="日志" placement="right">
-          <Button
-            size="sm"
-            isIconOnly
-            color={match ? 'primary' : 'default'}
-            variant={match ? 'solid' : 'light'}
-            onPress={() => {
-              navigate('/logs')
-            }}
-          >
-            <IoJournalOutline className="text-[20px]" />
-          </Button>
-        </Tooltip>
+        <SidebarNavButton
+          label="日志"
+          size="sm"
+          color={match ? 'primary' : 'default'}
+          variant={match ? 'solid' : 'light'}
+          onPress={() => {
+            navigate('/logs')
+          }}
+        >
+          <IoJournalOutline className="text-[20px]" />
+        </SidebarNavButton>
       </div>
     )
   }

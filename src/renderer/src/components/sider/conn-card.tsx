@@ -1,4 +1,5 @@
-import { Button, Card, CardBody, CardFooter, Tooltip } from '@renderer/components/ui'
+import SidebarNavButton from './sidebar-nav-button'
+import { Button, Card, CardBody, CardFooter } from '@renderer/components/ui'
 import { FaCircleArrowDown, FaCircleArrowUp } from 'react-icons/fa6'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { calcTraffic } from '@renderer/utils/calc'
@@ -105,19 +106,17 @@ const ConnCard: React.FC<Props> = (props) => {
   if (iconOnly) {
     return (
       <div className={`${connectionCardStatus} flex justify-center`}>
-        <Tooltip content="连接" placement="right">
-          <Button
-            size="sm"
-            isIconOnly
-            color={match ? 'primary' : 'default'}
-            variant={match ? 'solid' : 'light'}
-            onPress={() => {
-              navigate('/connections')
-            }}
-          >
-            <IoLink className="text-[20px]" />
-          </Button>
-        </Tooltip>
+        <SidebarNavButton
+          label="连接"
+          size="sm"
+          color={match ? 'primary' : 'default'}
+          variant={match ? 'solid' : 'light'}
+          onPress={() => {
+            navigate('/connections')
+          }}
+        >
+          <IoLink className="text-[20px]" />
+        </SidebarNavButton>
       </div>
     )
   }

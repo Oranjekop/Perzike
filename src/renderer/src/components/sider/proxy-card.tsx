@@ -1,4 +1,5 @@
-import { Button, Card, CardBody, CardFooter, Chip, Tooltip } from '@renderer/components/ui'
+import SidebarNavButton from './sidebar-nav-button'
+import { Button, Card, CardBody, CardFooter, Chip } from '@renderer/components/ui'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { LuGroup } from 'react-icons/lu'
@@ -47,19 +48,17 @@ const ProxyCard: React.FC<Props> = (props) => {
   if (iconOnly) {
     return (
       <div className={`${proxyCardStatus} flex justify-center`}>
-        <Tooltip content="代理组" placement="right">
-          <Button
-            size="sm"
-            isIconOnly
-            color={match ? 'primary' : 'default'}
-            variant={match ? 'solid' : 'light'}
-            onPress={() => {
-              navigate('/proxies')
-            }}
-          >
-            <LuGroup className="text-[20px]" />
-          </Button>
-        </Tooltip>
+        <SidebarNavButton
+          label="代理组"
+          size="sm"
+          color={match ? 'primary' : 'default'}
+          variant={match ? 'solid' : 'light'}
+          onPress={() => {
+            navigate('/proxies')
+          }}
+        >
+          <LuGroup className="text-[20px]" />
+        </SidebarNavButton>
       </div>
     )
   }

@@ -1,4 +1,5 @@
-import { Button, Card, CardBody, CardFooter, Tooltip } from '@renderer/components/ui'
+import SidebarNavButton from './sidebar-nav-button'
+import { Button, Card, CardBody, CardFooter } from '@renderer/components/ui'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -36,19 +37,17 @@ const SubStoreCard: React.FC<Props> = (props) => {
   if (iconOnly) {
     return (
       <div className={`${substoreCardStatus} ${!useSubStore ? 'hidden' : ''} flex justify-center`}>
-        <Tooltip content="Sub-Store" placement="right">
-          <Button
-            size="sm"
-            isIconOnly
-            color={match ? 'primary' : 'default'}
-            variant={match ? 'solid' : 'light'}
-            onPress={() => {
-              navigate('/substore')
-            }}
-          >
-            <SubStoreIcon className="text-[20px]" />
-          </Button>
-        </Tooltip>
+        <SidebarNavButton
+          label="Sub-Store"
+          size="sm"
+          color={match ? 'primary' : 'default'}
+          variant={match ? 'solid' : 'light'}
+          onPress={() => {
+            navigate('/substore')
+          }}
+        >
+          <SubStoreIcon className="text-[20px]" />
+        </SidebarNavButton>
       </div>
     )
   }

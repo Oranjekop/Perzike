@@ -42,6 +42,9 @@ import useSWR from 'swr'
 import ConfirmModal from '@renderer/components/base/base-confirm'
 import { notify } from '@renderer/utils/notification'
 import appIcon from '@renderer/assets/app-icon.png'
+import SidebarNavButton, {
+  SidebarExpandedContext
+} from '@renderer/components/sider/sidebar-nav-button'
 
 let navigate: NavigateFunction
 
@@ -121,6 +124,10 @@ const App: React.FC = () => {
   const [siderWidthValue, setSiderWidthValue] = useState(siderWidth)
   const siderWidthValueRef = useRef(siderWidthValue)
   const [resizing, setResizing] = useState(false)
+  const [sidebarExpanded, setSidebarExpanded] = useState(false)
+  useEffect(() => {
+    setSidebarExpanded(false)
+  }, [siderWidthValue])
   const resizingRef = useRef(resizing)
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -409,37 +416,65 @@ const App: React.FC = () => {
         />
       )}
       {siderWidthValue === narrowWidth ? (
-        <div style={{ width: `${narrowWidth}px` }} className="side app-sidebar h-full">
-          <div className="app-drag flex justify-center items-center z-40 bg-transparent h-11.25">
-            {platform === 'win32' && (
-              <span className="text-lg font-bold leading-8 tracking-wide select-none">P</span>
-            )}
-          </div>
-          <div
-            className={`${latest ? 'h-[calc(100%-275px)]' : 'h-[calc(100%-227px)]'} overflow-y-auto no-scrollbar`}
-          >
-            <div className="h-full w-full flex flex-col gap-2">
-              {visibleOrder.map((key: string) => {
-                const Component = componentMap[key]
-                if (!Component) return null
-                return <Component key={key} iconOnly={true} />
-              })}
-            </div>
-          </div>
-          <div className="p-2 flex flex-col items-center space-y-2">
-            {latest && latest.version && <UpdaterButton iconOnly={true} latest={latest} />}
-            <OutboundModeSwitcher iconOnly />
-            <Button
-              size="sm"
-              className="app-nodrag"
-              isIconOnly
-              color={location.pathname.includes('/settings') ? 'primary' : 'default'}
-              variant={location.pathname.includes('/settings') ? 'solid' : 'light'}
-              onPress={() => navigate('/settings')}
+        <div style={{ width: `${narrowWidth}px` }} className="relative h-full shrink-0">
+          <SidebarExpandedContext.Provider value={sidebarExpanded}>
+            <div
+              style={{ '--sidebar-compact-width': `${narrowWidth}px` } as React.CSSProperties}
+              className="side app-sidebar app-sidebar-compact absolute inset-y-0 left-0 z-50 flex flex-col"
+              data-expanded={sidebarExpanded}
+              onPointerEnter={(event) => {
+                if (event.pointerType === 'mouse' && !resizing) setSidebarExpanded(true)
+              }}
+              onPointerLeave={() => setSidebarExpanded(false)}
+              onFocusCapture={(event) => {
+                if (event.target.matches(':focus-visible')) setSidebarExpanded(true)
+              }}
+              onBlurCapture={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget)) setSidebarExpanded(false)
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') setSidebarExpanded(false)
+              }}
             >
-              <IoSettings className="text-[20px]" />
-            </Button>
-          </div>
+              <div className="app-drag flex justify-center items-center z-40 bg-transparent h-11.25">
+                {platform === 'win32' && (
+                  <div className="app-sidebar-compact-brand flex items-center">
+                    <img
+                      className="app-brand-mark shrink-0"
+                      src={appIcon}
+                      alt="Perzike"
+                      draggable={false}
+                    />
+                    <span className="app-sidebar-nav-label text-lg font-semibold select-none">
+                      Perzike
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto no-scrollbar">
+                <div className="app-sidebar-compact-nav w-full flex flex-col gap-2">
+                  {visibleOrder.map((key: string) => {
+                    const Component = componentMap[key]
+                    if (!Component) return null
+                    return <Component key={key} iconOnly={true} />
+                  })}
+                </div>
+              </div>
+              <div className="app-sidebar-compact-footer p-2 shrink-0 flex flex-col items-center space-y-2">
+                {latest && latest.version && <UpdaterButton iconOnly={true} latest={latest} />}
+                <OutboundModeSwitcher iconOnly />
+                <SidebarNavButton
+                  label="设置"
+                  className="app-nodrag"
+                  color={location.pathname.includes('/settings') ? 'primary' : 'default'}
+                  variant={location.pathname.includes('/settings') ? 'solid' : 'light'}
+                  onPress={() => navigate('/settings')}
+                >
+                  <IoSettings className="text-[20px]" />
+                </SidebarNavButton>
+              </div>
+            </div>
+          </SidebarExpandedContext.Provider>
         </div>
       ) : (
         <div

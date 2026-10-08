@@ -1,4 +1,5 @@
-import { Button, Card, CardBody, CardFooter, Tooltip } from '@renderer/components/ui'
+import SidebarNavButton from './sidebar-nav-button'
+import { Button, Card, CardBody, CardFooter } from '@renderer/components/ui'
 import BorderSwitch from '@renderer/components/base/border-swtich'
 import { RiScan2Fill } from 'react-icons/ri'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -45,19 +46,20 @@ const SniffCard: React.FC<Props> = (props) => {
   if (iconOnly) {
     return (
       <div className={`${sniffCardStatus} ${!controlSniff ? 'hidden' : ''} flex justify-center`}>
-        <Tooltip content="域名嗅探" placement="right">
-          <Button
-            size="sm"
-            isIconOnly
-            color={match ? 'primary' : 'default'}
-            variant={match ? 'solid' : 'light'}
-            onPress={() => {
-              navigate('/sniffer')
-            }}
-          >
-            <RiScan2Fill className="text-[20px]" />
-          </Button>
-        </Tooltip>
+        <SidebarNavButton
+          control={
+            <BorderSwitch aria-label="域名嗅探" isSelected={enable} onValueChange={onChange} />
+          }
+          label="域名嗅探"
+          size="sm"
+          color={match ? 'primary' : 'default'}
+          variant={match ? 'solid' : 'light'}
+          onPress={() => {
+            navigate('/sniffer')
+          }}
+        >
+          <RiScan2Fill className="text-[20px]" />
+        </SidebarNavButton>
       </div>
     )
   }

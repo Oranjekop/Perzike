@@ -1,4 +1,5 @@
-import { Button, Card, CardBody, CardFooter, Tooltip } from '@renderer/components/ui'
+import SidebarNavButton from './sidebar-nav-button'
+import { Button, Card, CardBody, CardFooter } from '@renderer/components/ui'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
 import BorderSwitch from '@renderer/components/base/border-swtich'
 import { TbDeviceIpadHorizontalBolt } from 'react-icons/tb'
@@ -48,19 +49,20 @@ const TunSwitcher: React.FC<Props> = (props) => {
   if (iconOnly) {
     return (
       <div className={`${tunCardStatus} flex justify-center`}>
-        <Tooltip content="虚拟网卡" placement="right">
-          <Button
-            size="sm"
-            isIconOnly
-            color={match ? 'primary' : 'default'}
-            variant={match ? 'solid' : 'light'}
-            onPress={() => {
-              navigate('/tun')
-            }}
-          >
-            <TbDeviceIpadHorizontalBolt className="text-[20px]" />
-          </Button>
-        </Tooltip>
+        <SidebarNavButton
+          control={
+            <BorderSwitch aria-label="虚拟网卡" isSelected={enable} onValueChange={onChange} />
+          }
+          label="虚拟网卡"
+          size="sm"
+          color={match ? 'primary' : 'default'}
+          variant={match ? 'solid' : 'light'}
+          onPress={() => {
+            navigate('/tun')
+          }}
+        >
+          <TbDeviceIpadHorizontalBolt className="text-[20px]" />
+        </SidebarNavButton>
       </div>
     )
   }

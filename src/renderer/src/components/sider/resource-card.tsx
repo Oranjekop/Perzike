@@ -1,4 +1,5 @@
-import { Button, Card, CardBody, CardFooter, Tooltip } from '@renderer/components/ui'
+import SidebarNavButton from './sidebar-nav-button'
+import { Button, Card, CardBody, CardFooter } from '@renderer/components/ui'
 import React from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useSortable } from '@dnd-kit/sortable'
@@ -32,19 +33,17 @@ const ResourceCard: React.FC<Props> = (props) => {
   if (iconOnly) {
     return (
       <div className={`${resourceCardStatus} flex justify-center`}>
-        <Tooltip content="外部资源" placement="right">
-          <Button
-            size="sm"
-            isIconOnly
-            color={match ? 'primary' : 'default'}
-            variant={match ? 'solid' : 'light'}
-            onPress={() => {
-              navigate('/resources')
-            }}
-          >
-            <IoLayersOutline className="text-[20px]" />
-          </Button>
-        </Tooltip>
+        <SidebarNavButton
+          label="外部资源"
+          size="sm"
+          color={match ? 'primary' : 'default'}
+          variant={match ? 'solid' : 'light'}
+          onPress={() => {
+            navigate('/resources')
+          }}
+        >
+          <IoLayersOutline className="text-[20px]" />
+        </SidebarNavButton>
       </div>
     )
   }

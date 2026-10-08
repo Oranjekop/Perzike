@@ -1,4 +1,5 @@
-import { Button, Card, CardBody, CardFooter, Chip, Tooltip } from '@renderer/components/ui'
+import SidebarNavButton from './sidebar-nav-button'
+import { Button, Card, CardBody, CardFooter, Chip } from '@renderer/components/ui'
 import { MdOutlineAltRoute } from 'react-icons/md'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useSortable } from '@dnd-kit/sortable'
@@ -34,19 +35,17 @@ const RuleCard: React.FC<Props> = (props) => {
   if (iconOnly) {
     return (
       <div className={`${ruleCardStatus} flex justify-center`}>
-        <Tooltip content="规则" placement="right">
-          <Button
-            size="sm"
-            isIconOnly
-            color={match ? 'primary' : 'default'}
-            variant={match ? 'solid' : 'light'}
-            onPress={() => {
-              navigate('/rules')
-            }}
-          >
-            <MdOutlineAltRoute className="text-[20px]" />
-          </Button>
-        </Tooltip>
+        <SidebarNavButton
+          label="规则"
+          size="sm"
+          color={match ? 'primary' : 'default'}
+          variant={match ? 'solid' : 'light'}
+          onPress={() => {
+            navigate('/rules')
+          }}
+        >
+          <MdOutlineAltRoute className="text-[20px]" />
+        </SidebarNavButton>
       </div>
     )
   }

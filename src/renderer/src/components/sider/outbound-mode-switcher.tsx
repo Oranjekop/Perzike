@@ -31,6 +31,8 @@ const OutboundModeSwitcher: React.FC<Props> = (props) => {
   if (iconOnly) {
     return (
       <Tabs
+        aria-label="代理模式"
+        className="app-sidebar-compact-modes"
         color="primary"
         selectedKey={mode}
         classNames={{
@@ -38,9 +40,24 @@ const OutboundModeSwitcher: React.FC<Props> = (props) => {
         }}
         onSelectionChange={(key: Key) => onChangeMode(key as OutboundMode)}
       >
-        <Tab className={`${mode === 'rule' ? 'font-bold' : ''}`} key="rule" title="R" />
-        <Tab className={`${mode === 'global' ? 'font-bold' : ''}`} key="global" title="G" />
-        <Tab className={`${mode === 'direct' ? 'font-bold' : ''}`} key="direct" title="D" />
+        {[
+          { key: 'rule', letter: 'R', label: '规则' },
+          { key: 'global', letter: 'G', label: '全局' },
+          { key: 'direct', letter: 'D', label: '直连' }
+        ].map((item) => (
+          <Tab
+            className={mode === item.key ? 'font-bold' : ''}
+            key={item.key}
+            title={
+              <span className="flex items-center gap-2">
+                <span>{item.letter}</span>
+                <span className="app-sidebar-nav-label">{item.label}</span>
+              </span>
+            }
+            aria-label={item.label}
+            textValue={item.label}
+          />
+        ))}
       </Tabs>
     )
   }

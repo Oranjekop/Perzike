@@ -1,4 +1,5 @@
-import { Button, Card, CardBody, CardFooter, Tooltip } from '@renderer/components/ui'
+import SidebarNavButton from './sidebar-nav-button'
+import { Button, Card, CardBody, CardFooter } from '@renderer/components/ui'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import React from 'react'
 import { IoStatsChartOutline } from 'react-icons/io5'
@@ -29,17 +30,15 @@ const TrafficCard: React.FC<Props> = ({ iconOnly }) => {
   if (iconOnly) {
     return (
       <div className={`${trafficCardStatus} flex justify-center`}>
-        <Tooltip content="流量统计" placement="right">
-          <Button
-            size="sm"
-            isIconOnly
-            color={match ? 'primary' : 'default'}
-            variant={match ? 'solid' : 'light'}
-            onPress={() => navigate('/traffic')}
-          >
-            <IoStatsChartOutline className="text-[20px]" />
-          </Button>
-        </Tooltip>
+        <SidebarNavButton
+          label="流量统计"
+          size="sm"
+          color={match ? 'primary' : 'default'}
+          variant={match ? 'solid' : 'light'}
+          onPress={() => navigate('/traffic')}
+        >
+          <IoStatsChartOutline className="text-[20px]" />
+        </SidebarNavButton>
       </div>
     )
   }

@@ -1,3 +1,4 @@
+import SidebarNavButton from './sidebar-nav-button'
 import {
   Button,
   Card,
@@ -68,19 +69,17 @@ const ProfileCard: React.FC<Props> = (props) => {
   if (iconOnly) {
     return (
       <div className={`${profileCardStatus} flex justify-center`}>
-        <Tooltip content="订阅管理" placement="right">
-          <Button
-            size="sm"
-            isIconOnly
-            color={match ? 'primary' : 'default'}
-            variant={match ? 'solid' : 'light'}
-            onPress={() => {
-              navigate('/profiles')
-            }}
-          >
-            <TiFolder className="text-[20px]" />
-          </Button>
-        </Tooltip>
+        <SidebarNavButton
+          label="订阅管理"
+          size="sm"
+          color={match ? 'primary' : 'default'}
+          variant={match ? 'solid' : 'light'}
+          onPress={() => {
+            navigate('/profiles')
+          }}
+        >
+          <TiFolder className="text-[20px]" />
+        </SidebarNavButton>
       </div>
     )
   }

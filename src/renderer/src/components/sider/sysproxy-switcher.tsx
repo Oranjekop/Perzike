@@ -1,4 +1,5 @@
-import { Button, Card, CardBody, CardFooter, Tooltip } from '@renderer/components/ui'
+import SidebarNavButton from './sidebar-nav-button'
+import { Button, Card, CardBody, CardFooter } from '@renderer/components/ui'
 import BorderSwitch from '@renderer/components/base/border-swtich'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
@@ -57,19 +58,25 @@ const SysproxySwitcher: React.FC<Props> = (props) => {
   if (iconOnly) {
     return (
       <div className={`${sysproxyCardStatus} flex justify-center`}>
-        <Tooltip content="系统代理" placement="right">
-          <Button
-            size="sm"
-            isIconOnly
-            color={match ? 'primary' : 'default'}
-            variant={match ? 'solid' : 'light'}
-            onPress={() => {
-              navigate('/sysproxy')
-            }}
-          >
-            <AiOutlineGlobal className="text-[20px]" />
-          </Button>
-        </Tooltip>
+        <SidebarNavButton
+          control={
+            <BorderSwitch
+              aria-label="系统代理"
+              isSelected={enable}
+              onValueChange={onChange}
+              isDisabled={disabled}
+            />
+          }
+          label="系统代理"
+          size="sm"
+          color={match ? 'primary' : 'default'}
+          variant={match ? 'solid' : 'light'}
+          onPress={() => {
+            navigate('/sysproxy')
+          }}
+        >
+          <AiOutlineGlobal className="text-[20px]" />
+        </SidebarNavButton>
       </div>
     )
   }
