@@ -484,10 +484,10 @@ const App: React.FC = () => {
       ) : (
         <div
           style={{ width: `${siderWidthValue}px` }}
-          className="side app-sidebar h-full overflow-y-auto no-scrollbar"
+          className="side app-sidebar h-full flex flex-col overflow-hidden"
         >
           <div
-            className={`app-drag sticky top-0 z-40 h-[var(--app-titlebar-height)] ${disableAnimation ? 'bg-background/95 backdrop-blur-sm' : 'bg-transparent backdrop-blur'}`}
+            className={`app-drag shrink-0 z-40 h-[var(--app-titlebar-height)] ${disableAnimation ? 'bg-background/95 backdrop-blur-sm' : 'bg-transparent backdrop-blur'}`}
           >
             <div
               className={`flex h-full translate-y-[3px] items-center px-2 ${platform === 'win32' ? 'justify-between' : 'justify-end gap-2'} ${!useWindowFrame && platform === 'darwin' ? 'ml-15' : ''}`}
@@ -515,10 +515,10 @@ const App: React.FC = () => {
               </Button>
             </div>
           </div>
-          <div className="mt-2 mx-2">
+          <div className="shrink-0 mt-2 mx-2">
             <OutboundModeSwitcher />
           </div>
-          <div style={{ overflowX: 'clip' }}>
+          <div className="app-sidebar-cards min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain no-scrollbar">
             <DndContext
               sensors={sensors}
               modifiers={[restrictCardDrag]}

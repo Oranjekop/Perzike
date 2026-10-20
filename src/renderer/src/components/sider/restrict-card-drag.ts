@@ -1,16 +1,16 @@
 import type { Modifier } from '@dnd-kit/core'
 
-// Keep the dragged card inside the visible card area, below the sticky title bar.
+// Keep the dragged card inside the scrolling card area, below the fixed mode switcher.
 export const restrictCardDrag: Modifier = ({ activeNodeRect, transform }) => {
   if (!activeNodeRect) return transform
 
   const sidebar = document.querySelector<HTMLElement>('.app-sidebar')
-  const header = sidebar?.querySelector<HTMLElement>(':scope > .app-drag')
+  const cards = sidebar?.querySelector<HTMLElement>('.app-sidebar-cards')
   const grid = sidebar?.querySelector<HTMLElement>('.app-sidebar-grid')
-  if (!sidebar || !header || !grid) return transform
+  if (!sidebar || !cards || !grid) return transform
 
-  const sidebarRect = sidebar.getBoundingClientRect()
-  const top = Math.max(header.getBoundingClientRect().bottom + 8, grid.getBoundingClientRect().top)
+  const sidebarRect = cards.getBoundingClientRect()
+  const top = Math.max(sidebarRect.top + 8, grid.getBoundingClientRect().top)
 
   return {
     ...transform,

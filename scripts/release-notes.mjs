@@ -136,6 +136,18 @@ if (/^\+\s*<Tab key="mips"/m.test(tunStackDiff)) {
   bullets.push('支持 Mihomo MIPS TUN 协议栈，并根据内核版本控制选项可用性')
 }
 
+const sidebarDiff = git([
+  'diff',
+  '--unified=0',
+  previousTag || EMPTY_TREE,
+  currentRef,
+  '--',
+  'src/renderer/src/App.tsx'
+])
+if (/^\+.*className="app-sidebar-cards /m.test(sidebarDiff)) {
+  bullets.push('固定左侧标题和规则、全局、直连切换区，仅下方卡片列表滚动，避免滚动或拖动卡片遮挡顶部')
+}
+
 const rules = [
   {
     message: '修复隐藏卡片参与排序导致的侧栏拖动错位，改善半宽与整行卡片混合排列',
