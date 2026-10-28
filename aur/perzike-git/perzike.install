@@ -12,3 +12,11 @@ post_install() {
     note "Custom flags should be put directly in: ~/.config/perzike-flags.conf"
     note "The launcher is called: 'perzike'"
 }
+
+pre_remove() {
+    if [ -f '/opt/perzike/resources/files/uninstall-service.sh' ]; then
+        /bin/sh '/opt/perzike/resources/files/uninstall-service.sh'
+    elif [ -x '/opt/perzike/resources/files/perzike-service' ]; then
+        '/opt/perzike/resources/files/perzike-service' service uninstall
+    fi
+}

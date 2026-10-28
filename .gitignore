@@ -9,3 +9,4 @@ out
 *.log*
 .idea
 *.ttf
+/HANDOFF.md

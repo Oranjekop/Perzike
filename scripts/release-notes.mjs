@@ -145,10 +145,25 @@ const sidebarDiff = git([
   'src/renderer/src/App.tsx'
 ])
 if (/^\+.*className="app-sidebar-cards /m.test(sidebarDiff)) {
-  bullets.push('固定左侧标题和规则、全局、直连切换区，仅下方卡片列表滚动，避免滚动或拖动卡片遮挡顶部')
+  bullets.push(
+    '固定左侧标题和规则、全局、直连切换区，仅下方卡片列表滚动，避免滚动或拖动卡片遮挡顶部'
+  )
 }
 
 const rules = [
+  {
+    message: '修复 Windows 卸载后残留系统服务的问题；升级时只停止服务，保留服务注册',
+    patterns: [/^build\/windows\/uninstall-service\.ps1$/]
+  },
+  {
+    message: 'Linux 卸载软件包时停止并注销系统服务，清理残留运行文件；升级时保留服务注册',
+    patterns: [/^build\/linux\/(?:prerm|uninstall-service\.sh)$/, /^aur\/[^/]+\/perzike\.install$/]
+  },
+  {
+    message:
+      'macOS 新增独立卸载脚本，清理系统服务后移除应用；请先退出应用再运行脚本，直接移入废纸篓不会清理服务',
+    patterns: [/^build\/macos\/perzike-uninstall\.command$/]
+  },
   {
     message: '修复隐藏卡片参与排序导致的侧栏拖动错位，改善半宽与整行卡片混合排列',
     patterns: [/^src\/renderer\/src\/components\/sider\/card-sorting\.ts$/]
@@ -178,7 +193,7 @@ const rules = [
     patterns: [/^src\/main\/resolve\/autoUpdater\.ts$/, /^src\/main\/.*update/i]
   },
   {
-    message: '调整 Windows 安装包、服务安装或打包配置',
+    message: '调整安装包、服务安装或跨平台打包配置',
     patterns: [/^build\//, /^electron-builder\.yml$/]
   },
   {

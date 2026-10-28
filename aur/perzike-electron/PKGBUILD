@@ -36,7 +36,7 @@ build(){
 package() {
     asar extract $srcdir/${_pkgname}-${pkgver}/dist/linux-unpacked/resources/app.asar ${pkgdir}/opt/perzike
     cp -r $srcdir/${_pkgname}-${pkgver}/extra/sidecar ${pkgdir}/opt/perzike/resources/
-    cp -r $srcdir/${_pkgname}-${pkgver}/extra/files ${pkgdir}/opt/perzike/resources/
+    cp -r $srcdir/${_pkgname}-${pkgver}/dist/linux-unpacked/resources/files ${pkgdir}/opt/perzike/resources/
     chmod +x ${pkgdir}/opt/perzike/resources/files/perzike-service
     chmod +sx ${pkgdir}/opt/perzike/resources/sidecar/mihomo
     chmod +sx ${pkgdir}/opt/perzike/resources/sidecar/mihomo-alpha

@@ -13,6 +13,7 @@ chown root:admin "$APP_PATH/Contents/Resources/sidecar/mihomo"
 chown root:admin "$APP_PATH/Contents/Resources/sidecar/mihomo-alpha"
 chmod +s "$APP_PATH/Contents/Resources/sidecar/mihomo"
 chmod +s "$APP_PATH/Contents/Resources/sidecar/mihomo-alpha"
+chmod 755 "$APP_PATH/Contents/Resources/perzike-uninstall.command"
 
 /usr/bin/codesign --force --deep --sign - \
   --preserve-metadata=identifier,entitlements,requirements,flags,runtime \

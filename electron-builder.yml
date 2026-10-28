@@ -48,6 +48,9 @@ nsis:
   include: build/installer.nsh
 mac:
   icon: build/icon-rounded-mac.icns
+  extraResources:
+    - from: 'build/macos/perzike-uninstall.command'
+      to: 'perzike-uninstall.command'
   target:
     - pkg
   entitlementsInherit: build/entitlements.mac.plist
@@ -67,6 +70,9 @@ pkg:
   #   file: build/background.png
 linux:
   icon: build/icon-rounded.png
+  extraResources:
+    - from: 'build/linux/uninstall-service.sh'
+      to: 'files/uninstall-service.sh'
   desktop:
     entry:
       Name: Perzike
@@ -80,6 +86,9 @@ linux:
   artifactName: ${name}-linux-${version}-${arch}.${ext}
 deb:
   afterInstall: 'build/linux/postinst'
+  fpm:
+    - --before-remove
+    - build/linux/prerm
   depends:
     - libasound2
     - libgtk-3-0
@@ -95,6 +104,9 @@ deb:
     - libappindicator3-1
 rpm:
   afterInstall: 'build/linux/postinst'
+  fpm:
+    - --before-remove
+    - build/linux/prerm
   depends:
     - alsa-lib
     - gtk3
@@ -109,6 +121,8 @@ rpm:
 pacman:
   afterInstall: 'build/linux/postinst'
   fpm:
+    - --before-remove
+    - build/linux/prerm
     - --pacman-compression
     - zstd
   depends:
@@ -124,4 +138,5 @@ pacman:
     - libsecret
   artifactName: ${name}-linux-${version}-${arch}.pkg.tar.zst
 npmRebuild: true
+afterAllArtifactBuild: './scripts/uninstall-artifact.cjs'
 publish: []

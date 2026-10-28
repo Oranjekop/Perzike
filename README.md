@@ -126,6 +126,7 @@ perzike/
 - `pnpm typecheck` - TypeScript 类型检查
 - `pnpm typecheck:node` - 主进程类型检查
 - `pnpm typecheck:web` - 渲染进程类型检查
+- `pnpm test:uninstall` - 卸载脚本回归检查（需要 Bash，Windows 还会检查 PowerShell 分支）
 - `pnpm lint` - 运行代码检查
 - `pnpm format` - 格式化代码
 
@@ -193,6 +194,20 @@ pnpm build:linux deb --x64
 - **Windows**: `.exe` 安装包和 `.7z` 便携版
 - **macOS**: `.pkg` 安装包
 - **Linux**: `.deb`、`.rpm`、`.pkg.tar.zst(pacman)` 等格式
+
+### 卸载
+
+- **Windows 安装版**：从系统“已安装的应用”卸载，会先停止并删除系统服务。个人安装也可能需要管理员授权；取消授权或服务清理失败时会中止卸载。升级只停止服务，不删除服务注册。
+- **Linux**：通过 apt/dpkg、rpm/dnf、pacman 或 AUR 卸载时，会清理服务注册、开机启动项、服务 socket 和 `/run/perzike` 下的服务运行副本。升级保留服务注册。
+- **macOS**：先退出 Perzike，再运行随安装包发布的 `perzike-macos-<版本>-<架构>-uninstall.command`。也可以执行应用内的卸载脚本：
+
+```bash
+sudo /bin/sh "/Applications/Perzike.app/Contents/Resources/perzike-uninstall.command"
+```
+
+macOS 卸载脚本会清理当前服务和旧版 helper，核验应用标识后删除 `Perzike.app`，保留用户配置。安装在其他位置时，可把应用的绝对路径作为独立脚本的第一个参数。直接将应用拖入废纸篓不会触发服务卸载；如果已删除应用，可运行随包发布的独立脚本清理残留服务。
+
+Windows 便携版删除目录前，如果安装过服务，请先在应用的服务管理中卸载服务。卸载清理不增加常驻进程或后台轮询。
 
 ### 常见问题
 

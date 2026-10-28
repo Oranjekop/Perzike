@@ -1,6 +1,6 @@
 {
   "name": "perzike",
-  "version": "1.26.19",
+  "version": "1.26.20",
   "description": "Perzike",
   "main": "./out/main/index.js",
   "author": {
@@ -14,6 +14,7 @@
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "pnpm run typecheck:node && pnpm run typecheck:web",
+    "test:uninstall": "node --test scripts/uninstall.test.mjs",
     "prepare": "node scripts/prepare.mjs",
     "updater": "node scripts/updater.mjs",
     "checksum": "node scripts/checksum.mjs",

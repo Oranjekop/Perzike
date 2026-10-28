@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# dpkg passes an action, RPM a remaining-package count, pacman a version.
+case "${1:-}" in
+    upgrade|failed-upgrade|deconfigure) exit 0 ;;
+    remove|0|'') ;;
+    *[!0-9]*)
+        case "$1" in
+            [0-9]*) ;;
+            *) exit 0 ;;
+        esac ;;
+    *) exit 0 ;;
+esac
+
+CLEANUP='/opt/perzike/resources/files/uninstall-service.sh'
+if [ ! -f "$CLEANUP" ] && [ -f '/opt/Perzike/resources/files/uninstall-service.sh' ]; then
+    CLEANUP='/opt/Perzike/resources/files/uninstall-service.sh'
+fi
+if [ ! -f "$CLEANUP" ]; then
+    echo "Missing Perzike service cleanup script: $CLEANUP" >&2
+    exit 1
+fi
+
+/bin/sh "$CLEANUP"

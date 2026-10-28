@@ -20,6 +20,7 @@ if (process.env.SKIP_CHANGELOG !== '1') {
   changelog += `- 安装版：[64位](${downloadUrl}/perzike-windows-${version}-x64-setup.exe) | [ARM64](${downloadUrl}/perzike-windows-${version}-arm64-setup.exe)\n\n`
   changelog += '\n#### macOS 11+：\n\n'
   changelog += `- PKG：[Intel](${downloadUrl}/perzike-macos-${version}-x64.pkg) | [Apple Silicon](${downloadUrl}/perzike-macos-${version}-arm64.pkg)\n\n`
+  changelog += `- 卸载脚本（先退出应用）：[Intel](${downloadUrl}/perzike-macos-${version}-x64-uninstall.command) | [Apple Silicon](${downloadUrl}/perzike-macos-${version}-arm64-uninstall.command)\n\n`
   changelog += '\n#### Linux：\n\n'
   changelog += `- DEB：[64位](${downloadUrl}/perzike-linux-${version}-amd64.deb) | [ARM64](${downloadUrl}/perzike-linux-${version}-arm64.deb) | [loong64](${downloadUrl}/perzike-linux-${version}-loong64.deb)\n\n`
   changelog += `- RPM：[64位](${downloadUrl}/perzike-linux-${version}-x86_64.rpm) | [ARM64](${downloadUrl}/perzike-linux-${version}-aarch64.rpm) | [loong64](${downloadUrl}/perzike-linux-${version}-loongarch64.rpm)\n\n`

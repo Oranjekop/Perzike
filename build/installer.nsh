@@ -43,3 +43,21 @@
     CreateShortcut "$DESKTOP\${PRODUCT_FILENAME}.lnk" "$INSTDIR\${PRODUCT_FILENAME}.exe"
   ${endIf}
 !macroend
+
+!macro customUnInstall
+  InitPluginsDir
+  SetOutPath "$PLUGINSDIR"
+  File /oname=perzike-uninstall-service.ps1 "${BUILD_RESOURCES_DIR}\windows\uninstall-service.ps1"
+
+  StrCpy $R1 ""
+  ${if} ${isUpdated}
+    StrCpy $R1 "-StopOnly"
+  ${endIf}
+
+  nsExec::ExecToLog `"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$PLUGINSDIR\perzike-uninstall-service.ps1" $R1`
+  Pop $R0
+  ${if} $R0 != 0
+    MessageBox MB_OK|MB_ICONSTOP "Unable to clean up the Perzike service. Close Services and retry with administrator permission." /SD IDOK
+    Abort
+  ${endIf}
+!macroend
