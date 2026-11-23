@@ -322,7 +322,7 @@ const Proxies: React.FC = () => {
         const currentProxy = cardListRef.current?.querySelector(
           `[data-group-index="${index}"] [data-selected="true"]`
         )
-        currentProxy?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        currentProxy?.scrollIntoView({ behavior: 'instant', block: 'center' })
         return
       }
       if (!(isOpenMap.get(group.name) ?? false)) {

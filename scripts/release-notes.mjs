@@ -177,8 +177,14 @@ const rules = [
     patterns: [/^src\/renderer\/src\/components\/sider\/restrict-card-drag\.ts$/]
   },
   {
+    message: '移除右侧主内容区的平滑滚动，恢复原生滚轮滚动，定位当前代理时立即跳转',
+    patterns: [/^src\/renderer\/src\/hooks\/use-smooth-wheel\.ts$/],
+    status: /^D$/
+  },
+  {
     message: '优化页面平滑滚动，消除起步跳动，改善连续滚动、换向和输入框区域的滚动体验',
-    patterns: [/^src\/renderer\/src\/hooks\/use-smooth-wheel\.ts$/]
+    patterns: [/^src\/renderer\/src\/hooks\/use-smooth-wheel\.ts$/],
+    status: /^[^D]/
   },
   {
     message: '调整 GitHub Actions 发布流程，自动生成并使用中文发布日志',
@@ -215,7 +221,9 @@ const rules = [
 ]
 
 for (const rule of rules) {
-  const files = changedFiles.filter((file) => matchAny(file.path, rule.patterns))
+  const files = changedFiles.filter(
+    (file) => (!rule.status || rule.status.test(file.status)) && matchAny(file.path, rule.patterns)
+  )
   if (files.length > 0 && !bullets.includes(rule.message)) {
     bullets.push(`${rule.message}${formatPaths(files)}`)
   }

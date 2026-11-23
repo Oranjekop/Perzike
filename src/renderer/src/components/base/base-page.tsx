@@ -4,7 +4,6 @@ import { platform } from '@renderer/utils/init'
 import { isAlwaysOnTop, setAlwaysOnTop } from '@renderer/utils/ipc'
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { RiPushpin2Fill, RiPushpin2Line } from 'react-icons/ri'
-import { useSmoothWheel } from '@renderer/hooks/use-smooth-wheel'
 interface Props {
   title?: React.ReactNode
   header?: React.ReactNode
@@ -37,7 +36,6 @@ const BasePage = forwardRef<HTMLDivElement, Props>((props, ref) => {
   }, [])
 
   const contentRef = useRef<HTMLDivElement>(null)
-  useSmoothWheel(contentRef, disableAnimation)
   useImperativeHandle(ref, () => {
     return contentRef.current as HTMLDivElement
   })
