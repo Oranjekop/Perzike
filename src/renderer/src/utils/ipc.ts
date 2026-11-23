@@ -408,6 +408,18 @@ export async function getPlatform(): Promise<NodeJS.Platform> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('platform'))
 }
 
+export async function getMcpSettings(): Promise<McpSettings> {
+  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('getMcpSettings'))
+}
+
+export async function saveMcpSettings(update: McpSettingsUpdate): Promise<McpSettings> {
+  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('saveMcpSettings', update))
+}
+
+export async function copyMcpConfig(candidate?: string): Promise<void> {
+  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('copyMcpConfig', candidate))
+}
+
 export async function openUWPTool(): Promise<void> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('openUWPTool'))
 }

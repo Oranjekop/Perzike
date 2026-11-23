@@ -1,3 +1,14 @@
+interface McpSettings {
+  enabled: boolean
+  port: number
+  allowDelayTest: boolean
+  allowProfileSwitch: boolean
+  hasKey: boolean
+  running: boolean
+}
+
+type McpSettingsUpdate = Omit<McpSettings, 'hasKey' | 'running'> & { key?: string }
+
 interface AppVersion {
   version: string
   changelog: string

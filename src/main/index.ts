@@ -25,6 +25,7 @@ import iconv from 'iconv-lite'
 import { getAppConfigSync } from './config/app'
 import { getUserAgent } from './utils/userAgent'
 import { showNotification } from './utils/notification'
+import { initMcp, stopMcp } from './resolve/mcp'
 import { flushTrafficStats } from './resolve/trafficStats'
 import { cleanupForExit } from './utils/shutdown'
 
@@ -256,6 +257,7 @@ app.on('window-all-closed', () => {
 async function quitApplication(useRegistry = false): Promise<void> {
   if (isQuitting) return
   isQuitting = true
+  stopMcp()
   if (quitTimeout) {
     clearTimeout(quitTimeout)
     quitTimeout = null
@@ -332,6 +334,13 @@ app.whenReady().then(async () => {
   })
   const appConfig = await getAppConfig()
   nativeTheme.themeSource = appConfig.appTheme ?? 'system'
+  await initMcp().catch(() => {
+    void showNotification({
+      title: 'MCP 启动失败',
+      body: '请检查应用设置中的 MCP 端口和密钥。',
+      variant: 'danger'
+    })
+  })
   const { showFloatingWindow: showFloating = false, disableTray = false } = appConfig
   registerIpcMainHandlers()
 

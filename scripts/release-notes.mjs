@@ -164,6 +164,11 @@ if (/^\+.*startProcessWithElevation\(uwpToolPath,.*windowStyle: 'Normal'/m.test(
 
 const rules = [
   {
+    message: '新增本机 MCP 接入，可配置端口与密钥并一键复制连接配置，支持代理诊断、节点切换、流量查询和可选测速及订阅切换',
+    patterns: [/^src\/main\/resolve\/mcp\.ts$/],
+    status: /^A$/
+  },
+  {
     message: '升级 Monaco 编辑器并按需加载语言 Worker，保留配置校验、PAC 类型提示和差异编辑',
     patterns: [/^src\/renderer\/src\/components\/base\/monaco-workers\.ts$/],
     status: /^A$/

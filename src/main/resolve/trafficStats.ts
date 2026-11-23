@@ -6,6 +6,8 @@ import { dataDir } from '../utils/dirs'
 
 const STORE_VERSION = 1
 const RETENTION_DAYS = 400
+const TREND_BUCKET_MS = 5 * 60_000
+const TREND_RETENTION_MS = 7 * 24 * 60 * 60_000
 const WRITE_DELAY = 1500
 const RECORD_SEPARATOR = '\u001f'
 
@@ -25,6 +27,7 @@ interface StoredTrafficDay {
 interface StoredTrafficStore {
   version: number
   days: Record<string, StoredTrafficDay>
+  trend?: { since: number; buckets: Record<number, ConnectionCounter> }
 }
 
 interface ConnectionCounter {
@@ -57,7 +60,11 @@ function loadStore(): StoredTrafficStore {
     if (parsed.version === STORE_VERSION && parsed.days && typeof parsed.days === 'object') {
       store = {
         version: STORE_VERSION,
-        days: parsed.days as Record<string, StoredTrafficDay>
+        days: parsed.days as Record<string, StoredTrafficDay>,
+        trend:
+          parsed.trend && Number.isFinite(parsed.trend.since) && parsed.trend.buckets
+            ? parsed.trend
+            : undefined
       }
     } else {
       store = createStore()
@@ -170,6 +177,8 @@ export function recordTrafficConnections(info: ControllerConnections): void {
   const day = getDay(storeValue, date)
   const activeIds = new Set<string>()
   let changed = false
+  let uploadBytes = 0
+  let downloadBytes = 0
 
   for (const connection of info.connections) {
     if (!connection?.id) continue
@@ -204,6 +213,8 @@ export function recordTrafficConnections(info: ControllerConnections): void {
 
     record.upload += Math.max(uploadDelta, 0)
     record.download += Math.max(downloadDelta, 0)
+    uploadBytes += Math.max(uploadDelta, 0)
+    downloadBytes += Math.max(downloadDelta, 0)
     if (isNewRequest) record.requests += 1
     changed = true
   }
@@ -213,7 +224,54 @@ export function recordTrafficConnections(info: ControllerConnections): void {
   }
 
   if (pruneStore(storeValue)) changed = true
+  const now = Date.now()
+  const trend = (storeValue.trend ??= { since: now, buckets: {} })
+  const key = Math.floor(now / TREND_BUCKET_MS) * TREND_BUCKET_MS
+  const bucket = trend.buckets[key]
+  if (!bucket) {
+    trend.buckets[key] = { upload: uploadBytes, download: downloadBytes }
+    for (const start of Object.keys(trend.buckets)) {
+      if (Number(start) < key - TREND_RETENTION_MS) delete trend.buckets[Number(start)]
+    }
+    changed = true
+  } else if (uploadBytes || downloadBytes) {
+    bucket.upload += uploadBytes
+    bucket.download += downloadBytes
+    changed = true
+  }
   if (changed) schedulePersist()
+}
+
+export function getTrafficTrend(period: 'hour' | 'day' | 'week') {
+  const trend = loadStore().trend
+  const bucketMs =
+    period === 'hour' ? TREND_BUCKET_MS : period === 'day' ? 60 * 60_000 : 24 * 60 * 60_000
+  const count = period === 'hour' ? 12 : period === 'day' ? 24 : 7
+  const now = Date.now()
+  const end = (Math.floor(now / bucketMs) + 1) * bucketMs
+  const start = end - count * bucketMs
+  const points = Array.from({ length: count }, (_, index) => ({
+    start: new Date(start + index * bucketMs).toISOString(),
+    uploadBytes: 0,
+    downloadBytes: 0,
+    observedSamples: 0
+  }))
+  for (let sample = start; sample < now; sample += TREND_BUCKET_MS) {
+    const bucket = trend?.buckets[sample]
+    if (!bucket) continue
+    const point = points[Math.floor((sample - start) / bucketMs)]
+    point.uploadBytes += getNumber(bucket.upload)
+    point.downloadBytes += getNumber(bucket.download)
+    point.observedSamples++
+  }
+  return {
+    period,
+    bucketMs,
+    sampleMs: TREND_BUCKET_MS,
+    collectedSince: trend ? new Date(trend.since).toISOString() : null,
+    asOf: new Date(now).toISOString(),
+    points
+  }
 }
 
 function getPeriodDates(period: TrafficStatsPeriod): string[] {

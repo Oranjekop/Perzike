@@ -115,6 +115,7 @@ import {
   webdavRestore
 } from '../resolve/backup'
 import { getInterfaces } from '../sys/interface'
+import { copyMcpConfig, getMcpSettings, saveMcpSettings } from '../resolve/mcp'
 import { closeTrayIcon, copyEnv, setDockVisible, showTrayIcon } from '../resolve/tray'
 import { registerShortcut } from '../resolve/shortcut'
 import {
@@ -186,6 +187,27 @@ async function patchAppConfigWithServiceSync(patch: Partial<AppConfig>): Promise
 }
 
 export function registerIpcMainHandlers(): void {
+  ipcMain.handle('getMcpSettings', (event) =>
+    ipcErrorWrapper(async () => {
+      if (event.senderFrame !== mainWindow?.webContents.mainFrame)
+        throw new Error('MCP 设置仅可在主窗口访问')
+      return getMcpSettings()
+    })()
+  )
+  ipcMain.handle('saveMcpSettings', (event, update: unknown) =>
+    ipcErrorWrapper(() => {
+      if (event.senderFrame !== mainWindow?.webContents.mainFrame)
+        throw new Error('MCP 设置仅可在主窗口修改')
+      return saveMcpSettings(update)
+    })()
+  )
+  ipcMain.handle('copyMcpConfig', (event, candidate: unknown) =>
+    ipcErrorWrapper(async () => {
+      if (event.senderFrame !== mainWindow?.webContents.mainFrame)
+        throw new Error('MCP 配置仅可在主窗口复制')
+      copyMcpConfig(candidate)
+    })()
+  )
   ipcMain.handle('mihomoVersion', ipcErrorWrapper(mihomoVersion))
   ipcMain.handle('mihomoConfig', ipcErrorWrapper(mihomoConfig))
   ipcMain.handle('mihomoCloseConnection', (_e, id) => ipcErrorWrapper(mihomoCloseConnection)(id))
