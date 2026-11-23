@@ -164,6 +164,11 @@ if (/^\+.*startProcessWithElevation\(uwpToolPath,.*windowStyle: 'Normal'/m.test(
 
 const rules = [
   {
+    message: '升级 Monaco 编辑器并按需加载语言 Worker，保留配置校验、PAC 类型提示和差异编辑',
+    patterns: [/^src\/renderer\/src\/components\/base\/monaco-workers\.ts$/],
+    status: /^A$/
+  },
+  {
     message: '修复 Windows 卸载后残留系统服务的问题；升级时只停止服务，保留服务注册',
     patterns: [/^build\/windows\/uninstall-service\.ps1$/]
   },

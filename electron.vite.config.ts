@@ -1,20 +1,7 @@
 import { resolve } from 'path'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
-// https://github.com/vdesjs/vite-plugin-monaco-editor/issues/21#issuecomment-1827562674
-import monacoEditorPluginModule from 'vite-plugin-monaco-editor'
 import tailwindcss from '@tailwindcss/vite'
-
-const isObjectWithDefaultFunction = (
-  module: unknown
-): module is { default: typeof monacoEditorPluginModule } =>
-  module != null &&
-  typeof module === 'object' &&
-  'default' in module &&
-  typeof module.default === 'function'
-const monacoEditorPlugin = isObjectWithDefaultFunction(monacoEditorPluginModule)
-  ? monacoEditorPluginModule.default
-  : monacoEditorPluginModule
 
 export default defineConfig({
   main: {
@@ -26,6 +13,10 @@ export default defineConfig({
   renderer: {
     server: {
       host: '127.0.0.1'
+    },
+    optimizeDeps: {
+      // The YAML worker imports this CommonJS dependency outside Vite's initial scan.
+      include: ['monaco-yaml > path-browserify']
     },
     build: {
       rollupOptions: {
@@ -42,19 +33,6 @@ export default defineConfig({
         '@renderer': resolve('src/renderer/src')
       }
     },
-    plugins: [
-      react(),
-      tailwindcss(),
-      monacoEditorPlugin({
-        languageWorkers: ['editorWorkerService', 'typescript', 'css'],
-        customDistPath: (_, out) => `${out}/monacoeditorwork`,
-        customWorkers: [
-          {
-            label: 'yaml',
-            entry: 'monaco-yaml/yaml.worker'
-          }
-        ]
-      })
-    ]
+    plugins: [react(), tailwindcss()]
   }
 })

@@ -1,0 +1,38 @@
+diff --git a/index.js b/index.js
+--- a/index.js
++++ b/index.js
+@@ -41,8 +41,13 @@ export function createWorkerManager(monaco, options) {
+             lastUsedTime = Date.now();
+             if (!worker) {
++                const createWorker = globalThis.MonacoEnvironment?.getWorker;
++                if (!createWorker) {
++                    throw new Error('MonacoEnvironment.getWorker is required');
++                }
+                 worker = monaco.editor.createWebWorker({
+-                    createData,
+-                    label,
+-                    moduleId,
++                    worker: Promise.resolve(createWorker(moduleId, label)).then((instance) => {
++                        instance.postMessage(createData);
++                        return instance;
++                    }),
+                 });
+             }
+diff --git a/worker.js b/worker.js
+--- a/worker.js
++++ b/worker.js
+@@ -1,4 +1,4 @@
+-import { initialize as initializeWorker } from 'monaco-editor/esm/vs/editor/editor.worker.js';
++import { initialize as initializeWorker } from 'monaco-editor/editor/editor.worker.js';
+ /**
+  * Create a web worker proxy.
+  *
+@@ -6,7 +6,5 @@ import { initialize as initializeWorker } from 'monaco-editor/esm/vs/editor/editor.worker.js';
+  * @param fn - The function that creates the web worker.
+  */
+ export function initialize(fn) {
+-    self.onmessage = () => {
+-        initializeWorker((ctx, createData) => Object.create(fn(ctx, createData)));
+-    };
++    initializeWorker((ctx, createData) => Object.create(fn(ctx, createData)));
+ }

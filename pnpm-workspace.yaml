@@ -8,4 +8,4 @@ overrides:
   qs: 6.15.2
   vite: npm:rolldown-vite@^7.3.1
 patchedDependencies:
-  vite-plugin-monaco-editor@1.1.0: patches/vite-plugin-monaco-editor@1.1.0.patch
+  monaco-worker-manager@2.0.1: patches/monaco-worker-manager@2.0.1.patch
