@@ -1,6 +1,6 @@
-import { exec, execFile, execSync, spawn } from 'child_process'
+import { exec, execSync, spawn } from 'child_process'
 import { app, dialog, nativeTheme, shell } from 'electron'
-import { readFile } from 'fs/promises'
+import { access, readFile } from 'fs/promises'
 import path from 'path'
 import { promisify } from 'util'
 import {
@@ -9,7 +9,6 @@ import {
   mihomoCorePath,
   overridePath,
   profilePath,
-  resourcesDir,
   resourcesFilesDir,
   taskDir
 } from '../utils/dirs'
@@ -38,19 +37,17 @@ export function openFile(type: 'profile' | 'override', id: string, ext?: 'yaml' 
 }
 
 export async function openUWPTool(): Promise<void> {
-  const execFilePromise = promisify(execFile)
-  const uwpToolPath = path.join(resourcesDir(), 'files', 'enableLoopback.exe')
-
+  if (process.platform !== 'win32') return
+  const uwpToolPath = path.join(resourcesFilesDir(), 'enableLoopback.exe')
   try {
-    await execFilePromise(uwpToolPath)
+    await access(uwpToolPath)
   } catch (error) {
-    const errorCode = error && typeof error === 'object' && 'code' in error ? error.code : undefined
-    if (process.platform !== 'win32' || errorCode !== 'EACCES') {
-      throw error
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      throw new Error('找不到 UWP 工具（enableLoopback.exe），请重新安装 Perzike。')
     }
-
-    await startProcessWithElevation(uwpToolPath, [])
+    throw error
   }
+  await startProcessWithElevation(uwpToolPath, [], { windowStyle: 'Normal' })
 }
 
 export async function setupFirewall(): Promise<void> {

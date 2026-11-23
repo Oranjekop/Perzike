@@ -20,7 +20,11 @@ export async function isRunningAsAdmin(): Promise<boolean> {
   }
 }
 
-export async function startProcessWithElevation(command: string, args: string[]): Promise<number> {
+export async function startProcessWithElevation(
+  command: string,
+  args: string[],
+  { windowStyle = 'Hidden' }: { windowStyle?: 'Hidden' | 'Normal' } = {}
+): Promise<number> {
   if (process.platform !== 'win32') {
     throw new Error('startProcessWithElevation is only supported on Windows')
   }
@@ -33,7 +37,7 @@ export async function startProcessWithElevation(command: string, args: string[])
         '-ExecutionPolicy',
         'Bypass',
         '-EncodedCommand',
-        encodePowerShellCommand(buildWindowsElevationScript(command, args, false))
+        encodePowerShellCommand(buildWindowsElevationScript(command, args, false, windowStyle))
       ],
       { timeout: 30000 }
     )
@@ -90,11 +94,16 @@ function encodePowerShellCommand(script: string): string {
   return Buffer.from(script, 'utf16le').toString('base64')
 }
 
-function buildWindowsElevationScript(command: string, args: string[], wait: boolean): string {
+function buildWindowsElevationScript(
+  command: string,
+  args: string[],
+  wait: boolean,
+  windowStyle: 'Hidden' | 'Normal' = 'Hidden'
+): string {
   const parameters = [
     `FilePath = ${powerShellQuote(command)}`,
     "Verb = 'RunAs'",
-    "WindowStyle = 'Hidden'",
+    `WindowStyle = '${windowStyle}'`,
     'PassThru = $true'
   ]
 

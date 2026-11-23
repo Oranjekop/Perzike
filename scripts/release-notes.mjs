@@ -150,6 +150,18 @@ if (/^\+.*className="app-sidebar-cards /m.test(sidebarDiff)) {
   )
 }
 
+const miscDiff = git([
+  'diff',
+  '--unified=0',
+  previousTag || EMPTY_TREE,
+  currentRef,
+  '--',
+  'src/main/sys/misc.ts'
+])
+if (/^\+.*startProcessWithElevation\(uwpToolPath,.*windowStyle: 'Normal'/m.test(miscDiff)) {
+  bullets.push('修复 Windows 上 UWP 工具启动后窗口未显示的问题')
+}
+
 const rules = [
   {
     message: '修复 Windows 卸载后残留系统服务的问题；升级时只停止服务，保留服务注册',
