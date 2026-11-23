@@ -207,10 +207,13 @@ jobs:
         run: node scripts/release-notes.mjs
 
       - name: Generate Update Metadata
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm install -g pnpm
           SKIP_PREPARE=1 pnpm install
-          RELEASE_TAG=pre-release RELEASE_NOTES_FILE=release-notes.md SKIP_CHANGELOG=1 pnpm updater
+          gh release view pre-release --json assets --jq '.assets' > "$RUNNER_TEMP/update-assets.json"
+          RELEASE_TAG=pre-release RELEASE_ASSETS_FILE="$RUNNER_TEMP/update-assets.json" RELEASE_NOTES_FILE=release-notes.md SKIP_CHANGELOG=1 pnpm updater
 
       - name: Upload Update Metadata
         env:

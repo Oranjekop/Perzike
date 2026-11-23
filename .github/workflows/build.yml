@@ -258,10 +258,14 @@ jobs:
         run: node scripts/release-notes.mjs
 
       - name: Install Dependencies and Updater
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.prepare_release.outputs.tag_name }}
         run: |
           npm install -g pnpm
           SKIP_PREPARE=1 pnpm install
-          RELEASE_NOTES_FILE=release-notes.md pnpm updater
+          gh release view "$RELEASE_TAG" --json assets --jq '.assets' > "$RUNNER_TEMP/update-assets.json"
+          RELEASE_ASSETS_FILE="$RUNNER_TEMP/update-assets.json" RELEASE_NOTES_FILE=release-notes.md pnpm updater
 
       - name: Upload Release Metadata
         env:

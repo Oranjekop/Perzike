@@ -162,9 +162,24 @@ if (/^\+.*startProcessWithElevation\(uwpToolPath,.*windowStyle: 'Normal'/m.test(
   bullets.push('修复 Windows 上 UWP 工具启动后窗口未显示的问题')
 }
 
+const updaterDiff = git([
+  'diff',
+  '--unified=0',
+  previousTag || EMPTY_TREE,
+  currentRef,
+  '--',
+  'src/main/resolve/autoUpdater.ts'
+])
+if (/^\+.*fetchUpdateMetadata\(endpoint, mixedPort\)/m.test(updaterDiff)) {
+  bullets.push(
+    '修复 GitHub API 限流导致的升级检测 403，直接读取发布更新文件并使用其中的 SHA-256 校验安装包'
+  )
+}
+
 const rules = [
   {
-    message: '新增本机 MCP 接入，可配置端口与密钥并一键复制连接配置，支持代理诊断、节点切换、流量查询和可选测速及订阅切换',
+    message:
+      '新增本机 MCP 接入，可配置端口与密钥并一键复制连接配置，支持代理诊断、节点切换、流量查询和可选测速及订阅切换',
     patterns: [/^src\/main\/resolve\/mcp\.ts$/],
     status: /^A$/
   },

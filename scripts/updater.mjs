@@ -8,11 +8,26 @@ let changelog = existsSync(releaseNotesFile)
   ? readFileSync(releaseNotesFile, 'utf-8')
   : `## ${version}\n\n### 更新内容\n\n- 发布 ${version}\n`
 const refTag = process.env.RELEASE_TAG || process.env.GITHUB_REF_NAME
-const releaseTag = refTag === version || refTag === `v${version}` ? refTag : version
+const releaseTag =
+  refTag === 'pre-release' || refTag === version || refTag === `v${version}` ? refTag : version
 const downloadUrl = `https://github.com/Oranjekop/Perzike/releases/download/${releaseTag}`
 const latest = {
   version,
   changelog
+}
+
+if (process.env.RELEASE_ASSETS_FILE) {
+  const assets = JSON.parse(readFileSync(process.env.RELEASE_ASSETS_FILE, 'utf-8'))
+  const installable = assets.filter(({ name }) => /\.(?:exe|7z|pkg)$/.test(name))
+  if (
+    !installable.length ||
+    installable.some(({ digest }) => !/^sha256:[a-f0-9]{64}$/i.test(digest))
+  ) {
+    throw new Error('Missing SHA-256 digest for one or more update packages')
+  }
+  latest.sha256 = Object.fromEntries(
+    installable.map(({ name, digest }) => [name, digest.slice(7).toLowerCase()])
+  )
 }
 
 if (process.env.SKIP_CHANGELOG !== '1') {

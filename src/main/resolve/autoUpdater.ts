@@ -29,6 +29,14 @@ interface GithubRelease {
   assets: GithubReleaseAsset[]
 }
 
+interface UpdateMetadata extends AppVersion {
+  sha256?: Record<string, string>
+}
+
+const releaseBaseUrl = 'https://github.com/Oranjekop/Perzike/releases'
+const updateVersionPattern = /^\d+\.\d+\.\d+(?:-beta-[a-f0-9]{7,40})?$/i
+const sha256Pattern = /^[a-f0-9]{64}$/i
+
 function quotePowerShellString(value: string): string {
   return `'${value.replace(/'/g, "''")}'`
 }
@@ -169,10 +177,6 @@ async function fetchReleases(mixedPort: number): Promise<GithubRelease[]> {
   return res.data
 }
 
-function getLatestYmlAsset(release: GithubRelease): GithubReleaseAsset | undefined {
-  return release.assets.find((asset) => asset.name === 'latest.yml')
-}
-
 async function resolveReleaseForChannel(
   updateChannel: AppConfig['updateChannel'],
   mixedPort: number
@@ -211,30 +215,78 @@ async function resolveReleaseForVersion(
 export async function checkUpdate(): Promise<AppVersion | undefined> {
   const { 'mixed-port': mixedPort = 7890 } = await getControledMihomoConfig()
   const { updateChannel = 'stable' } = await getAppConfig()
-  const release = await resolveReleaseForChannel(updateChannel, mixedPort)
-  if (!release) {
-    return undefined
-  }
+  const isBeta = updateChannel === 'beta'
+  const endpoint = isBeta ? 'download/pre-release' : 'latest/download'
+  const latest = await fetchUpdateMetadata(endpoint, mixedPort)
+  if (!latest && isBeta) return undefined
+  if (!latest) throw new Error('正式版更新文件暂不可用，请稍后重试')
+  if (latest.version.includes('-beta-') !== isBeta) throw new Error('更新文件与所选更新通道不符')
+  if (latest.version === app.getVersion()) return undefined
+  return { version: latest.version, changelog: latest.changelog }
+}
 
-  const latestYmlAsset = getLatestYmlAsset(release)
-  if (!latestYmlAsset) {
-    throw new Error(`最新版本 ${release.tag_name} 的更新文件尚不可用，请稍后重试`)
-  }
-
-  const res = await axios.get(latestYmlAsset.browser_download_url, {
-    ...createReleaseLookupConfig(mixedPort),
-    responseType: 'text'
-  })
-  const latest = parseYaml<AppVersion>(res.data)
-  const currentVersion = app.getVersion()
-  if (latest.version !== currentVersion) {
-    return latest
-  } else {
-    return undefined
+async function fetchUpdateMetadata(
+  endpoint: string,
+  mixedPort: number
+): Promise<UpdateMetadata | undefined> {
+  try {
+    const response = await axios.get<string>(`${releaseBaseUrl}/${endpoint}/latest.yml`, {
+      ...createAxiosConfig(mixedPort),
+      headers: { Accept: 'application/yaml, text/plain, */*', 'User-Agent': 'Perzike-Updater' },
+      responseType: 'text',
+      timeout: 15000,
+      maxContentLength: 256 * 1024
+    })
+    const metadata = parseYaml<UpdateMetadata>(response.data)
+    if (
+      !metadata ||
+      typeof metadata.version !== 'string' ||
+      !updateVersionPattern.test(metadata.version) ||
+      typeof metadata.changelog !== 'string'
+    ) {
+      throw new Error('GitHub 发布的更新文件格式无效')
+    }
+    return metadata
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) return undefined
+    throw error
   }
 }
 
+async function resolveUpdateAsset(
+  version: string,
+  file: string,
+  mixedPort: number
+): Promise<{ url: string; hash: string }> {
+  const tags = version.includes('-beta-') ? ['pre-release'] : [version, `v${version}`]
+  for (const tag of tags) {
+    const metadata = await fetchUpdateMetadata(`download/${tag}`, mixedPort)
+    if (!metadata) continue
+    if (metadata.version !== version) throw new Error('发布版本已变化，请重新检测更新')
+    if (metadata.sha256 === undefined) break
+    const hash = metadata.sha256?.[file]
+    if (typeof hash !== 'string' || !sha256Pattern.test(hash))
+      throw new Error(`更新文件缺少 ${file} 的有效 SHA-256`)
+    return { url: `${releaseBaseUrl}/download/${tag}/${file}`, hash: hash.toLowerCase() }
+  }
+
+  let release: GithubRelease | undefined
+  try {
+    release = await resolveReleaseForVersion(version, mixedPort)
+  } catch (error) {
+    if (axios.isAxiosError(error) && [403, 429].includes(error.response?.status ?? 0)) {
+      throw new Error('GitHub 暂时限制了旧版更新的校验信息查询，请从 Releases 手动下载或稍后重试')
+    }
+    throw error
+  }
+  const asset = release?.assets.find(({ name }) => name === file)
+  const hash = asset?.digest?.match(/^sha256:([a-f0-9]{64})$/i)?.[1]
+  if (!asset || !hash) throw new Error(`无法从 GitHub Release 中找到 ${file} 的 SHA-256`)
+  return { url: asset.browser_download_url, hash: hash.toLowerCase() }
+}
+
 export async function downloadAndInstallUpdate(version: string): Promise<void> {
+  if (!updateVersionPattern.test(version)) throw new Error('更新版本无效')
   const { 'mixed-port': mixedPort = 7890 } = await getControledMihomoConfig()
   const fileMap = {
     'win32-x64': `perzike-windows-${version}-x64-setup.exe`,
@@ -257,20 +309,10 @@ export async function downloadAndInstallUpdate(version: string): Promise<void> {
       progress: 0
     })
 
-    const release = await resolveReleaseForVersion(version, mixedPort)
-    if (!release) {
-      throw new Error(`未找到版本 ${version} 对应的发布信息`)
-    }
-
-    const assets = release.assets || []
-    const matchedAsset = assets.find((a) => a.name === file)
-    if (!matchedAsset || !matchedAsset.digest) {
-      throw new Error(`无法从 GitHub Release 中找到 "${file}" 对应的 SHA-256 信息`)
-    }
-    const expectedHash = matchedAsset.digest.split(':')[1].toLowerCase()
+    const { url, hash: expectedHash } = await resolveUpdateAsset(version, file, mixedPort)
 
     if (!existsSync(path.join(dataDir(), file))) {
-      const res = await axios.get(matchedAsset.browser_download_url, {
+      const res = await axios.get(url, {
         responseType: 'arraybuffer',
         ...createAxiosConfig(mixedPort, downloadCancelToken.token),
         headers: {
